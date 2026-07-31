@@ -294,6 +294,11 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
     <button class="nav-item" data-view="master"><i data-lucide="package-search"></i><span class="tx">상품 마스터</span><span class="cnt" id="cntMaster"></span></button>
     <a class="nav-item" href="https://gaiacatalog-4n3mekcg.manus.space/?code=6q8PbzYNYPfMPETtqBVzFZ" target="_blank" rel="noopener"><i data-lucide="layout-grid"></i><span class="tx">상품 카탈로그</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
     <button class="nav-item" data-view="brands"><i data-lucide="tags"></i><span class="tx">브랜드 현황</span></button>
+
+    <div class="nav-label">실무 도구</div>
+    <button class="nav-item" data-view="freight"><i data-lucide="calculator"></i><span class="tx">수입 물류비 계산</span></button>
+    <a class="nav-item" href="tools/kc-checker.html" target="_blank" rel="noopener"><i data-lucide="file-check-2"></i><span class="tx">KC×SM 크로스체커</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
+    <a class="nav-item" href="tools/co-checker.html" target="_blank" rel="noopener"><i data-lucide="file-search"></i><span class="tx">CO·인보이스 대조</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
     <a class="nav-item" href="https://newceo-dot.github.io/gaia-resizer/" target="_blank" rel="noopener"><i data-lucide="image"></i><span class="tx">이미지 리사이저</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
 
     <div class="nav-label">분석 · 인증</div>
@@ -1304,6 +1309,7 @@ function render(){
   else if(state.view==='stock')v.innerHTML=vStock();
   else if(state.view==='sales')v.innerHTML=vSales();
   else if(state.view==='brand')v.innerHTML=vBrandDetail();
+  else if(state.view==='freight')v.innerHTML=vFreight();
   bindView();refreshIcons();
 }
 function pageHead(t,sub){return '<div class="page-head"><div><h2>'+t+'</h2><p>'+sub+'</p></div></div>'}
@@ -1842,6 +1848,93 @@ function kcStat(lab,val,note,col){
     +'<div style="font-size:.73rem;color:var(--ink-3);margin-top:2px">'+note+'</div></div>';
 }
 
+/* ----- 수입 물류비 계산기 ----- */
+var FRATES=[
+  {route:"심천 → 인천",mode:"LCL",unit:"CBM",varUsd:105,varKrw:0,fixUsd:100,fixKrw:0,sur:0,note:"EXW · 2026.07.29"},
+  {route:"인도네시아 → 인천",mode:"LCL",unit:"CBM",varUsd:101,varKrw:2850,fixUsd:155,fixKrw:162000,sur:0,note:"EXW · 드레이지 15CBM까지"},
+  {route:"하이퐁 → 인천",mode:"LCL",unit:"CBM",varUsd:47,varKrw:2850,fixUsd:165,fixKrw:132000,sur:0,note:"EXW · 드레이지 7CBM까지"},
+  {route:"방콕 → 인천",mode:"FCL 20GP",unit:"대",varUsd:300,varKrw:189537,fixUsd:55,fixKrw:44000,sur:0,note:"FOB · 유효 06.30"},
+  {route:"방콕 → 인천",mode:"FCL 40HQ",unit:"대",varUsd:590,varKrw:269074,fixUsd:55,fixKrw:44000,sur:0,note:"FOB · 유효 06.30"},
+  {route:"산터우 → 인천",mode:"FCL 20GP",unit:"대",varUsd:200,varKrw:189537,fixUsd:55,fixKrw:44000,sur:0,note:"FOB(ALL-IN) · 유효 06.30"},
+  {route:"산터우 → 인천",mode:"FCL 40HQ",unit:"대",varUsd:400,varKrw:269074,fixUsd:55,fixKrw:44000,sur:0,note:"FOB(ALL-IN) · 유효 06.30"},
+  {route:"방콕 → 인천 (TSN-ICN)",mode:"항공",unit:"KG",varUsd:3.10,varKrw:0,fixUsd:0,fixKrw:30000,sur:0.05,note:"FOB · C.C.FEE 5% 포함"}
+];
+state.fr={fx:1500,rows:FRATES.map(function(){return {qty:'',pcs:''}}),edit:false};
+state.fr.rows[0].qty=1;
+function frNum(v){var n=parseFloat(v);return isFinite(n)?n:0}
+function frCalc(i){
+  var r=FRATES[i],fx=frNum(state.fr.fx),q=frNum(state.fr.rows[i].qty),p=frNum(state.fr.rows[i].pcs);
+  var total=(r.varUsd*q+r.fixUsd)*(1+r.sur)*fx + r.varKrw*q + r.fixKrw;
+  return {total:total,per:p>0?total/p:null,q:q};
+}
+function frModeCls(m){ return m.indexOf('FCL')===0?'b-done':(m==='항공'?'b-warn':'b-prod') }
+function vFreight(){
+  var h=pageHead('수입 물류비 계산기','LCL · FCL · 항공 구간별 예상 물류비 및 개당 운임 산출');
+  h+='<div class="toolbar">'
+    +'<span style="font-size:.85rem;font-weight:600;color:var(--ink-2)">적용 환율 (USD→KRW)</span>'
+    +'<input type="text" id="frFx" value="'+state.fr.fx+'" style="width:100px;text-align:right;font-weight:700">'
+    +'<span style="font-size:.76rem;color:var(--ink-3)">선적일 환율 기준 · LCL·항공 견적 1,500 / FCL 견적 1,450</span>'
+    +'<button class="chip'+(state.fr.edit?' on':'')+'" id="frEdit" style="margin-left:auto">'+icon('pencil')+' 단가 편집</button>'
+    +'<button class="btnDl" data-dl="freight">'+icon('download')+'엑셀</button>'
+    +'</div>';
+  var editing=state.fr.edit;
+  h+='<div class="card tblWrap"><table class="tbl"><thead><tr>'
+    +'<th>구간</th><th>형태</th><th class="num">변동비 USD</th><th class="num">변동비 KRW</th><th class="num">고정비 USD</th><th class="num">고정비 KRW</th>'
+    +'<th class="num">물량</th><th class="num">제품수량</th><th class="num">예상 물류비</th><th class="num">개당 운임</th>'
+    +'</tr></thead><tbody>'
+    +FRATES.map(function(r,i){
+      var c=frCalc(i);
+      function cell(f,fmt){
+        if(editing)return '<td class="num"><input type="text" data-fr="'+i+'" data-ff="'+f+'" value="'+r[f]+'" style="width:80px;text-align:right;border:1px solid var(--line-2);border-radius:8px;padding:5px 8px"></td>';
+        return '<td class="num" style="color:var(--ink-3)">'+fmt(r[f])+'</td>';
+      }
+      return '<tr>'
+        +'<td style="font-weight:700">'+esc(r.route)+'<div style="font-size:.72rem;font-weight:400;color:var(--ink-3)">'+esc(r.note)+'</div></td>'
+        +'<td><span class="badge '+frModeCls(r.mode)+'">'+esc(r.mode)+'</span></td>'
+        +cell('varUsd',function(v){return '$'+v.toLocaleString('en-US')})
+        +cell('varKrw',function(v){return v?v.toLocaleString():'–'})
+        +cell('fixUsd',function(v){return '$'+v.toLocaleString('en-US')})
+        +cell('fixKrw',function(v){return v?v.toLocaleString():'–'})
+        +'<td class="num"><input type="text" data-fr="'+i+'" data-ff="qty" value="'+esc(state.fr.rows[i].qty)+'" placeholder="'+r.unit+'" style="width:74px;text-align:right;border:1px solid var(--line-2);border-radius:8px;padding:6px 8px"> <span style="font-size:.72rem;color:var(--ink-3)">'+r.unit+'</span></td>'
+        +'<td class="num"><input type="text" data-fr="'+i+'" data-ff="pcs" value="'+esc(state.fr.rows[i].pcs)+'" placeholder="개" style="width:74px;text-align:right;border:1px solid var(--line-2);border-radius:8px;padding:6px 8px"></td>'
+        +'<td class="num" id="frT'+i+'" style="font-weight:800">'+(c.q>0?'₩'+Math.round(c.total).toLocaleString():'<span style="color:var(--ink-3)">–</span>')+'</td>'
+        +'<td class="num" id="frP'+i+'" style="font-weight:800;color:var(--g600)">'+(c.per!=null?'₩'+(Math.round(c.per*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:var(--ink-3);font-weight:400">수량 입력</span>')+'</td>'
+        +'</tr>';
+    }).join('')+'</tbody></table></div>';
+  h+='<section class="card" style="margin-top:14px"><div class="section-head"><h3>계산식 및 유의사항</h3></div>'
+    +'<div style="padding:0 20px 18px;font-size:.82rem;color:var(--ink-2);line-height:1.75">'
+    +'<div><b>계산식</b> — (변동비USD × 물량 + 고정비USD) × (1+할증률) × 환율 + 변동비KRW × 물량 + 고정비KRW</div>'
+    +'<div style="margin-top:8px">· 물량 단위: LCL은 CBM, FCL은 컨테이너 대수, 항공은 운임중량(KG)</div>'
+    +'<div>· 항공은 C.C.FEE(외화금액 5%)가 할증률로 반영됨</div>'
+    +'<div>· LCL·항공 견적은 VAT 불포함, FCL 견적은 DOC FEE·핸들링에 VAT 포함(견적서 표기 그대로)</div>'
+    +'<div>· 단가 출처: 아이에스씨앤에어 견적서(AT COST 항목·관부가세 제외). 새 견적 반영은 단가 편집으로 임시 수정 가능</div>'
+    +'</div></section>';
+  return h;
+}
+function frUpdateCells(){
+  FRATES.forEach(function(r,i){
+    var c=frCalc(i);
+    var t=document.getElementById('frT'+i),p=document.getElementById('frP'+i);
+    if(t)t.innerHTML=c.q>0?'₩'+Math.round(c.total).toLocaleString():'<span style="color:var(--ink-3)">–</span>';
+    if(p)p.innerHTML=c.per!=null?'₩'+(Math.round(c.per*100)/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:var(--ink-3);font-weight:400">수량 입력</span>';
+  });
+}
+function exportFreightXlsx(){
+  if(typeof XLSX==='undefined')return;
+  var rows=FRATES.map(function(r,i){
+    var c=frCalc(i);
+    return {'구간':r.route,'형태':r.mode,'비고':r.note,'단위':r.unit,
+      '변동비USD':r.varUsd,'변동비KRW':r.varKrw,'고정비USD':r.fixUsd,'고정비KRW':r.fixKrw,
+      '할증률':r.sur,'적용환율':frNum(state.fr.fx),
+      '물량':frNum(state.fr.rows[i].qty)||'','제품수량':frNum(state.fr.rows[i].pcs)||'',
+      '예상물류비KRW':c.q>0?Math.round(c.total):'','개당운임KRW':c.per!=null?Math.round(c.per*100)/100:''};
+  });
+  var ws=XLSX.utils.json_to_sheet(rows);
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'물류비');
+  var d=new Date();
+  XLSX.writeFile(wb,'GAIA_수입물류비_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.xlsx');
+}
+
 /* ----- 브랜드 상세 ----- */
 function vBrandDetail(){
   var b=state.brand;
@@ -2042,6 +2135,16 @@ function bindView(){
   v.querySelectorAll('[data-si]').forEach(function(el){
     el.addEventListener('click',function(){openStockPanel(el.dataset.si);});
   });
+  var ffx=$('#frFx');if(ffx)ffx.addEventListener('input',function(){state.fr.fx=this.value;frUpdateCells();});
+  var fed=$('#frEdit');if(fed)fed.addEventListener('click',function(){state.fr.edit=!state.fr.edit;render();});
+  v.querySelectorAll('[data-fr]').forEach(function(el){
+    el.addEventListener('input',function(){
+      var i=+el.dataset.fr,f=el.dataset.ff;
+      if(f==='qty'||f==='pcs')state.fr.rows[i][f]=el.value;
+      else FRATES[i][f]=frNum(el.value);
+      frUpdateCells();
+    });
+  });
   v.querySelectorAll('[data-dl]').forEach(function(b){
     b.addEventListener('click',function(e){
       e.stopPropagation();
@@ -2052,6 +2155,7 @@ function bindView(){
           if(k==='stock')exportStockXlsx();
           else if(k==='kcupdate')exportKcXlsx('update');
           else if(k==='kcall')exportKcXlsx('all');
+          else if(k==='freight')exportFreightXlsx();
           else exportMasterXlsx(k);
         }
         catch(err){ alert('다운로드 실패: '+(err.message||err)); }
