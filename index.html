@@ -1728,24 +1728,27 @@ function priceRow(o){
     +'</div>';
 }
 function specPairs(o){
-  var cd=catDetail(o), m=msByBc(o.bc);
+  var cd=catDetail(o), m=msByBc(o.bc), od=ordAttr(o.bc)||{};
   var money=function(v){ if(!v)return ''; var n=Number(String(v).replace(/[^0-9.]/g,'')); return isNaN(n)?'':n.toLocaleString()+'원'; };
   return [
+    ['상품명',o.name||(m&&m.name)||od.name||''],
+    ['아이템번호',o.item||od.item||''],
     ['바코드',o.bc||(m&&m.bc)||''],
-    ['물류바코드',(cd&&cd.lb)||''],
+    ['물류바코드',(cd&&cd.lb)||o.lbc||od.lbc||''],
     ['소비자가',money(o.rrp||(m&&m.rrp))],
     ['판매가',money(cd&&cd.sp)],
     ['사이즈',(cd&&cd.sz)||''],
     ['무게',(cd&&cd.wt)||''],
-    ['C/T 입수',(o.pack||(m&&m.pack)||(cd&&cd.ct)||'')?String(o.pack||(m&&m.pack)||cd.ct)+'개':''],
+    ['입수',(function(){var p=o.pack||od.pack||(m&&m.pack)||(cd&&cd.ct)||'';if(!p)return '';p=String(p).replace(/개$/,'');return /[\/]/.test(p)?p:p+'개';})()],
     ['재질',(cd&&cd.mt)||''],
     ['제조국',(cd&&cd.oc)||''],
     ['권장연령',(cd&&cd.ag)||''],
     ['색상',(cd&&cd.cl)||''],
     ['출시년월',(cd&&cd.rd)||''],
-    ['KC 번호',o.kcno||(m&&m.kcno)||''],
-    ['코리안넷',o.knet||(m&&m.knet)||''],
-    ['롯데안전',o.lotte||(m&&m.lotte)||'']
+    ['KC 번호',o.kcno||(m&&m.kcno)||od.kcno||''],
+    ['KC 인증명',o.kcn||(m&&m.kcn)||od.kcname||''],
+    ['코리안넷',o.knet||(m&&m.knet)||od.knet||''],
+    ['롯데안전',o.lotte||(m&&m.lotte)||od.lotte||'']
   ];
 }
 function dlHtml(pairs){
@@ -1762,6 +1765,33 @@ function featHtml(o){
     +parts.map(function(x){return '<li>'+esc(x.trim())+'</li>'}).join('')+'</ul></div>';
 }
 
+
+/* ---- 오더 RAW에서 상품 속성 보강 (바코드 기준) ---- */
+var _ordIdx=null,_ordIdxKey='';
+function ordIdx(){
+  var key=YEARS.filter(function(y){return state.data[y]}).join(',');
+  if(_ordIdx&&_ordIdxKey===key)return _ordIdx;
+  var map={};
+  YEARS.slice().sort().forEach(function(y){
+    (state.data[y]||[]).forEach(function(r){
+      var b=normBc(r.bc); if(!b)return;
+      var o=map[b]=map[b]||{};
+      if(r.lbc)o.lbc=r.lbc;
+      if(r.item)o.item=r.item;
+      if(r.pack)o.pack=r.pack;
+      if(r.name||r.desc)o.name=r.name||r.desc;
+      if(r.desc)o.desc=r.desc;
+      if(r.code)o.code=r.code;
+      if(r.kcno)o.kcno=r.kcno;
+      if(r.kcname)o.kcname=r.kcname;
+      if(r.knet)o.knet=r.knet;
+      if(r.lotte)o.lotte=r.lotte;
+      if(r.br)o.br=r.br;
+    });
+  });
+  _ordIdx=map;_ordIdxKey=key;return map;
+}
+function ordAttr(bc){ var b=normBc(bc); return b?(ordIdx()[b]||null):null; }
 /* ---- 상품 스펙 (편집 가능) ---- */
 var SPEC_F=[
   ['name','상품명','text'],['item','아이템번호','text'],['bc','바코드','ro'],['lb','물류바코드','text'],
@@ -1789,24 +1819,27 @@ function specOverride(e){
   try{ return JSON.parse(e.spec)||{}; }catch(err){ return {}; }
 }
 function specValues(o){
-  var e=exOf(o), cd=catDetail(o), m=msByBc(o.bc), ov=specOverride(e);
+  var e=exOf(o), cd=catDetail(o), m=msByBc(o.bc), ov=specOverride(e), od=ordAttr(o.bc)||{};
   var money=function(v){ if(!v)return ''; var n=Number(String(v).replace(/[^0-9.]/g,'')); return isNaN(n)?'':n.toLocaleString()+'원'; };
   var base={
-    name:o.name||(m&&m.name)||'',
-    item:o.item||(m&&m.no)||'',
+    name:o.name||(m&&m.name)||od.name||'',
+    item:o.item||od.item||(m&&m.no)||'',
     bc:o.bc||(m&&m.bc)||'',
-    lb:(cd&&cd.lb)||o.lbc||'',
+    lb:(cd&&cd.lb)||o.lbc||od.lbc||'',
     rrp:money(o.rrp||(m&&m.rrp)),
     sz:(cd&&cd.sz)||'',
     wt:toGram(cd&&cd.wt),
-    pack:(o.pack||(m&&m.pack)||(cd&&cd.ct)||''),
+    pack:(o.pack||od.pack||(m&&m.pack)||(cd&&cd.ct)||''),
     oc:(cd&&cd.oc)||'',
     ag:(cd&&cd.ag)||'',
     ctn:cartonSize(e),
     ctwt:(e&&e.cwt)?String(e.cwt).replace(/kg$/i,'')+'kg':'',
     ft:(cd&&cd.ft)||''
   };
-  if(base.pack)base.pack=String(base.pack).replace(/개$/,'')+'개';
+  if(base.pack){
+    var pk=String(base.pack).trim().replace(/개$/,'');
+    base.pack=/[\/]/.test(pk)?pk:(pk+'개');
+  }
   SPEC_F.forEach(function(f){ if(ov[f[0]]!==undefined&&ov[f[0]]!=='')base[f[0]]=ov[f[0]]; });
   return base;
 }
@@ -2000,7 +2033,7 @@ function render(){
   else if(state.view==='logi')v.innerHTML=vLogi(rs,d);
   else if(state.view==='kc')v.innerHTML=vKC(rs,d);
   else if(state.view==='brands')v.innerHTML=vBrands(rs,d);
-  else if(state.view==='master')v.innerHTML=vMaster();
+  else if(state.view==='master'){ ensureAllYears(); v.innerHTML=vMaster(); }
   else if(state.view==='stock')v.innerHTML=vStock();
   else if(state.view==='sales')v.innerHTML=vSales();
   else if(state.view==='brand')v.innerHTML=vBrandDetail();
@@ -2556,6 +2589,17 @@ function buildKcMaster(){
   });
   list.sort(function(a,b){ return (b.yrs[b.yrs.length-1]||'').localeCompare(a.yrs[a.yrs.length-1]||'') || String(a.br).localeCompare(String(b.br)); });
   return {map:map,list:list};
+}
+var _allYearsReq=false;
+function ensureAllYears(){
+  if(_allYearsReq)return;
+  var missing=YEARS.filter(function(y){return !state.data[y]});
+  if(!missing.length)return;
+  _allYearsReq=true;
+  Promise.all(missing.map(function(y){return loadYear(y)})).then(function(){
+    _ordIdx=null;
+    if(state.view==='master')render();
+  });
 }
 function ensureKcMaster(){
   if(kcm.status==='ok')return;
