@@ -257,6 +257,11 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
 
 .pSecT{display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:800;color:var(--ink);margin:18px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
 .pSecT svg{color:var(--g600)}
+.pcRow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.pcCell{background:var(--bg);border-radius:11px;padding:9px 11px}
+.pcCell span{display:block;font-size:.68rem;color:var(--ink-3);font-weight:600;margin-bottom:3px}
+.pcCell b{font-size:.92rem;font-weight:800;font-variant-numeric:tabular-nums}
+.pcCell b.hi{color:var(--g600)}
 .imgWrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .imgSlot{background:var(--bg);border-radius:12px;padding:9px;text-align:center}
 .imgSlot.dragOn{outline:2px dashed var(--g500);outline-offset:-3px;background:var(--g50)}
@@ -1478,13 +1483,34 @@ function vMaster(){
 }
 
 /* 패널 본문 공통 렌더 (이미지·카톤·상세) */
+
+function msByBc(bc){
+  var b=normBc(bc); if(!b||ms.status!=='ok')return null;
+  for(var i=0;i<ms.list.length;i++) if(normBc(ms.list[i].bc)===b) return ms.list[i];
+  return null;
+}
+function priceRow(o){
+  var cd=catDetail(o), m=msByBc(o.bc);
+  var rrp=o.rrp||(m&&m.rrp)||'';
+  var sp=(cd&&cd.sp)||'';
+  var pack=o.pack||(m&&m.pack)||(cd&&cd.ct)||'';
+  var cell=function(lab,val,hi){
+    return '<div class="pcCell"><span>'+lab+'</span><b'+(hi?' class="hi"':'')+'>'+(val||'—')+'</b></div>';
+  };
+  return '<div class="pcRow">'
+    +cell('소비자가',rrp?Number(String(rrp).replace(/[^0-9.]/g,'')).toLocaleString()+'원':'')
+    +cell('판매가',sp?Number(String(sp).replace(/[^0-9.]/g,'')).toLocaleString()+'원':'',true)
+    +cell('입수',pack?esc(pack)+'개':'')
+    +'</div>';
+}
 function renderPanelBody(o,pairs,below){
   var e=exOf(o), cd=catDetail(o);
   var cbm=(e&&e.cbm)?e.cbm:'';
   var head='';
   if(normBc(o.bc)){
     head='<div class="pSecT">'+icon('package')+'상품 정보</div>'
-      +'<div class="imgWrap">'+imgSlot(o,'img','제품 이미지',e)+imgSlot(o,'limg','물류바코드',e)+'</div>'
+      +priceRow(o)
+      +'<div class="imgWrap">'+imgSlot(o,'img','상품 이미지 1',e)+imgSlot(o,'limg','상품 이미지 2',e)+'</div>'
       +'<div class="ctBox"><div class="ctT">'+icon('box')+'카톤(박스) 정보'
       +(cbm?'<span class="cbmTag">CBM '+esc(cbm)+'</span>':'')+'</div>'
       +'<div class="ctGrid">'
