@@ -1483,7 +1483,6 @@ function openMasterPanel(mi){
   } else {
     head='<div class="ctBox" style="text-align:center;color:var(--ink-3);font-size:.8rem">바코드가 없어 이미지·카톤 정보를 저장할 수 없습니다</div>';
   }
-  $('#pGrid').innerHTML='';
   var body=$('#panel .pbody');
   body.innerHTML=head+'<dl class="dl-grid" id="pGrid2">'
     +pairs.filter(function(p){return p[1]}).map(function(p){
@@ -2739,7 +2738,9 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closePanel()
 
 /* ================= 시작 ================= */
 initCat();buildYearSeg();refreshIcons();
-fetchHayoung();fetchMaster();fetchStock();fetchCert();fetchExtra();
+[fetchHayoung,fetchMaster,fetchStock,fetchCert,fetchExtra].forEach(function(fn){
+  try{ fn(); }catch(e){ console.warn('init',fn.name,e); }
+});
 loadYear(state.year).then(render);
 </script>
 </body>
