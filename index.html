@@ -1134,6 +1134,12 @@ function doUpload(o,kind,file){
   .then(function(){ state._imgSel=0; reopenPanel(o); })
   .catch(function(e){ alert('업로드 실패: '+(e.message||e)); reopenPanel(o); });
 }
+function refreshOpenPanel(){
+  var p=document.getElementById('panel');
+  if(!p||!p.classList.contains('on'))return;
+  if(state._panelRow!=null){ try{ openPanel(state._panelRow); }catch(e){} return; }
+  if(state._panelMi!=null){ try{ openMasterPanel(state._panelMi); }catch(e){} }
+}
 function reopenPanel(o){
   if(state.view==='master'){
     var i=ms.list.indexOf(o);
@@ -1809,6 +1815,15 @@ function ordIdx(){
   });
   _ordIdx=map;_ordIdxKey=key;return map;
 }
+function kcmVal(bc,f){
+  if(kcm.status!=='ok'||!kcm.map)return '';
+  var b=normBc(bc); if(!b)return '';
+  var hit=kcm.map[String(bc).replace(/\s/g,'')]||null;
+  if(!hit){
+    for(var k in kcm.map){ if(normBc(k)===b){hit=kcm.map[k];break;} }
+  }
+  return (hit&&hit[f])||'';
+}
 function ordAttr(bc){ var b=normBc(bc); return b?(ordIdx()[b]||null):null; }
 
 /* 펀코·MGA는 원래 12자리(UPC) — 표시 시 앞의 0 제거 */
@@ -1822,7 +1837,7 @@ function displayBc(bc,br){
 /* ---- 상품 스펙 (편집 가능) ---- */
 var SPEC_F=[
   ['name','상품명','text'],['item','아이템번호','text'],['bc','바코드','ro'],['lb','물류바코드','text'],
-  ['rrp','소비자가','text'],['sz','사이즈','text'],['ctn','카톤 사이즈','ro'],['ctwt','카톤 중량','ro'],
+  ['rrp','소비자가','text'],['sz','사이즈','text'],['ctn','카톤 사이즈','text'],['ctwt','카톤 중량','text'],
   ['wt','무게(g)','text'],['pack','입수','text'],
   ['oc','제조국','text'],['ag','권장연령','text'],
   ['kcno','KC 번호','text'],['kcn','KC 인증명','text'],
@@ -1863,14 +1878,14 @@ function specValues(o){
     pack:(o.pack||od.pack||(m&&m.pack)||(cd&&cd.ct)||''),
     oc:(cd&&cd.oc)||'',
     ag:(cd&&cd.ag)||'',
-    kcno:o.kcno||(m&&m.kcno)||od.kcno||(cd&&cd.kc)||'',
-    kcn:o.kcn||(m&&m.kcn)||od.kcname||'',
+    kcno:o.kcno||(m&&m.kcno)||od.kcno||(cd&&cd.kc)||kcmVal(o.bc,'kcno'),
+    kcn:o.kcn||(m&&m.kcn)||od.kcname||kcmVal(o.bc,'kcname'),
     kcex:(function(){
       var c=certOf(o.kcno||(m&&m.kcno)||od.kcno||(cd&&cd.kc),o.kcn||(m&&m.kcn)||od.kcname);
       return c?(fmtD(c._iss)+' ~ '+fmtD(c._exp)+(c._dday!=null?'  ·  '+ddayTx(c):'')):'';
     })(),
-    knet:o.knet||(m&&m.knet)||od.knet||'',
-    lotte:o.lotte||(m&&m.lotte)||od.lotte||'',
+    knet:o.knet||(m&&m.knet)||od.knet||kcmVal(o.bc,'knet'),
+    lotte:o.lotte||(m&&m.lotte)||od.lotte||kcmVal(o.bc,'lotte'),
     ctn:cartonSize(e),
     ctwt:(e&&e.cwt)?String(e.cwt).replace(/kg$/i,'')+'kg':'',
     ft:(cd&&cd.ft)||''
@@ -2016,12 +2031,15 @@ function catPairs(o){
 }
 function openMasterPanel(mi){
   var o=ms.list[mi];if(!o)return;
-  state._panelRow=null;
+  state._panelRow=null; state._panelMi=mi;
+  ensureAllYears(); ensureKcMaster();
   var s=hy.status==='ok'?stockOf(o):null;
   var lv=liveStockOf(o);
   $('#pBrand').textContent=(o.br||'')+(s?'  ·  '+(s.it.cls||''):'');
   $('#pName').textContent=o.name||'(상품명 없음)';
-  var pairs=[['품번',o.no],['분류',[o.c1,o.c2].filter(Boolean).join(' / ')],['KC 인증명',o.kcn],
+  var od0=ordAttr(o.bc)||{};
+  var pairs=[['ITEM#',od0.item||''],['DESC.',od0.desc||''],['더존품목코드',o.no||od0.code||''],
+    ['브랜드',o.br||''],['분류',[o.c1,o.c2].filter(Boolean).join(' / ')],
     ['카탈로그',inCatalog(o)===true?'등록됨':(normBc(o.bc)?'미등록':'바코드 없음')]];
   if(lv){
     pairs.push(['— 실시간 재고 —','재고_RAW 기준']);
@@ -2635,6 +2653,7 @@ function ensureAllYears(){
   Promise.all(missing.map(function(y){return loadYear(y)})).then(function(){
     _ordIdx=null;
     if(state.view==='master')render();
+    refreshOpenPanel();
   });
 }
 function ensureKcMaster(){
@@ -2646,6 +2665,7 @@ function ensureKcMaster(){
     if(b){kcm.map=b.map;kcm.list=b.list;kcm.status='ok';}
     else kcm.status='error';
     if(state.view==='kc')render();
+    refreshOpenPanel();
   });
 }
 /* 영업DB 대비 갱신 대상 산출 */
@@ -3288,11 +3308,12 @@ function refreshOrders(){
 /* ================= 상세 패널 ================= */
 function openPanel(sheetRow){
   ensurePGrid();
+  ensureAllYears(); ensureKcMaster();
   var r=rows().find(function(x){return x.r===sheetRow});if(!r)return;
   $('#pBrand').textContent=(r.br||'')+(r._dl?'  ·  ⚠ 지연':'');
   $('#pName').textContent=r.name||r.desc||'(품목명 없음)';
   var order=['item','desc','code','bc','lbc','price','qty','pack','amt','od','sc','lc','im','etd','eta','ind','load','bl','obl','req','kct','sales','knet','lotte','kcname','kcno','kcs','sm','memo'];
-  state._panelRow=sheetRow;
+  state._panelRow=sheetRow; state._panelMi=null;
   var po={bc:r.bc||'',name:r.name||r.desc||'',no:r.code||'',br:r.br||r._br||''};
   var skip={bc:1,lbc:1,price:1,pack:1,knet:1,lotte:1,kcno:1,kcname:1,name:1,item:1};
   var pairs=order.filter(function(f){return r[f]&&!skip[f]}).map(function(f){return [FIELD_KO[f],r[f]]});
