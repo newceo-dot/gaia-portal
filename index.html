@@ -258,6 +258,18 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
 .pSecT{display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:800;color:var(--ink);margin:18px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
 .pSecT svg{color:var(--g600)}
 
+
+.pSecT .pSecAct{margin-left:auto;display:flex;gap:6px}
+.pSecT .pSecAct .isBtn{padding:5px 11px;font-size:.73rem;flex:none}
+.spEdit{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.spRow{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:10px}
+.spRow.area{align-items:start}
+.spRow label{font-size:.75rem;color:var(--ink-3);font-weight:600}
+.spRow input,.spRow textarea{width:100%;padding:8px 10px;border:1px solid var(--line-2);border-radius:9px;font-size:.83rem;font-family:inherit}
+.spRow input:disabled{background:var(--bg);color:var(--ink-3)}
+.spRow textarea{resize:vertical;line-height:1.5}
+.spBtns{display:flex;gap:8px;margin-top:4px}
+.spBtns .btnDl{flex:1;justify-content:center}
 .pFeat{margin-top:14px;background:var(--bg);border-radius:12px;padding:12px 14px}
 .pFeatT{font-size:.74rem;font-weight:800;color:var(--ink-2);margin-bottom:7px}
 .pFeat p{font-size:.82rem;line-height:1.6;color:var(--ink-2)}
@@ -1583,15 +1595,138 @@ function featHtml(o){
   return '<div class="pFeat"><div class="pFeatT">주요 특징</div><ul>'
     +parts.map(function(x){return '<li>'+esc(x.trim())+'</li>'}).join('')+'</ul></div>';
 }
+
+/* ---- 상품 스펙 (편집 가능) ---- */
+var SPEC_F=[
+  ['name','상품명','text'],['item','아이템번호','text'],['bc','바코드','ro'],['lb','물류바코드','text'],
+  ['rrp','소비자가','text'],['sz','사이즈','text'],['ctn','카톤 사이즈','ro'],['ctwt','카톤 중량','ro'],
+  ['wt','무게(g)','text'],['pack','입수','text'],
+  ['oc','제조국','text'],['ag','권장연령','text'],['ft','주요 특징','area']
+];
+function toGram(v){
+  if(!v)return '';
+  var s=String(v).trim();
+  var n=parseFloat(s.replace(/[^0-9.]/g,''));
+  if(isNaN(n))return s;
+  if(/kg/i.test(s))return Math.round(n*1000).toLocaleString()+'g';
+  if(/g/i.test(s))return Math.round(n).toLocaleString()+'g';
+  return (n<50?Math.round(n*1000):Math.round(n)).toLocaleString()+'g';
+}
+function cartonSize(e){
+  if(!e)return '';
+  var d=[e.cw,e.cl,e.ch].filter(function(x){return x&&String(x).trim()});
+  if(d.length<3)return d.length?d.join(' × ')+' cm':'';
+  return d.join(' × ')+' cm'+(e.cbm?'  ·  CBM '+e.cbm:'');
+}
+function specOverride(e){
+  if(!e||!e.spec)return {};
+  try{ return JSON.parse(e.spec)||{}; }catch(err){ return {}; }
+}
+function specValues(o){
+  var e=exOf(o), cd=catDetail(o), m=msByBc(o.bc), ov=specOverride(e);
+  var money=function(v){ if(!v)return ''; var n=Number(String(v).replace(/[^0-9.]/g,'')); return isNaN(n)?'':n.toLocaleString()+'원'; };
+  var base={
+    name:o.name||(m&&m.name)||'',
+    item:o.item||(m&&m.no)||'',
+    bc:o.bc||(m&&m.bc)||'',
+    lb:(cd&&cd.lb)||o.lbc||'',
+    rrp:money(o.rrp||(m&&m.rrp)),
+    sz:(cd&&cd.sz)||'',
+    wt:toGram(cd&&cd.wt),
+    pack:(o.pack||(m&&m.pack)||(cd&&cd.ct)||''),
+    oc:(cd&&cd.oc)||'',
+    ag:(cd&&cd.ag)||'',
+    ctn:cartonSize(e),
+    ctwt:(e&&e.cwt)?String(e.cwt).replace(/kg$/i,'')+'kg':'',
+    ft:(cd&&cd.ft)||''
+  };
+  if(base.pack)base.pack=String(base.pack).replace(/개$/,'')+'개';
+  SPEC_F.forEach(function(f){ if(ov[f[0]]!==undefined&&ov[f[0]]!=='')base[f[0]]=ov[f[0]]; });
+  return base;
+}
+function specViewHtml(o){
+  var v=specValues(o);
+  var rows=SPEC_F.filter(function(f){return f[0]!=='ft'&&v[f[0]]}).map(function(f){
+    return '<dt>'+esc(f[1])+'</dt><dd>'+esc(v[f[0]])+'</dd>';
+  }).join('');
+  var ft='';
+  if(v.ft){
+    var parts=String(v.ft).split(/\s*[·•]\s*|\n+/).filter(function(x){return x.trim().length>3});
+    ft='<div class="pFeat"><div class="pFeatT">주요 특징</div>'
+      +(parts.length>1?'<ul>'+parts.map(function(x){return '<li>'+esc(x.trim())+'</li>'}).join('')+'</ul>':'<p>'+esc(v.ft)+'</p>')
+      +'</div>';
+  }
+  return '<dl class="dl-grid">'+rows+'</dl>'+ft;
+}
+function specEditHtml(o){
+  var v=specValues(o);
+  return '<div class="spEdit">'+SPEC_F.map(function(f){
+    if(f[2]==='ro')return '<div class="spRow"><label>'+esc(f[1])+'</label><input type="text" value="'+esc(v[f[0]])+'" disabled></div>';
+    if(f[2]==='area')return '<div class="spRow area"><label>'+esc(f[1])+'</label><textarea id="sp_'+f[0]+'" rows="3" placeholder="· 로 구분하면 목록으로 표시됩니다">'+esc(v[f[0]])+'</textarea></div>';
+    return '<div class="spRow"><label>'+esc(f[1])+'</label><input type="text" id="sp_'+f[0]+'" value="'+esc(v[f[0]])+'"></div>';
+  }).join('')
+  +'<div class="spBtns"><button class="isBtn" id="spCancel">취소</button><button class="btnDl" id="spSave">저장</button></div></div>';
+}
+function saveSpec(o){
+  var ov={};
+  SPEC_F.forEach(function(f){
+    if(f[2]==='ro')return;
+    var el=document.getElementById('sp_'+f[0]);
+    if(el)ov[f[0]]=el.value.trim();
+  });
+  var btn=document.getElementById('spSave');
+  if(btn){btn.disabled=true;btn.textContent='저장 중…';}
+  gasPost({action:'saveExtra',bc:normBc(o.bc),bcRaw:o.bc,name:ov.name||o.name||'',spec:JSON.stringify(ov)})
+    .then(function(){ return new Promise(function(r){setTimeout(r,1700)}); })
+    .then(function(){ return fetchExtra(true); })
+    .then(function(){ state._specEdit=false; reopenPanel(o); })
+    .catch(function(e){ alert('저장 실패: '+(e.message||e)); state._specEdit=false; reopenPanel(o); });
+}
+function exportSpecPDF(o){
+  var v=specValues(o), e=exOf(o), ids=imgList(e);
+  var rows=SPEC_F.filter(function(f){return f[0]!=='ft'&&v[f[0]]}).map(function(f){
+    return '<tr><th>'+esc(f[1])+'</th><td>'+esc(v[f[0]])+'</td></tr>';
+  }).join('');
+  var ct=e&&(e.cw||e.cl||e.ch||e.cwt)
+    ? '<tr><th>카톤 사이즈</th><td>'+esc([e.cw,e.cl,e.ch].filter(Boolean).join(' × '))+' cm'+(e.cbm?' · CBM '+esc(e.cbm):'')+'</td></tr>'
+      +(e.cwt?'<tr><th>카톤 중량</th><td>'+esc(e.cwt)+' kg</td></tr>':'')
+    : '';
+  var ftHtml='';
+  if(v.ft){
+    var parts=String(v.ft).split(/\s*[·•]\s*|\n+/).filter(function(x){return x.trim().length>3});
+    ftHtml='<h3>주요 특징</h3>'+(parts.length>1?'<ul>'+parts.map(function(x){return '<li>'+esc(x.trim())+'</li>'}).join('')+'</ul>':'<p>'+esc(v.ft)+'</p>');
+  }
+  var imgs=ids.slice(0,3).map(function(id){return '<img src="'+driveThumb(id,800)+'">'}).join('');
+  var w=window.open('','_blank');
+  if(!w){alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.');return;}
+  w.document.write('<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(v.name||'상품 정보')+'</title>'
+    +'<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">'
+    +'<style>body{font-family:"Pretendard Variable",Pretendard,sans-serif;color:#12181A;padding:28px;max-width:760px;margin:0 auto}'
+    +'h1{font-size:20px;margin-bottom:4px}.sub{color:#8b9195;font-size:12px;margin-bottom:18px}'
+    +'.imgs{display:flex;gap:10px;margin-bottom:18px}.imgs img{width:33%;height:180px;object-fit:contain;border:1px solid #E2E6E4;border-radius:10px;background:#fff}'
+    +'table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #EDEFEE;padding:8px 10px;text-align:left}'
+    +'th{width:130px;color:#616B6E;font-weight:600;background:#F7F8F7}h3{font-size:14px;margin:18px 0 8px}ul{padding-left:18px}li{font-size:13px;margin-bottom:4px}'
+    +'.ft{color:#8b9195;font-size:11px;margin-top:22px;border-top:1px solid #EDEFEE;padding-top:10px}'
+    +'@media print{body{padding:0}}</style></head><body>'
+    +'<h1>'+esc(v.name||'')+'</h1><div class="sub">GAIA CORPORATION · '+new Date().toLocaleDateString('ko-KR')+'</div>'
+    +(imgs?'<div class="imgs">'+imgs+'</div>':'')
+    +'<table>'+rows+ct+'</table>'+ftHtml
+    +'<div class="ft">본 정보는 GAIA MD 운영포털에서 생성되었습니다.</div>'
+    +'<script>setTimeout(function(){window.print()},900);<\/script></body></html>');
+  w.document.close();
+}
 function renderPanelBody(o,pairs){
   var e=exOf(o);
   var cbm=(e&&e.cbm)?e.cbm:'';
   var html=dlHtml(pairs);
   if(normBc(o.bc)){
-    html+='<div class="pSecT">'+icon('package')+'상품 정보</div>'
+    html+='<div class="pSecT">'+icon('package')+'상품 정보'
+      +'<span class="pSecAct">'
+      +(state._specEdit?'':'<button class="isBtn" id="spEdit">'+icon('pencil')+' 수정</button>'
+        +'<button class="isBtn" id="spPdf">'+icon('file-down')+' PDF</button>')
+      +'</span></div>'
       +gallery(o,e)
-      +dlHtml(specPairs(o))
-      +featHtml(o)
+      +(state._specEdit?specEditHtml(o):specViewHtml(o))
       +'<div class="ctBox" style="margin-top:14px"><div class="ctT">'+icon('box')+'카톤(박스) 정보'
       +(cbm?'<span class="cbmTag">CBM '+esc(cbm)+'</span>':'')+'</div>'
       +'<div class="ctGrid">'
@@ -1634,6 +1769,14 @@ function renderPanelBody(o,pairs){
   bindDropZones(o,body);
   var cs=document.getElementById('ctSave');
   if(cs)cs.addEventListener('click',function(){ saveCarton(o); });
+  var se=document.getElementById('spEdit');
+  if(se)se.addEventListener('click',function(){ state._specEdit=true; reopenPanel(o); });
+  var sc=document.getElementById('spCancel');
+  if(sc)sc.addEventListener('click',function(){ state._specEdit=false; reopenPanel(o); });
+  var ss=document.getElementById('spSave');
+  if(ss)ss.addEventListener('click',function(){ saveSpec(o); });
+  var sp=document.getElementById('spPdf');
+  if(sp)sp.addEventListener('click',function(){ exportSpecPDF(o); });
 }
 function catPairs(o){
   var cd=catDetail(o); if(!cd)return [];
@@ -2910,7 +3053,7 @@ function openPanel(sheetRow){
   $('#pLink').textContent='시트에서 이 행 열기 ↗';
   $('#ovl').classList.add('on');$('#panel').classList.add('on');
 }
-function closePanel(){$('#ovl').classList.remove('on');$('#panel').classList.remove('on');}
+function closePanel(){state._specEdit=false;$('#ovl').classList.remove('on');$('#panel').classList.remove('on');}
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closePanel();});
 
 /* ================= 시작 ================= */
