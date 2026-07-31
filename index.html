@@ -1778,20 +1778,40 @@ var CERT_ST={
   watch:{label:'6개월 내',cls:'b-prod'}, valid:{label:'유효',cls:'b-done'}, none:{label:'기한 미등록',cls:'b-ordered'}
 };
 function certKey(s){ return String(s||'').toUpperCase().replace(/[^A-Z0-9\-]/g,'') }
+function serKey(s){ return String(s||'').toUpperCase().replace(/\s+/g,'').replace(/[·・_\-]/g,'') }
+function serKeyNP(s){ return serKey(s).replace(/[（(][^)）]*[)）]/g,'') }
 function buildCertIdx(list){
-  var exact={},base={};
+  var exact={},base={},ser={},serNP={};
   list.forEach(function(c){
-    var k=certKey(c.kcno); if(!k)return;
-    if(!exact[k])exact[k]=c;
-    var b=k.replace(/[A-Z]$/,'');
-    if(!base[b]||(c._exp&&(!base[b]._exp||c._exp>base[b]._exp)))base[b]=c;
+    var k=certKey(c.kcno);
+    if(k){
+      if(!exact[k])exact[k]=c;
+      var b=k.replace(/[A-Z]$/,'');
+      if(!base[b]||(c._exp&&(!base[b]._exp||c._exp>base[b]._exp)))base[b]=c;
+    }
+    if(c.series){
+      var s=serKey(c.series), sn=serKeyNP(c.series);
+      if(s&&(!ser[s]||(c._exp&&(!ser[s]._exp||c._exp>ser[s]._exp))))ser[s]=c;
+      if(sn&&(!serNP[sn]||(c._exp&&(!serNP[sn]._exp||c._exp>serNP[sn]._exp))))serNP[sn]=c;
+    }
   });
-  return {exact:exact,base:base};
+  return {exact:exact,base:base,ser:ser,serNP:serNP};
 }
-function certOf(kcno){
-  if(cert.status!=='ok'||!kcno)return null;
-  var k=certKey(kcno);
-  return cert.idx.exact[k]||cert.idx.base[k.replace(/[A-Z]$/,'')]||null;
+function certOf(kcno,kcname){
+  if(cert.status!=='ok')return null;
+  var i=cert.idx;
+  if(kcno){
+    var k=certKey(kcno);
+    var hit=i.exact[k]||i.base[k.replace(/[A-Z]$/,'')];
+    if(hit)return hit;
+  }
+  if(kcname){
+    var s=serKey(kcname);
+    if(i.ser[s])return i.ser[s];
+    var sn=serKeyNP(kcname);
+    if(i.serNP[sn])return i.serNP[sn];
+  }
+  return null;
 }
 function ddayTx(c){
   if(!c||c._dday==null)return '';
@@ -1892,7 +1912,7 @@ function exportKcXlsx(kind){
   } else {
     name='KC통합';
     (kcm.list||[]).forEach(function(o){
-      var ct=certOf(o.kcno);
+      var ct=certOf(o.kcno,o.kcname);
       rows.push({'상태':KC[o.state].label,'브랜드':o.br||'','품목명':o.name||'','더존코드':o.code||'','바코드':o.bc||'',
         'ITEM#':o.item||'','요건':o.req||'','KC검사':o.kct||'','코리안넷':o.knet||'','롯데안전':o.lotte||'',
         'KC인증명':o.kcname||'','KC번호':o.kcno||'',
@@ -2033,9 +2053,9 @@ function vKC(rs,d){
   }
 
   /* 통합 KC 목록 */
-  var expN=L.filter(function(o){var c=certOf(o.kcno);return c&&(c._st==='expired'||c._st==='soon')}).length;
+  var expN=L.filter(function(o){var c=certOf(o.kcno,o.kcname);return c&&(c._st==='expired'||c._st==='soon')}).length;
   var chips=[['','전체 '+L.length],['done','확보 '+g.done.length],['prog','진행중 '+g.prog.length],['none','미확인 '+g.none.length],['na','불필요 '+g.na.length],['exp','만료·임박 '+expN]];
-  var fl=state.kcf==='exp'?L.filter(function(o){var c=certOf(o.kcno);return c&&(c._st==='expired'||c._st==='soon')}):(state.kcf?g[state.kcf]:L);
+  var fl=state.kcf==='exp'?L.filter(function(o){var c=certOf(o.kcno,o.kcname);return c&&(c._st==='expired'||c._st==='soon')}):(state.kcf?g[state.kcf]:L);
   if(state.kcq){
     var q=state.kcq.toLowerCase();
     fl=fl.filter(function(o){return [o.name,o.code,o.bc,o.br,o.kcno,o.kcname].join(' ').toLowerCase().indexOf(q)!==-1});
@@ -2046,10 +2066,10 @@ function vKC(rs,d){
     +'<button class="btnDl" data-dl="kcall">'+icon('download')+'통합 목록 다운로드</button>'
     +'<div class="sum"><b>'+fl.length.toLocaleString()+'</b>종</div></div>'
     +'<div class="card tblWrap" style="max-height:64vh"><table class="tbl"><thead><tr>'
-    +'<th>상태</th><th>브랜드</th><th>품목명</th><th>KC 인증명</th><th>KC 번호</th><th>발급일</th><th>유효기간</th><th class="num">D-day</th><th>인증상태</th><th>코리안넷</th><th class="num">출처</th>'
+    +'<th>상태</th><th>브랜드</th><th>품목명</th><th>KC 인증명</th><th>KC 번호</th><th>발급일</th><th>유효기간</th><th class="num">D-day</th><th>인증상태</th><th>코리안넷</th><th>롯데안전</th><th class="num">출처</th>'
     +'</tr></thead><tbody>'
     +(fl.length?fl.slice(0,300).map(function(o){
-      var ct=certOf(o.kcno);
+      var ct=certOf(o.kcno,o.kcname);
       return '<tr><td><span class="badge '+KC[o.state].cls+'">'+KC[o.state].label+'</span></td>'
         +'<td>'+esc(o.br||'')+'</td><td class="name" title="'+esc(o.name||'')+'">'+esc(o.name||'')+'</td>'
         +'<td class="name" style="max-width:190px" title="'+esc(o.kcname||'')+'">'+esc(o.kcname||'')+'</td>'
@@ -2059,8 +2079,9 @@ function vKC(rs,d){
         +'<td class="num" style="font-weight:700;color:'+(ct&&ct._st==='expired'?'var(--red)':(ct&&ct._st==='soon'?'var(--amber-tx)':'var(--ink-2)'))+'">'+(ct?ddayTx(ct):'')+'</td>'
         +'<td>'+(ct?'<span class="badge '+CERT_ST[ct._st].cls+'">'+CERT_ST[ct._st].label+'</span>':(o.kcno?'<span style="color:var(--ink-3);font-size:.76rem">대장 미등록</span>':''))+'</td>'
         +'<td>'+esc(o.knet||'')+'</td>'
+        +'<td>'+esc(o.lotte||'')+'</td>'
         +'<td class="num" style="color:var(--ink-3)">'+esc(o.src.kcno||o.src.kcname||'')+'</td></tr>';
-    }).join(''):'<tr><td colspan="11"><div class="empty">데이터 없음</div></td></tr>')
+    }).join(''):'<tr><td colspan="12"><div class="empty">데이터 없음</div></td></tr>')
     +'</tbody></table></div>'
     +(fl.length>300?'<div style="font-size:.75rem;color:var(--ink-3);margin-top:9px">상위 300종 표시 · 전체는 엑셀로 확인</div>':'');
   return h;
