@@ -1435,6 +1435,45 @@ function vMaster(){
     +(rt.status==='ok'?'<div style="font-size:.73rem;color:var(--ink-3);margin-top:10px">가용재고 기준: 재고_RAW · '+new Date(rt.updated).toLocaleString('ko-KR')+' (10분 캐시, 상단 새로고침으로 즉시 갱신) · 입고예정/재고금액/재고상태는 재고·발주 대시보드 연동</div>':'');
   return h;
 }
+
+/* 패널 본문 공통 렌더 (이미지·카톤·상세) */
+function renderPanelBody(o,pairs){
+  var e=exOf(o), cd=catDetail(o);
+  var cbm=(e&&e.cbm)?e.cbm:'';
+  var head='';
+  if(normBc(o.bc)){
+    head='<div class="imgWrap">'+imgSlot(o,'img','제품 이미지',e)+imgSlot(o,'limg','물류바코드',e)+'</div>'
+      +'<div class="ctBox"><div class="ctT">'+icon('box')+'카톤(박스) 정보'
+      +(cbm?'<span class="cbmTag">CBM '+esc(cbm)+'</span>':'')+'</div>'
+      +'<div class="ctGrid">'
+      +'<div><label>가로(cm)</label><input type="text" id="ctW" value="'+esc((e&&e.cw)||'')+'"></div>'
+      +'<div><label>세로(cm)</label><input type="text" id="ctL" value="'+esc((e&&e.cl)||'')+'"></div>'
+      +'<div><label>높이(cm)</label><input type="text" id="ctH" value="'+esc((e&&e.ch)||'')+'"></div>'
+      +'<div><label>중량(kg)</label><input type="text" id="ctWt" value="'+esc((e&&e.cwt)||'')+'"></div>'
+      +'</div><div class="ctFoot"><input type="text" id="ctMemo" placeholder="메모" value="'+esc((e&&e.memo)||'')+'">'
+      +'<button id="ctSave">저장</button></div>'
+      +((e&&e.upd)?'<div style="font-size:.68rem;color:var(--ink-3);margin-top:7px">최종 수정 '+esc(e.upd)+'</div>':'')
+      +'</div>';
+  }
+  var body=$('#panel .pbody');
+  body.innerHTML=head+'<dl class="dl-grid">'
+    +pairs.filter(function(p){return p[1]}).map(function(p){
+      return '<dt>'+esc(p[0])+'</dt><dd>'+esc(p[1])+'</dd>';
+    }).join('')+'</dl>';
+  body.querySelectorAll('[data-up]').forEach(function(b){
+    b.addEventListener('click',function(){ pickAndUpload(o,b.dataset.up); });
+  });
+  var cs=document.getElementById('ctSave');
+  if(cs)cs.addEventListener('click',function(){ saveCarton(o); });
+}
+function catPairs(o){
+  var cd=catDetail(o); if(!cd)return [];
+  return [['— 카탈로그 정보 —',inCatalog(o)===true?'등록됨':'미등록'],
+    ['판매가',cd.sp?Number(cd.sp).toLocaleString()+'원':''],
+    ['사이즈',cd.sz||''],['중량',cd.wt||''],['C/T 입수',cd.ct||''],
+    ['재질',cd.mt||''],['제조국',cd.oc||''],['권장연령',cd.ag||''],
+    ['색상',cd.cl||''],['출시년월',cd.rd||''],['특징',cd.ft||'']];
+}
 function openMasterPanel(mi){
   var o=ms.list[mi];if(!o)return;
   var s=hy.status==='ok'?stockOf(o):null;
@@ -1464,35 +1503,7 @@ function openMasterPanel(mi){
     if(s.it.adps)pairs.push(['일평균판매',s.it.adps.toFixed(1)+'pcs']);
     if(s.it.days!=null)pairs.push(['재고 커버일',Math.round(s.it.days)+'일']);
   }
-  var e=exOf(o);
-  var cbm=(e&&e.cbm)?e.cbm:'';
-  var head='';
-  if(normBc(o.bc)){
-    head='<div class="imgWrap">'+imgSlot(o,'img','제품 이미지',e)+imgSlot(o,'limg','물류바코드',e)+'</div>'
-      +'<div class="ctBox"><div class="ctT">'+icon('box')+'카톤(박스) 정보'
-      +(cbm?'<span class="cbmTag">CBM '+esc(cbm)+'</span>':'')+'</div>'
-      +'<div class="ctGrid">'
-      +'<div><label>가로(cm)</label><input type="text" id="ctW" value="'+esc((e&&e.cw)||'')+'"></div>'
-      +'<div><label>세로(cm)</label><input type="text" id="ctL" value="'+esc((e&&e.cl)||'')+'"></div>'
-      +'<div><label>높이(cm)</label><input type="text" id="ctH" value="'+esc((e&&e.ch)||'')+'"></div>'
-      +'<div><label>중량(kg)</label><input type="text" id="ctWt" value="'+esc((e&&e.cwt)||'')+'"></div>'
-      +'</div><div class="ctFoot"><input type="text" id="ctMemo" placeholder="메모" value="'+esc((e&&e.memo)||'')+'">'
-      +'<button id="ctSave">저장</button></div>'
-      +((e&&e.upd)?'<div style="font-size:.68rem;color:var(--ink-3);margin-top:7px">최종 수정 '+esc(e.upd)+'</div>':'')
-      +'</div>';
-  } else {
-    head='<div class="ctBox" style="text-align:center;color:var(--ink-3);font-size:.8rem">바코드가 없어 이미지·카톤 정보를 저장할 수 없습니다</div>';
-  }
-  var body=$('#panel .pbody');
-  body.innerHTML=head+'<dl class="dl-grid" id="pGrid2">'
-    +pairs.filter(function(p){return p[1]}).map(function(p){
-      return '<dt>'+esc(p[0])+'</dt><dd>'+esc(p[1])+'</dd>';
-    }).join('')+'</dl>';
-  body.querySelectorAll('[data-up]').forEach(function(b){
-    b.addEventListener('click',function(){ pickAndUpload(o,b.dataset.up); });
-  });
-  var cs=document.getElementById('ctSave');
-  if(cs)cs.addEventListener('click',function(){ saveCarton(o); });
+  renderPanelBody(o,pairs);
   $('#pLink').href='https://gaia-hyhong.github.io/Hayoung-MD-Dashboard/';
   $('#pLink').textContent=s?'재고/발주 대시보드에서 보기 ↗':'재고/발주 대시보드 열기 ↗';
   $('#ovl').classList.add('on');$('#panel').classList.add('on');
@@ -2726,9 +2737,10 @@ function openPanel(sheetRow){
   $('#pBrand').textContent=(r.br||'')+(r._dl?'  ·  ⚠ 지연':'');
   $('#pName').textContent=r.name||r.desc||'(품목명 없음)';
   var order=['item','desc','code','bc','lbc','price','qty','pack','amt','od','sc','lc','im','etd','eta','ind','load','bl','obl','req','kct','sales','knet','lotte','kcname','kcno','kcs','sm','memo'];
-  $('#pGrid').innerHTML=order.filter(function(f){return r[f]}).map(function(f){
-    return '<dt>'+FIELD_KO[f]+'</dt><dd>'+esc(r[f])+'</dd>';
-  }).join('')||'<dd style="grid-column:1/-1;color:var(--ink-3)">추가 정보 없음</dd>';
+  var po={bc:r.bc||'',name:r.name||r.desc||'',no:r.code||''};
+  var pairs=order.filter(function(f){return r[f]}).map(function(f){return [FIELD_KO[f],r[f]]});
+  pairs=pairs.concat(catPairs(po));
+  renderPanelBody(po,pairs);
   var m=state.meta[state.year];
   $('#pLink').href=m?'https://docs.google.com/spreadsheets/d/'+m.sheetId+'/edit#gid='+m.gid+'&range=A'+r.r:'#';
   $('#ovl').classList.add('on');$('#panel').classList.add('on');
