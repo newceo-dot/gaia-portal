@@ -1,1 +1,434 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>CO Draft 대조 검증 · GAIA</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    --bg:#F4F5F4; --panel:#FFFFFF; --panel2:#F7F8F7; --line:#E2E6E4;
+    --text:#12181A; --sub:#616B6E; --accent:#1B7A4F; --accent2:#0B3D2C;
+    --ok:#1B7A4F; --ok-bg:rgba(27,122,79,.10);
+    --bad:#CF3B3B; --bad-bg:rgba(207,59,59,.10);
+    --warn:#E0A030; --warn-bg:rgba(224,160,48,.13);
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Pretendard Variable',Pretendard,-apple-system,'Malgun Gothic',sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 20px 80px;}
+  header{margin-bottom:28px;}
+  .topbar{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .topbar a.back{color:#14603F;background:rgba(27,122,79,.1);font-size:13px;font-weight:700;text-decoration:none;padding:8px 14px;border-radius:10px}
+  .topbar a.back:hover{background:rgba(27,122,79,.18)}
+  .keyrow{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:18px;flex-wrap:wrap}
+  .keyrow label{font-size:12.5px;font-weight:700;color:var(--sub)}
+  .keyrow input{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-family:inherit;font-size:13px;background:var(--panel2);color:var(--text)}
+  .keyrow .note{font-size:11.5px;color:var(--sub);width:100%}
+  header h1{
+    font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-.01em;
+    display:flex;align-items:center;gap:10px;
+  }
+  header h1 .tag{
+    font-size:11px;font-weight:600;color:var(--accent2);background:rgba(27,122,79,.10);
+    border:1px solid rgba(27,122,79,.3);padding:2px 8px;border-radius:20px;
+  }
+  header p{color:var(--sub);font-size:13.5px;margin:0;}
 
+  .dropzone{
+    background:var(--panel);border:1.5px dashed var(--line);border-radius:14px;
+    padding:30px;min-height:150px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;cursor:pointer;
+    transition:border-color .15s,background .15s;margin-bottom:18px;
+  }
+  .dropzone:hover, .dropzone.dragover{border-color:var(--accent);background:var(--panel2);}
+  .dropzone.filled{border-style:solid;border-color:var(--ok);background:var(--panel2);}
+  .dropzone .dz-icon{font-size:28px;margin-bottom:8px;opacity:.75;}
+  .dropzone .dz-main{font-size:14.5px;color:var(--text);font-weight:600;}
+  .dropzone .dz-sub{font-size:12px;color:var(--sub);margin-top:4px;}
+  .dropzone input{display:none;}
+
+  .filelist{display:flex;flex-direction:column;gap:8px;width:100%;max-width:520px;}
+  .filechip{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--bg);border:1px solid var(--line);border-radius:9px;
+    padding:9px 12px;font-size:13px;
+  }
+  .filechip .fname{display:flex;align-items:center;gap:8px;overflow:hidden;}
+  .filechip .fname span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);font-weight:500;}
+  .filechip .remove{background:none;border:none;color:var(--sub);cursor:pointer;font-size:15px;flex-shrink:0;}
+  .filechip .remove:hover{color:var(--bad);}
+  .filechip .ficon{flex-shrink:0;}
+
+  .hint-row{font-size:12px;color:var(--sub);margin-top:2px;}
+
+  .run-btn{
+    width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;
+    background:var(--accent);color:#FFFFFF;cursor:pointer;letter-spacing:-.01em;
+    transition:background .15s,opacity .15s;margin-top:14px;
+  }
+  .run-btn:hover:not(:disabled){background:var(--accent2);}
+  .run-btn:disabled{opacity:.35;cursor:not-allowed;}
+
+  .status-line{display:flex;align-items:center;gap:10px;margin:16px 0;font-size:13px;color:var(--sub);min-height:20px;}
+  .spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(27,122,79,.22);border-top-color:var(--accent);animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .err-box{background:var(--bad-bg);border:1px solid rgba(207,59,59,.35);color:#9B2626;padding:12px 16px;border-radius:10px;font-size:13px;margin:16px 0;}
+
+  .id-box{
+    display:flex;gap:12px;margin:18px 0;flex-wrap:wrap;
+  }
+  .id-card{
+    flex:1;min-width:220px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;font-size:13px;
+  }
+  .id-card .id-role{font-size:11px;color:var(--accent2);text-transform:uppercase;letter-spacing:.03em;font-weight:700;margin-bottom:4px;}
+  .id-card .id-file{color:var(--text);font-weight:600;word-break:break-all;}
+
+  .summary{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0 20px;
+  }
+  @media (max-width:720px){.summary{grid-template-columns:repeat(2,1fr);}}
+  .summary .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;}
+  .summary .card .num{font-size:26px;font-weight:800;letter-spacing:-.02em;}
+  .summary .card .lbl{font-size:11.5px;color:var(--sub);margin-top:4px;text-transform:uppercase;letter-spacing:.03em;}
+  .summary .card.ok .num{color:var(--ok);}
+  .summary .card.bad .num{color:var(--bad);}
+  .summary .card.warn .num{color:var(--warn);}
+
+  .verdict{
+    padding:16px 18px;border-radius:12px;font-size:14.5px;font-weight:600;margin-bottom:8px;
+    display:flex;align-items:flex-start;gap:10px;line-height:1.55;
+  }
+  .verdict.pass{background:var(--ok-bg);border:1px solid rgba(27,122,79,.35);color:#14603F;}
+  .verdict.fail{background:var(--bad-bg);border:1px solid rgba(207,59,59,.35);color:#9B2626;}
+  .verdict .vicon{font-size:18px;}
+
+  table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:12px;overflow:hidden;border:1px solid var(--line);}
+  thead th{
+    text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--sub);
+    padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel2);font-weight:600;
+  }
+  tbody td{padding:12px 14px;font-size:13.5px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  td.field{font-weight:600;white-space:nowrap;}
+  td.val{font-family:var(--mono);font-size:12.5px;color:#5B6069;max-width:260px;}
+  td.note{color:var(--sub);font-size:12.5px;}
+  .badge{
+    display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;
+    font-size:11.5px;font-weight:700;white-space:nowrap;
+  }
+  .badge.match{background:var(--ok-bg);color:var(--ok);}
+  .badge.mismatch{background:var(--bad-bg);color:var(--bad);}
+  .badge.check{background:var(--warn-bg);color:var(--warn);}
+
+  .section-title{font-size:13px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.03em;margin:28px 0 10px;}
+  .issues{list-style:none;padding:0;margin:0;}
+  .issues li{
+    background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--bad);
+    padding:11px 14px;border-radius:8px;margin-bottom:8px;font-size:13.5px;line-height:1.5;
+  }
+  footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:40px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><a class="back" href="../">← GAIA 포털</a></div>
+  <header>
+    <h1>CO Draft 대조 검증 <span class="tag">CO vs Invoice</span></h1>
+    <p>CO draft와 Invoice 파일 2개를 한번에 올리면 AI가 자동으로 구분하고 항목별로 대조합니다.</p>
+  </header>
+
+  <div class="keyrow">
+    <label for="apiKey">Anthropic API 키</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off">
+    <span class="note">이 브라우저에만 저장되며 서버로 전송되지 않습니다. 공용 PC에서는 사용 후 지워주세요. 키 발급: console.anthropic.com</span>
+  </div>
+
+  <label class="dropzone" id="dz">
+    <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple>
+    <div id="dzBody">
+      <div class="dz-icon">📎</div>
+      <div class="dz-main">CO Draft + Invoice 2개 파일을 함께 선택하거나 드래그하세요</div>
+      <div class="dz-sub">PDF / JPG / PNG</div>
+    </div>
+    <div class="filelist" id="fileList" style="display:none;"></div>
+  </label>
+  <div class="hint-row" id="hintRow"></div>
+
+  <button class="run-btn" id="runBtn" disabled>파일 2개를 업로드하세요</button>
+  <div class="status-line" id="statusLine"></div>
+  <div id="errBox"></div>
+
+  <div id="results"></div>
+
+  <footer>추출 결과는 AI 판독 기반이므로 최종 제출 전 원본 서류로 반드시 재확인하세요.</footer>
+</div>
+
+<script>
+let files = []; // { name, mediaType, data }
+
+const dz = document.getElementById('dz');
+const fileInput = document.getElementById('fileInput');
+const dzBody = document.getElementById('dzBody');
+const fileList = document.getElementById('fileList');
+const hintRow = document.getElementById('hintRow');
+const runBtn = document.getElementById('runBtn');
+
+function guessMime(name){
+  const ext = name.split('.').pop().toLowerCase();
+  if(ext === 'pdf') return 'application/pdf';
+  if(ext === 'png') return 'image/png';
+  if(ext === 'webp') return 'image/webp';
+  return 'image/jpeg';
+}
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result.split(',')[1]);
+    r.onerror = () => reject(new Error('파일 읽기 실패'));
+    r.readAsDataURL(file);
+  });
+}
+
+async function addFiles(fileArr){
+  for(const f of fileArr){
+    if(files.length >= 2) break;
+    if(files.some(x => x.name === f.name)) continue;
+    const base64 = await fileToBase64(f);
+    files.push({ name: f.name, mediaType: f.type || guessMime(f.name), data: base64 });
+  }
+  renderFileList();
+}
+
+function removeFile(idx){
+  files.splice(idx,1);
+  renderFileList();
+}
+
+function renderFileList(){
+  if(files.length === 0){
+    dzBody.style.display = 'flex';
+    fileList.style.display = 'none';
+    dz.classList.remove('filled');
+    hintRow.textContent = '';
+  } else {
+    dzBody.style.display = 'none';
+    fileList.style.display = 'flex';
+    dz.classList.toggle('filled', files.length === 2);
+    fileList.innerHTML = files.map((f, i) => `
+      <div class="filechip">
+        <div class="fname"><span class="ficon">${f.mediaType === 'application/pdf' ? '📄' : '🖼️'}</span><span>${escapeHtml(f.name)}</span></div>
+        <button type="button" class="remove" data-idx="${i}">✕</button>
+      </div>
+    `).join('');
+    fileList.querySelectorAll('.remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeFile(parseInt(btn.dataset.idx));
+      });
+    });
+    hintRow.textContent = files.length === 1 ? '파일 1개 더 추가하세요 (CO와 Invoice 각 1개씩)' : '';
+  }
+  runBtn.disabled = files.length !== 2;
+  runBtn.textContent = files.length === 2 ? '대조 시작' : `파일 ${2 - files.length}개를 더 업로드하세요`;
+}
+
+dz.addEventListener('click', (e) => {
+  if(e.target.closest('.remove')) return;
+  fileInput.click();
+});
+
+fileInput.addEventListener('change', async () => {
+  await addFiles(Array.from(fileInput.files));
+  fileInput.value = '';
+});
+
+['dragover','dragenter'].forEach(evt => {
+  dz.addEventListener(evt, (e) => { e.preventDefault(); dz.classList.add('dragover'); });
+});
+['dragleave','drop'].forEach(evt => {
+  dz.addEventListener(evt, (e) => { e.preventDefault(); dz.classList.remove('dragover'); });
+});
+dz.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  const dropped = Array.from(e.dataTransfer.files);
+  await addFiles(dropped);
+});
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function docBlock(fileObj){
+  const type = fileObj.mediaType === 'application/pdf' ? 'document' : 'image';
+  return { type, source: { type: 'base64', media_type: fileObj.mediaType, data: fileObj.data } };
+}
+
+const SYSTEM_PROMPT = `당신은 무역 서류(원산지증명서 CO, 상업송장 Invoice) 대조 전문가입니다.
+사용자가 두 개의 문서를 순서 상관없이 업로드했습니다 ("문서 1", "문서 2"). 어느 것이 CO(원산지증명서) draft이고 어느 것이 Invoice(상업송장)인지 문서 내용을 보고 스스로 판별하세요.
+
+판별 후 두 문서를 정밀 대조하여 CO draft가 올바르게 작성되었는지 검증하세요.
+
+대조 항목 (해당 정보가 문서에 있는 경우만 comparison에 포함):
+- 인보이스 번호 (CO에 기재된 invoice no. vs 실제 invoice no.)
+- 인보이스 날짜
+- 수출자(Exporter/Shipper) 상호·주소
+- 수하인(Consignee) 상호·주소
+- 원산지 국가(Country of Origin)
+- 수입국(Country of Importation)
+- 운송수단/선적항
+- 품목별: 품명(Description), HS코드, 수량, 원산지기준(Origin Criterion) — 품목이 여러개면 각각 별도 row
+- 총 수량/금액 일치 여부
+
+각 항목 status는 다음 중 하나:
+- "match": CO와 invoice가 논리적으로 일치 (완전 동일 문자열이 아니어도 의미상 일치하면 match)
+- "mismatch": 서로 다르거나 모순됨
+- "check": invoice에 해당 정보가 없어 대조 불가하거나 CO에만 정상적으로 존재하는 항목 (예: 원산지기준). note에 이유를 짧게 명시
+
+오직 아래 JSON 형식으로만 답하세요. 설명, 코드블록 마크다운 없이 순수 JSON만 출력하세요. note는 15자 이내로 간결하게:
+
+{
+  "identification": {"doc1_role":"CO"|"Invoice", "doc2_role":"CO"|"Invoice"},
+  "comparison": [
+    {"field":"항목명","co_value":"CO상 값","invoice_value":"invoice상 값 또는 N/A","status":"match|mismatch|check","note":"짧은 코멘트"}
+  ],
+  "issues": ["구체적 오류/누락 설명 (있는 경우만, 없으면 빈 배열)"],
+  "overall_pass": true or false
+}`;
+
+async function runComparison(){
+  const statusLine = document.getElementById('statusLine');
+  const errBox = document.getElementById('errBox');
+  const results = document.getElementById('results');
+  errBox.innerHTML = '';
+  results.innerHTML = '';
+  runBtn.disabled = true;
+  statusLine.innerHTML = `<div class="spinner"></div><span>문서를 판독하여 CO/Invoice를 구분하고 대조하는 중...</span>`;
+
+  try{
+    const _key = (document.getElementById('apiKey').value || '').trim();
+    if(!_key) throw new Error('Anthropic API 키를 입력하세요');
+    try{ localStorage.setItem('gaia_ak', _key); }catch(e){}
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': _key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: '문서 1:' },
+              docBlock(files[0]),
+              { type: 'text', text: '문서 2:' },
+              docBlock(files[1]),
+              { type: 'text', text: '어느 것이 CO이고 어느 것이 Invoice인지 판별한 뒤, 지시된 JSON 형식으로만 대조 결과를 출력하세요.' }
+            ]
+          }
+        ]
+      })
+    });
+
+    if(!resp.ok){
+      throw new Error(`API 오류 (${resp.status})`);
+    }
+
+    const data = await resp.json();
+    const textBlocks = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+    const clean = textBlocks.replace(/```json/g,'').replace(/```/g,'').trim();
+
+    let parsed;
+    try{
+      parsed = JSON.parse(clean);
+    }catch(e){
+      const match = clean.match(/\{[\s\S]*\}/);
+      if(match) parsed = JSON.parse(match[0]);
+      else throw new Error('응답 파싱 실패: ' + clean.slice(0,200));
+    }
+
+    renderResults(parsed);
+    statusLine.innerHTML = '';
+  }catch(err){
+    statusLine.innerHTML = '';
+    errBox.innerHTML = `<div class="err-box">대조 실패: ${err.message}</div>`;
+  }finally{
+    runBtn.disabled = false;
+  }
+}
+
+function renderResults(parsed){
+  const results = document.getElementById('results');
+  const ident = parsed.identification || {};
+  const doc1Role = ident.doc1_role || '알 수 없음';
+  const doc2Role = ident.doc2_role || '알 수 없음';
+  const rows = parsed.comparison || [];
+  const matchCount = rows.filter(r => r.status === 'match').length;
+  const mismatchCount = rows.filter(r => r.status === 'mismatch').length;
+  const checkCount = rows.filter(r => r.status === 'check').length;
+  const issues = parsed.issues || [];
+  const pass = parsed.overall_pass === true && mismatchCount === 0;
+
+  let html = '';
+
+  html += `<div class="id-box">
+    <div class="id-card"><div class="id-role">${escapeHtml(doc1Role)}(으)로 판별</div><div class="id-file">${escapeHtml(files[0].name)}</div></div>
+    <div class="id-card"><div class="id-role">${escapeHtml(doc2Role)}(으)로 판별</div><div class="id-file">${escapeHtml(files[1].name)}</div></div>
+  </div>`;
+
+  html += `<div class="verdict ${pass ? 'pass' : 'fail'}">
+    <span class="vicon">${pass ? '✅' : '⚠️'}</span>
+    <span>${pass ? 'CO Draft가 Invoice와 일치합니다. 주요 불일치 항목이 발견되지 않았습니다.' : 'CO Draft에서 확인이 필요한 항목이 발견되었습니다. 아래 대조 결과를 확인하세요.'}</span>
+  </div>`;
+
+  html += `<div class="summary">
+    <div class="card ok"><div class="num">${matchCount}</div><div class="lbl">일치</div></div>
+    <div class="card bad"><div class="num">${mismatchCount}</div><div class="lbl">불일치</div></div>
+    <div class="card warn"><div class="num">${checkCount}</div><div class="lbl">확인필요</div></div>
+    <div class="card"><div class="num">${rows.length}</div><div class="lbl">전체 대조 항목</div></div>
+  </div>`;
+
+  html += `<div class="section-title">항목별 대조 결과</div>`;
+  html += `<table><thead><tr><th>항목</th><th>CO 값</th><th>Invoice 값</th><th>결과</th><th>비고</th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    const badgeClass = r.status === 'match' ? 'match' : r.status === 'mismatch' ? 'mismatch' : 'check';
+    const badgeText = r.status === 'match' ? '일치' : r.status === 'mismatch' ? '불일치' : '확인필요';
+    html += `<tr>
+      <td class="field">${escapeHtml(r.field||'')}</td>
+      <td class="val">${escapeHtml(r.co_value||'-')}</td>
+      <td class="val">${escapeHtml(r.invoice_value||'-')}</td>
+      <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+      <td class="note">${escapeHtml(r.note||'')}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+
+  if(issues.length){
+    html += `<div class="section-title">발견된 이슈</div><ul class="issues">`;
+    issues.forEach(i => { html += `<li>⚠️ ${escapeHtml(i)}</li>`; });
+    html += `</ul>`;
+  }
+
+  results.innerHTML = html;
+}
+
+runBtn.addEventListener('click', runComparison);
+
+try{ var _sk=localStorage.getItem('gaia_ak'); if(_sk) document.getElementById('apiKey').value=_sk; }catch(e){}
+</script>
+</body>
+</html>
