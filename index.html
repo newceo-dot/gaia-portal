@@ -255,6 +255,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
 .covPill b{width:7px;height:7px;border-radius:50%;display:inline-block}
 
 
+.pSecT{display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:800;color:var(--ink);margin:18px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
+.pSecT svg{color:var(--g600)}
 .imgWrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .imgSlot{background:var(--bg);border-radius:12px;padding:9px;text-align:center}
 .imgSlot .isLab{font-size:.7rem;font-weight:700;color:var(--ink-3);margin-bottom:6px}
@@ -1437,12 +1439,13 @@ function vMaster(){
 }
 
 /* 패널 본문 공통 렌더 (이미지·카톤·상세) */
-function renderPanelBody(o,pairs){
+function renderPanelBody(o,pairs,below){
   var e=exOf(o), cd=catDetail(o);
   var cbm=(e&&e.cbm)?e.cbm:'';
   var head='';
   if(normBc(o.bc)){
-    head='<div class="imgWrap">'+imgSlot(o,'img','제품 이미지',e)+imgSlot(o,'limg','물류바코드',e)+'</div>'
+    head='<div class="pSecT">'+icon('package')+'상품 정보</div>'
+      +'<div class="imgWrap">'+imgSlot(o,'img','제품 이미지',e)+imgSlot(o,'limg','물류바코드',e)+'</div>'
       +'<div class="ctBox"><div class="ctT">'+icon('box')+'카톤(박스) 정보'
       +(cbm?'<span class="cbmTag">CBM '+esc(cbm)+'</span>':'')+'</div>'
       +'<div class="ctGrid">'
@@ -1455,11 +1458,12 @@ function renderPanelBody(o,pairs){
       +((e&&e.upd)?'<div style="font-size:.68rem;color:var(--ink-3);margin-top:7px">최종 수정 '+esc(e.upd)+'</div>':'')
       +'</div>';
   }
-  var body=$('#panel .pbody');
-  body.innerHTML=head+'<dl class="dl-grid">'
+  var dl='<dl class="dl-grid">'
     +pairs.filter(function(p){return p[1]}).map(function(p){
       return '<dt>'+esc(p[0])+'</dt><dd>'+esc(p[1])+'</dd>';
     }).join('')+'</dl>';
+  var body=$('#panel .pbody');
+  body.innerHTML=below?(dl+head):(head+dl);
   body.querySelectorAll('[data-up]').forEach(function(b){
     b.addEventListener('click',function(){ pickAndUpload(o,b.dataset.up); });
   });
@@ -2740,9 +2744,10 @@ function openPanel(sheetRow){
   var po={bc:r.bc||'',name:r.name||r.desc||'',no:r.code||''};
   var pairs=order.filter(function(f){return r[f]}).map(function(f){return [FIELD_KO[f],r[f]]});
   pairs=pairs.concat(catPairs(po));
-  renderPanelBody(po,pairs);
+  renderPanelBody(po,pairs,true);
   var m=state.meta[state.year];
   $('#pLink').href=m?'https://docs.google.com/spreadsheets/d/'+m.sheetId+'/edit#gid='+m.gid+'&range=A'+r.r:'#';
+  $('#pLink').textContent='시트에서 이 행 열기 ↗';
   $('#ovl').classList.add('on');$('#panel').classList.add('on');
 }
 function closePanel(){$('#ovl').classList.remove('on');$('#panel').classList.remove('on');}
