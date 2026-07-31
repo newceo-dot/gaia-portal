@@ -289,6 +289,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
     <a class="nav-item" href="https://gaia-hyhong.github.io/Hayoung-MD-Dashboard/" target="_blank" rel="noopener"><i data-lucide="warehouse"></i><span class="tx">재고/발주</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
     <a class="nav-item" href="https://newceo-dot.github.io/inbound-dashboard/" target="_blank" rel="noopener"><i data-lucide="container"></i><span class="tx">입고관리 시스템</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
     <button class="nav-item" data-view="stock"><i data-lucide="boxes"></i><span class="tx">재고 현황</span><span class="cnt" id="cntStock"></span></button>
+    <button class="nav-item" data-view="sheets"><i data-lucide="folder-open"></i><span class="tx">공유 시트</span></button>
 
     <div class="nav-label">상품</div>
     <button class="nav-item" data-view="master"><i data-lucide="package-search"></i><span class="tx">상품 마스터</span><span class="cnt" id="cntMaster"></span></button>
@@ -455,7 +456,7 @@ $('#yearSeg').addEventListener('click',function(e){
   state.year=b.dataset.y;buildYearSeg();
   loadYear(state.year).then(render);
 });
-$('#btnRefresh').addEventListener('click',function(){_rtSuf=null;fetchStock(true);loadYear(state.year,true).then(render);});
+$('#btnRefresh').addEventListener('click',function(){_rtSuf=null;fetchStock(true);fetchCert(true);loadYear(state.year,true).then(render);});
 $('#btnMeeting').addEventListener('click',function(){
   document.body.classList.toggle('meeting');
   var on=document.body.classList.contains('meeting');
@@ -1310,6 +1311,7 @@ function render(){
   else if(state.view==='sales')v.innerHTML=vSales();
   else if(state.view==='brand')v.innerHTML=vBrandDetail();
   else if(state.view==='freight')v.innerHTML=vFreight();
+  else if(state.view==='sheets')v.innerHTML=vSheets();
   bindView();refreshIcons();
 }
 function pageHead(t,sub){return '<div class="page-head"><div><h2>'+t+'</h2><p>'+sub+'</p></div></div>'}
@@ -1633,6 +1635,187 @@ function vLogi(rs,d){
 }
 
 /* ----- KC 인증 ----- */
+
+/* ================= 공유 시트 모음 ================= */
+var SH2026='14kAQZnm_OguqV1FWwO9LxJvG3i7YkZDA3wkNDc9RUQE';
+var SHEET_DIR_DEFAULT=[
+ {cat:'오더 관리',icon:'clipboard-list',items:[
+   {n:'2026 완구오더진행현황',u:'https://docs.google.com/spreadsheets/d/'+SH2026+'/edit',d:'당해년도 오더 원본'},
+   {n:'2025 완구오더진행현황',u:'https://docs.google.com/spreadsheets/d/1rqM6qSRDYpN1Ll14-3hooXxzhzPDLkDCHzJjrl9gtqw/edit',d:'전년도 오더'},
+   {n:'★2024 오더관리',u:'https://docs.google.com/spreadsheets/d/1_hf8HSR-y29jdNvK4Hcb5TOADDW8hVEHAzA8ks6SwGE/edit',d:'2024년 오더'}
+ ]},
+ {cat:'2026 주요 탭',icon:'table-2',items:[
+   {n:'오더진행현황_RAW',u:'https://docs.google.com/spreadsheets/d/'+SH2026+'/edit#gid=1113936161',d:'포털 오더 데이터 원본'},
+   {n:'재고_RAW',u:'https://docs.google.com/spreadsheets/d/'+SH2026+'/edit#gid=981941567',d:'실시간 가용재고'},
+   {n:'KC (인증서 관리대장)',u:'https://docs.google.com/spreadsheets/d/'+SH2026+'/edit#gid=2081795319',d:'발급일·유효기간'}
+ ]},
+ {cat:'발주 · 영업',icon:'shopping-cart',items:[
+   {n:'2026 영업팀 발주수량 취합(~7월)',u:'https://docs.google.com/spreadsheets/d/1kCx7nXwp3peLqTWRtzLd8hxrLzOQ58QOXYsgMpBcNQc/edit?gid=2055856',d:'채널별 발주수량·판가·마진'}
+ ]},
+ {cat:'인증 · 비용',icon:'receipt',items:[
+   {n:'Kotiti 인증비용 내역',u:'https://docs.google.com/spreadsheets/d/1BLffE0vhbZR-XfQyypt-xS_eyZOsU6W-HsFCu2C9c2g/edit?gid=0',d:'연도별 KC 인증 접수·비용'}
+ ]},
+ {cat:'제작 · 콘텐츠',icon:'image',items:[
+   {n:'완구상세페이지제작 현황',u:'https://docs.google.com/spreadsheets/d/1pChXrXNbIWWz1ekUmOq5ZCLl7pbEC2kGtQI3NaQODAw/edit?gid=0',d:'상세페이지 기획·디자인 진행'}
+ ]},
+ {cat:'기타',icon:'folder',items:[
+   {n:'공유 시트 1 (이름 수정 필요)',u:'https://docs.google.com/spreadsheets/d/1dHDMTCig3FvPnyO3jc4t6FL2_C-V6m4JZsjDhJm1bb0/edit?gid=0',d:'편집 모드에서 이름을 바꿔주세요'},
+   {n:'공유 시트 2 (이름 수정 필요)',u:'https://docs.google.com/spreadsheets/d/1Si102bcOqlsa1drIvIF63OjBASDB0KXGefT1Qy0brB0/edit?gid=259484882',d:'편집 모드에서 이름을 바꿔주세요'}
+ ]},
+ {cat:'대시보드 · 도구',icon:'layout-dashboard',items:[
+   {n:'재고/발주 대시보드',u:'https://gaia-hyhong.github.io/Hayoung-MD-Dashboard/',d:'재고·발주·매출 분석'},
+   {n:'입고관리 시스템',u:'https://newceo-dot.github.io/inbound-dashboard/',d:'입고 일정·재고원가'},
+   {n:'상품 카탈로그',u:'https://gaiacatalog-4n3mekcg.manus.space/?code=6q8PbzYNYPfMPETtqBVzFZ',d:'영업용 상품 카탈로그'},
+   {n:'이미지 리사이저',u:'https://newceo-dot.github.io/gaia-resizer/',d:'코리안넷 이미지 규격 변환'}
+ ]}
+];
+function sheetDir(){
+  try{
+    var s=localStorage.getItem('gaia_sheetdir');
+    if(s){var p=JSON.parse(s); if(Array.isArray(p)&&p.length)return p;}
+  }catch(e){}
+  return SHEET_DIR_DEFAULT;
+}
+function saveSheetDir(d){ try{ localStorage.setItem('gaia_sheetdir',JSON.stringify(d)); }catch(e){ alert('저장 실패 — 브라우저 설정을 확인하세요'); } }
+function linkKind(u){
+  if(/docs\.google\.com\/spreadsheets/.test(u))return {t:'시트',c:'b-done',i:'sheet'};
+  if(/docs\.google\.com\/document/.test(u))return {t:'문서',c:'b-prod',i:'doc'};
+  if(/drive\.google\.com/.test(u))return {t:'드라이브',c:'b-warn',i:'drive'};
+  return {t:'웹',c:'b-ordered',i:'web'};
+}
+function vSheets(){
+  var dir=sheetDir();
+  var q=(state.shq||'').toLowerCase();
+  var total=dir.reduce(function(s,g){return s+g.items.length},0);
+  var h=pageHead('공유 시트','업무별 구글 시트·도구 모음 · 총 '+total+'개');
+  h+='<div class="toolbar">'
+    +'<input type="text" id="shq" placeholder="시트명·설명 검색" value="'+esc(state.shq||'')+'">'
+    +'<button class="chip'+(state.shEdit?' on':'')+'" id="shEditBtn">'+icon('pencil')+' 편집</button>'
+    +'<div class="sum" style="display:flex;gap:8px;align-items:center">'
+    +'<button class="chip" id="shExport">'+icon('download')+' 목록 내보내기</button>'
+    +'<button class="chip" id="shImport">'+icon('upload')+' 가져오기</button>'
+    +'</div></div>';
+
+  if(state.shEdit){
+    h+='<section class="card" style="margin-bottom:14px;padding:16px 20px">'
+      +'<div style="font-size:.88rem;font-weight:800;margin-bottom:12px">새 항목 추가</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+      +'<input type="text" id="adN" placeholder="이름" style="flex:1;min-width:150px;padding:9px 12px;border:1px solid var(--line-2);border-radius:10px">'
+      +'<input type="text" id="adU" placeholder="https://docs.google.com/..." style="flex:2;min-width:220px;padding:9px 12px;border:1px solid var(--line-2);border-radius:10px">'
+      +'<input type="text" id="adD" placeholder="설명(선택)" style="flex:1;min-width:130px;padding:9px 12px;border:1px solid var(--line-2);border-radius:10px">'
+      +'<select id="adC" style="padding:9px 12px;border:1px solid var(--line-2);border-radius:10px">'
+      +dir.map(function(g){return '<option>'+esc(g.cat)+'</option>'}).join('')+'<option value="__new">+ 새 카테고리</option></select>'
+      +'<button class="btnDl" id="adBtn">추가</button></div>'
+      +'<div style="font-size:.75rem;color:var(--ink-3);margin-top:10px">추가·삭제 내용은 이 브라우저에만 저장됩니다. 팀과 공유하려면 [목록 내보내기]로 JSON을 전달하세요.</div>'
+      +'</section>';
+  }
+
+  dir.forEach(function(g,gi){
+    var items=g.items.filter(function(it){
+      return !q||((it.n+' '+(it.d||'')).toLowerCase().indexOf(q)!==-1);
+    });
+    if(!items.length&&q)return;
+    h+='<section class="card" style="margin-bottom:12px">'
+      +'<div class="section-head"><span style="width:34px;height:34px;border-radius:11px;background:var(--g100);display:flex;align-items:center;justify-content:center;color:var(--g700);margin-right:2px">'+icon(g.icon||'folder')+'</span>'
+      +'<h3>'+esc(g.cat)+'</h3><span class="sub">'+items.length+'개</span></div>'
+      +'<div style="padding:2px 12px 14px">'
+      +items.map(function(it){
+        var k=linkKind(it.u);
+        var oi=g.items.indexOf(it);
+        return '<div class="task-row" style="cursor:default">'
+          +'<div class="task-icon">'+icon(k.i==='sheet'?'table':(k.i==='doc'?'file-text':(k.i==='drive'?'hard-drive':'globe')))+'</div>'
+          +'<div class="task-copy" style="flex:1;min-width:0">'
+          +'<a href="'+esc(it.u)+'" target="_blank" rel="noopener" style="font-weight:700;font-size:.88rem;display:block">'+esc(it.n)+' <span style="font-size:.72rem;color:var(--ink-3)">↗</span></a>'
+          +'<span>'+esc(it.d||'')+'</span></div>'
+          +'<span class="badge '+k.c+'" style="margin-left:auto">'+k.t+'</span>'
+          +(state.shEdit?'<button class="chip" data-shren="'+gi+':'+oi+'" style="margin-left:8px;padding:5px 10px">이름</button><button class="chip" data-shdel="'+gi+':'+oi+'" style="margin-left:5px;padding:5px 10px">삭제</button>':'')
+          +'</div>';
+      }).join('')
+      +(items.length?'':'<div class="empty" style="padding:18px">항목 없음</div>')
+      +'</div></section>';
+  });
+  return h;
+}
+
+/* ================= KC 인증서 만료 관리 ================= */
+var cert={status:'loading',list:[],idx:null,err:''};
+function fetchCert(force){
+  cert.status='loading';
+  jsonp({action:'kccert',refresh:force?'1':'0'}).then(function(d){
+    if(!d.ok)throw new Error(d.error||'서버 오류');
+    cert.list=d.certs||[];
+    cert.list.forEach(function(c){
+      c._iss=parseKDate(c.issue); c._exp=parseKDate(c.expire);
+      c._dday=c._exp?Math.floor((c._exp-todayMid())/864e5):null;
+      c._st=certState(c);
+    });
+    cert.idx=buildCertIdx(cert.list);
+    cert.status='ok';
+    if(state.view==='kc')render();
+  }).catch(function(e){
+    cert.status='error';cert.err=String(e.message||e);
+    if(state.view==='kc')render();
+  });
+}
+function todayMid(){var d=new Date();d.setHours(0,0,0,0);return d.getTime()}
+function parseKDate(s){
+  if(!s)return null;
+  var m=String(s).trim().match(/^(\d{2,4})\s*[.\-\/]\s*(\d{1,2})\s*[.\-\/]\s*(\d{1,2})/);
+  if(!m)return null;
+  var y=parseInt(m[1],10); if(y<100)y+=2000;
+  var d=new Date(y,parseInt(m[2],10)-1,parseInt(m[3],10));
+  return isNaN(d.getTime())?null:d.getTime();
+}
+function fmtD(ts){ if(!ts)return ''; var d=new Date(ts);
+  return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
+function certState(c){
+  if(!c._exp)return 'none';
+  if(c._dday<0)return 'expired';
+  if(c._dday<=90)return 'soon';
+  if(c._dday<=180)return 'watch';
+  return 'valid';
+}
+var CERT_ST={
+  expired:{label:'만료',cls:'b-delay'}, soon:{label:'만료임박',cls:'b-warn'},
+  watch:{label:'6개월 내',cls:'b-prod'}, valid:{label:'유효',cls:'b-done'}, none:{label:'기한 미등록',cls:'b-ordered'}
+};
+function certKey(s){ return String(s||'').toUpperCase().replace(/[^A-Z0-9\-]/g,'') }
+function buildCertIdx(list){
+  var exact={},base={};
+  list.forEach(function(c){
+    var k=certKey(c.kcno); if(!k)return;
+    if(!exact[k])exact[k]=c;
+    var b=k.replace(/[A-Z]$/,'');
+    if(!base[b]||(c._exp&&(!base[b]._exp||c._exp>base[b]._exp)))base[b]=c;
+  });
+  return {exact:exact,base:base};
+}
+function certOf(kcno){
+  if(cert.status!=='ok'||!kcno)return null;
+  var k=certKey(kcno);
+  return cert.idx.exact[k]||cert.idx.base[k.replace(/[A-Z]$/,'')]||null;
+}
+function ddayTx(c){
+  if(!c||c._dday==null)return '';
+  if(c._dday<0)return '만료 '+Math.abs(c._dday)+'일 경과';
+  return 'D-'+c._dday;
+}
+function exportCertXlsx(){
+  if(typeof XLSX==='undefined'||cert.status!=='ok')return;
+  var rows=cert.list.slice().sort(function(a,b){
+    var x=a._exp||9e15,y=b._exp||9e15;return x-y;
+  }).map(function(c){
+    return {'상태':CERT_ST[c._st].label,'관리번호':c.no||'','KC 신고번호':c.kcno,'시리즈':c.series||'',
+      '업체명':c.maker||'','성적서번호':c.report||'','발급일':fmtD(c._iss),'유효기간':fmtD(c._exp),
+      'D-day':c._dday==null?'':c._dday,'서류':c.doc||'','비고':c.memo||''};
+  });
+  var ws=XLSX.utils.json_to_sheet(rows);
+  ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:rows.length,c:10}})};
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'KC인증서');
+  var d=new Date();
+  XLSX.writeFile(wb,'GAIA_KC인증서_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.xlsx');
+}
+
 /* ===== KC 통합 마스터 (3개년 RAW 병합) ===== */
 var kcm={status:'idle',map:null,list:null};
 function kcKey(o){ return (o.bc?String(o.bc).replace(/\s/g,''):'')||(o.code?String(o.code).replace(/\s/g,''):'')||''; }
@@ -1711,9 +1894,13 @@ function exportKcXlsx(kind){
   } else {
     name='KC통합';
     (kcm.list||[]).forEach(function(o){
+      var ct=certOf(o.kcno);
       rows.push({'상태':KC[o.state].label,'브랜드':o.br||'','품목명':o.name||'','더존코드':o.code||'','바코드':o.bc||'',
         'ITEM#':o.item||'','요건':o.req||'','KC검사':o.kct||'','코리안넷':o.knet||'','롯데안전':o.lotte||'',
-        'KC인증명':o.kcname||'','KC번호':o.kcno||'','최신출처':o.src.kcno||o.src.kcname||'','발주년도':o.yrs.join(', ')});
+        'KC인증명':o.kcname||'','KC번호':o.kcno||'',
+        '발급일':ct?fmtD(ct._iss):'','유효기간':ct?fmtD(ct._exp):'','D-day':ct&&ct._dday!=null?ct._dday:'',
+        '인증상태':ct?CERT_ST[ct._st].label:'대장 미등록',
+        '최신출처':o.src.kcno||o.src.kcname||'','발주년도':o.yrs.join(', ')});
     });
   }
   if(!rows.length){alert('내보낼 항목이 없습니다.');return;}
@@ -1745,6 +1932,41 @@ function vKC(rs,d){
     +metric('미확인',g.none.length.toLocaleString(),'종','KC 정보 없음','shield-alert','','',g.none.length>0)
     +metric('영업DB 갱신 필요',needN==null?'…':needN.toLocaleString(),'종',needN?'RAW에 최신 정보 있음':'모두 최신','refresh-cw','','',!!needN)
     +'</div>';
+
+  /* 인증서 만료 관리 */
+  if(cert.status==='ok'&&cert.list.length){
+    var cg={expired:[],soon:[],watch:[],valid:[],none:[]};
+    cert.list.forEach(function(c){cg[c._st].push(c)});
+    var urgent=cg.expired.concat(cg.soon).sort(function(a,b){return (a._exp||9e15)-(b._exp||9e15)});
+    h+='<div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(165px,1fr))">'
+      +metric('등록 인증서',cert.list.length,'건','KC 관리대장','folder-check','','',false,true)
+      +metric('만료',cg.expired.length,'건','갱신 필요','circle-x','','',cg.expired.length>0)
+      +metric('만료 임박',cg.soon.length,'건','90일 이내','alarm-clock','','',cg.soon.length>0)
+      +metric('6개월 내',cg.watch.length,'건','사전 준비','calendar-clock','','')
+      +metric('유효',cg.valid.length,'건','6개월 초과','shield-check','','')
+      +'</div>';
+    if(urgent.length){
+      h+='<section class="card" style="margin-bottom:14px"><div class="section-head"><h3>갱신 필요 인증서</h3>'
+        +'<span class="sub">만료 '+cg.expired.length+'건 · 임박 '+cg.soon.length+'건 · 만료일 순</span></div>'
+        +'<div style="padding:0 20px 12px"><button class="btnDl" data-dl="cert">'+icon('download')+'인증서 목록 엑셀</button></div>'
+        +'<div class="tblWrap" style="max-height:42vh"><table class="tbl"><thead><tr>'
+        +'<th>상태</th><th class="num">D-day</th><th>KC 신고번호</th><th>시리즈</th><th>업체명</th><th>발급일</th><th>유효기간</th><th>성적서</th>'
+        +'</tr></thead><tbody>'
+        +urgent.map(function(c){
+          return '<tr><td><span class="badge '+CERT_ST[c._st].cls+'">'+CERT_ST[c._st].label+'</span></td>'
+            +'<td class="num" style="font-weight:800;color:'+(c._st==='expired'?'var(--red)':'var(--amber-tx)')+'">'+ddayTx(c)+'</td>'
+            +'<td style="font-weight:700">'+esc(c.kcno)+'</td>'
+            +'<td class="name" title="'+esc(c.series||'')+'">'+esc(c.series||'')+'</td>'
+            +'<td class="name" style="max-width:220px;font-weight:400" title="'+esc(c.maker||'')+'">'+esc(c.maker||'')+'</td>'
+            +'<td>'+fmtD(c._iss)+'</td><td style="font-weight:700">'+fmtD(c._exp)+'</td>'
+            +'<td style="color:var(--ink-3);font-size:.78rem">'+esc(c.report||'')+'</td></tr>';
+        }).join('')+'</tbody></table></div></section>';
+    }
+  } else if(cert.status==='loading'){
+    h+='<section class="card" style="margin-bottom:14px"><div class="empty"><div class="spin" style="display:inline-block;vertical-align:-4px;margin-right:9px"></div>KC 인증서 관리대장 불러오는 중…</div></section>';
+  } else if(cert.status==='error'){
+    h+='<div id="notice" class="err" style="display:block;margin-bottom:14px">KC 인증서(KC 탭) 로드 실패 — '+esc(cert.err)+'. Apps Script를 최신 Code.gs로 갱신 후 재배포하세요.</div>';
+  }
 
   /* 영업DB 갱신 대상 */
   if(df&&needN){
@@ -1814,8 +2036,9 @@ function vKC(rs,d){
   }
 
   /* 통합 KC 목록 */
-  var chips=[['','전체 '+L.length],['done','확보 '+g.done.length],['prog','진행중 '+g.prog.length],['none','미확인 '+g.none.length],['na','불필요 '+g.na.length]];
-  var fl=state.kcf?g[state.kcf]:L;
+  var expN=L.filter(function(o){var c=certOf(o.kcno);return c&&(c._st==='expired'||c._st==='soon')}).length;
+  var chips=[['','전체 '+L.length],['done','확보 '+g.done.length],['prog','진행중 '+g.prog.length],['none','미확인 '+g.none.length],['na','불필요 '+g.na.length],['exp','만료·임박 '+expN]];
+  var fl=state.kcf==='exp'?L.filter(function(o){var c=certOf(o.kcno);return c&&(c._st==='expired'||c._st==='soon')}):(state.kcf?g[state.kcf]:L);
   if(state.kcq){
     var q=state.kcq.toLowerCase();
     fl=fl.filter(function(o){return [o.name,o.code,o.bc,o.br,o.kcno,o.kcname].join(' ').toLowerCase().indexOf(q)!==-1});
@@ -1826,17 +2049,20 @@ function vKC(rs,d){
     +'<button class="btnDl" data-dl="kcall">'+icon('download')+'통합 목록 다운로드</button>'
     +'<div class="sum"><b>'+fl.length.toLocaleString()+'</b>종</div></div>'
     +'<div class="card tblWrap" style="max-height:64vh"><table class="tbl"><thead><tr>'
-    +'<th>상태</th><th>브랜드</th><th>품목명</th><th>바코드</th><th>요건</th><th>KC검사</th><th>코리안넷</th><th>KC 인증명</th><th>KC 번호</th><th class="num">최신출처</th><th>발주년도</th>'
+    +'<th>상태</th><th>브랜드</th><th>품목명</th><th>KC 인증명</th><th>KC 번호</th><th>발급일</th><th>유효기간</th><th class="num">D-day</th><th>인증상태</th><th>코리안넷</th><th class="num">출처</th>'
     +'</tr></thead><tbody>'
     +(fl.length?fl.slice(0,300).map(function(o){
+      var ct=certOf(o.kcno);
       return '<tr><td><span class="badge '+KC[o.state].cls+'">'+KC[o.state].label+'</span></td>'
         +'<td>'+esc(o.br||'')+'</td><td class="name" title="'+esc(o.name||'')+'">'+esc(o.name||'')+'</td>'
-        +'<td style="font-variant-numeric:tabular-nums">'+esc(o.bc||'')+'</td>'
-        +'<td>'+esc(o.req||'')+'</td><td>'+esc(o.kct||'')+'</td><td>'+esc(o.knet||'')+'</td>'
-        +'<td class="name" style="max-width:200px" title="'+esc(o.kcname||'')+'">'+esc(o.kcname||'')+'</td>'
+        +'<td class="name" style="max-width:190px" title="'+esc(o.kcname||'')+'">'+esc(o.kcname||'')+'</td>'
         +'<td style="font-weight:700">'+esc(o.kcno||'')+'</td>'
-        +'<td class="num" style="color:var(--ink-3)">'+esc(o.src.kcno||o.src.kcname||'')+'</td>'
-        +'<td style="color:var(--ink-3);font-size:.78rem">'+o.yrs.join(', ')+'</td></tr>';
+        +'<td>'+(ct?fmtD(ct._iss):'')+'</td>'
+        +'<td style="font-weight:'+(ct&&(ct._st==='expired'||ct._st==='soon')?'800':'400')+'">'+(ct?fmtD(ct._exp):'')+'</td>'
+        +'<td class="num" style="font-weight:700;color:'+(ct&&ct._st==='expired'?'var(--red)':(ct&&ct._st==='soon'?'var(--amber-tx)':'var(--ink-2)'))+'">'+(ct?ddayTx(ct):'')+'</td>'
+        +'<td>'+(ct?'<span class="badge '+CERT_ST[ct._st].cls+'">'+CERT_ST[ct._st].label+'</span>':(o.kcno?'<span style="color:var(--ink-3);font-size:.76rem">대장 미등록</span>':''))+'</td>'
+        +'<td>'+esc(o.knet||'')+'</td>'
+        +'<td class="num" style="color:var(--ink-3)">'+esc(o.src.kcno||o.src.kcname||'')+'</td></tr>';
     }).join(''):'<tr><td colspan="11"><div class="empty">데이터 없음</div></td></tr>')
     +'</tbody></table></div>'
     +(fl.length>300?'<div style="font-size:.75rem;color:var(--ink-3);margin-top:9px">상위 300종 표시 · 전체는 엑셀로 확인</div>':'');
@@ -1859,6 +2085,7 @@ var FRATES=[
   {route:"산터우 → 인천",mode:"FCL 40HQ",unit:"대",varUsd:400,varKrw:269074,fixUsd:55,fixKrw:44000,sur:0,note:"FOB(ALL-IN) · 유효 06.30"},
   {route:"방콕 → 인천 (TSN-ICN)",mode:"항공",unit:"KG",varUsd:3.10,varKrw:0,fixUsd:0,fixKrw:30000,sur:0.05,note:"FOB · C.C.FEE 5% 포함"}
 ];
+state.shq='';state.shEdit=false;
 state.fr={fx:1500,rows:FRATES.map(function(){return {qty:'',pcs:''}}),edit:false};
 state.fr.rows[0].qty=1;
 function frNum(v){var n=parseFloat(v);return isFinite(n)?n:0}
@@ -2135,6 +2362,65 @@ function bindView(){
   v.querySelectorAll('[data-si]').forEach(function(el){
     el.addEventListener('click',function(){openStockPanel(el.dataset.si);});
   });
+  var shq=$('#shq');if(shq)shq.addEventListener('input',function(){state.shq=this.value;var p=this.selectionStart;render();var n=$('#shq');if(n){n.focus();n.setSelectionRange(p,p);}});
+  var shE=$('#shEditBtn');if(shE)shE.addEventListener('click',function(){state.shEdit=!state.shEdit;render();});
+  var adB=$('#adBtn');if(adB)adB.addEventListener('click',function(){
+    var n=$('#adN').value.trim(),u=$('#adU').value.trim(),dd=$('#adD').value.trim(),c=$('#adC').value;
+    if(!n||!u){alert('이름과 주소를 입력하세요');return;}
+    if(!/^https?:\/\//.test(u)){alert('주소는 https:// 로 시작해야 합니다');return;}
+    var dir=JSON.parse(JSON.stringify(sheetDir()));
+    if(c==='__new'){
+      var nc=prompt('새 카테고리 이름'); if(!nc)return;
+      dir.push({cat:nc,icon:'folder',items:[{n:n,u:u,d:dd}]});
+    } else {
+      var g=dir.filter(function(x){return x.cat===c})[0];
+      if(!g){dir.push({cat:c,icon:'folder',items:[{n:n,u:u,d:dd}]});}
+      else g.items.push({n:n,u:u,d:dd});
+    }
+    saveSheetDir(dir);render();
+  });
+  v.querySelectorAll('[data-shren]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var p=b.dataset.shren.split(':'),gi=+p[0],ii=+p[1];
+      var dir=JSON.parse(JSON.stringify(sheetDir()));
+      var it=dir[gi]&&dir[gi].items[ii]; if(!it)return;
+      var nn=prompt('이름',it.n); if(nn===null)return;
+      var nd=prompt('설명',it.d||''); if(nd===null)nd=it.d||'';
+      it.n=nn.trim()||it.n; it.d=nd.trim();
+      saveSheetDir(dir);render();
+    });
+  });
+  v.querySelectorAll('[data-shdel]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var p=b.dataset.shdel.split(':'),gi=+p[0],ii=+p[1];
+      var dir=JSON.parse(JSON.stringify(sheetDir()));
+      if(!dir[gi]||!dir[gi].items[ii])return;
+      if(!confirm('"'+dir[gi].items[ii].n+'" 항목을 삭제할까요?'))return;
+      dir[gi].items.splice(ii,1);
+      if(!dir[gi].items.length)dir.splice(gi,1);
+      saveSheetDir(dir);render();
+    });
+  });
+  var shX=$('#shExport');if(shX)shX.addEventListener('click',function(){
+    var blob=new Blob([JSON.stringify(sheetDir(),null,2)],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='GAIA_공유시트목록.json';a.click();
+  });
+  var shI=$('#shImport');if(shI)shI.addEventListener('click',function(){
+    var inp=document.createElement('input');inp.type='file';inp.accept='.json';
+    inp.onchange=function(){
+      var f=inp.files[0];if(!f)return;
+      var rd=new FileReader();
+      rd.onload=function(){
+        try{
+          var p=JSON.parse(rd.result);
+          if(!Array.isArray(p))throw new Error('형식 오류');
+          saveSheetDir(p);render();
+        }catch(e){alert('가져오기 실패: '+(e.message||e));}
+      };
+      rd.readAsText(f);
+    };
+    inp.click();
+  });
   var ffx=$('#frFx');if(ffx)ffx.addEventListener('input',function(){state.fr.fx=this.value;frUpdateCells();});
   var fed=$('#frEdit');if(fed)fed.addEventListener('click',function(){state.fr.edit=!state.fr.edit;render();});
   v.querySelectorAll('[data-fr]').forEach(function(el){
@@ -2156,6 +2442,7 @@ function bindView(){
           else if(k==='kcupdate')exportKcXlsx('update');
           else if(k==='kcall')exportKcXlsx('all');
           else if(k==='freight')exportFreightXlsx();
+          else if(k==='cert')exportCertXlsx();
           else exportMasterXlsx(k);
         }
         catch(err){ alert('다운로드 실패: '+(err.message||err)); }
@@ -2197,7 +2484,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closePanel()
 
 /* ================= 시작 ================= */
 buildYearSeg();refreshIcons();
-fetchHayoung();fetchMaster();fetchStock();
+fetchHayoung();fetchMaster();fetchStock();fetchCert();
 loadYear(state.year).then(render);
 </script>
 </body>
