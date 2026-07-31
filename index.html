@@ -211,6 +211,43 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
 .bcard .m{color:var(--ink-2);font-size:.75rem;display:flex;gap:8px;flex-wrap:wrap}
 
 /* 브랜드 카드 */
+
+
+.btWrap{display:grid;grid-template-columns:1.55fr 1fr;gap:0;align-items:center}
+@media(max-width:1000px){.btWrap{grid-template-columns:1fr}}
+.btLegend{padding:6px 18px 18px;display:flex;flex-direction:column;gap:2px}
+.btRow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:11px;cursor:pointer}
+.btRow:hover{background:var(--hover)}
+.btDot{width:9px;height:9px;border-radius:50%;flex:none}
+.btName{min-width:0;flex:1}
+.btName b{display:block;font-size:.86rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btName span{font-size:.7rem;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.spk{width:54px;height:20px;flex:none;opacity:.9}
+.btVal{text-align:right;min-width:74px}
+.btVal b{display:block;font-size:.87rem;font-weight:800;font-variant-numeric:tabular-nums}
+.btVal span{font-size:.7rem;font-weight:800;font-variant-numeric:tabular-nums}
+.btVal span.up{color:var(--g600)}.btVal span.dn{color:var(--red)}.btVal span.flat{color:var(--ink-3)}
+.btFoot{font-size:.72rem;color:var(--ink-3);padding:10px 10px 0;border-top:1px solid var(--line);margin-top:6px}
+.btSeries{transition:opacity .25s var(--ease-soft)}
+.btCard:hover .btSeries{opacity:.45}
+.btCard .btSeries:hover{opacity:1}
+.pGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:12px}
+.pCard{background:var(--card);border-radius:14px;padding:10px;cursor:pointer;box-shadow:var(--sh);transition:transform .14s,box-shadow .14s;display:flex;flex-direction:column}
+.pCard:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
+.pcTop{display:flex;align-items:center;margin-bottom:7px}
+.pcBrand{font-size:.66rem;font-weight:800;color:#fff;background:var(--g600);padding:3px 8px;border-radius:7px;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcImgN{margin-left:auto;font-size:.65rem;font-weight:700;color:var(--ink-3);background:var(--bg);padding:2px 7px;border-radius:99px}
+.pcImg{height:150px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:9px}
+.pcImg img{width:100%;height:100%;object-fit:contain}
+.pcNo{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--ink-3);font-size:.7rem}
+.pcName{font-size:.83rem;font-weight:700;line-height:1.35;height:2.7em;overflow:hidden;margin-bottom:4px}
+.pcBc{font-size:.7rem;color:var(--ink-3);font-variant-numeric:tabular-nums;margin-bottom:7px}
+.pcFoot{display:flex;align-items:baseline;margin-bottom:8px}
+.pcPrice{font-size:.98rem;font-weight:800;color:var(--red)}
+.pcAge{margin-left:auto;font-size:.68rem;color:var(--ink-3)}
+.pcBadges{display:flex;align-items:center;gap:5px;margin-top:auto}
+.pcStk{margin-left:auto;font-size:.68rem;font-weight:800;color:var(--g700);background:var(--g100);padding:2px 8px;border-radius:99px}
+.pcStk.zero{color:var(--red-tx);background:var(--red-bg)}
 .brandGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:12px}
 .brandCard{padding:17px 18px;cursor:pointer;transition:transform .14s,box-shadow .14s}
 .brandCard:hover{transform:translateY(-2px);box-shadow:var(--sh-md)}
@@ -329,6 +366,73 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
   #content{padding:4px 2px 60px}
   .page-head h2{font-size:1.4rem}
 }
+
+/* ===== 모션 · 부드러운 전환 ===== */
+:root{
+  --ease:cubic-bezier(.22,1,.36,1);
+  --ease-soft:cubic-bezier(.4,0,.2,1);
+  --spring:cubic-bezier(.34,1.4,.5,1);
+}
+*{-webkit-tap-highlight-color:transparent}
+@media (prefers-reduced-motion:no-preference){
+  html{scroll-behavior:smooth}
+}
+/* 화면 전환 */
+#view{animation:viewIn .38s var(--ease) both}
+@keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.page-head{animation:viewIn .42s var(--ease) both}
+/* 카드 스태거 */
+.pCard,.metric,.hCard,.brandCard{animation:cardIn .42s var(--ease) both}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+.pGrid>.pCard:nth-child(1){animation-delay:.01s}.pGrid>.pCard:nth-child(2){animation-delay:.03s}
+.pGrid>.pCard:nth-child(3){animation-delay:.05s}.pGrid>.pCard:nth-child(4){animation-delay:.07s}
+.pGrid>.pCard:nth-child(5){animation-delay:.09s}.pGrid>.pCard:nth-child(6){animation-delay:.11s}
+.pGrid>.pCard:nth-child(7){animation-delay:.13s}.pGrid>.pCard:nth-child(8){animation-delay:.15s}
+.pGrid>.pCard:nth-child(9){animation-delay:.17s}.pGrid>.pCard:nth-child(10){animation-delay:.19s}
+.pGrid>.pCard:nth-child(n+11){animation-delay:.21s}
+.metrics>.metric:nth-child(2){animation-delay:.05s}.metrics>.metric:nth-child(3){animation-delay:.09s}
+.metrics>.metric:nth-child(4){animation-delay:.13s}.metrics>.metric:nth-child(5){animation-delay:.17s}
+.metrics>.metric:nth-child(6){animation-delay:.21s}
+/* 눌림 피드백 */
+.pCard,.metric,.hCard,.brandCard,.chip,.nav-item,.tb-btn,.btnDl,.isBtn,.seg button,.task-row,.dRow,.yearSeg button,.gTh,.gAdd{
+  transition:transform .18s var(--spring),box-shadow .22s var(--ease),background .18s var(--ease-soft),color .18s var(--ease-soft),border-color .18s var(--ease-soft),opacity .18s var(--ease-soft);
+}
+.pCard:active,.metric:active,.hCard:active,.brandCard:active{transform:scale(.975)}
+.chip:active,.btnDl:active,.isBtn:active,.seg button:active,.tb-btn:active,.nav-item:active,.gTh:active,.gAdd:active{transform:scale(.94)}
+.task-row:active,.dRow:active{transform:scale(.99)}
+.tbl tbody tr{transition:background .16s var(--ease-soft)}
+/* 패널 */
+#panel{transition:right .42s var(--ease),transform .42s var(--ease)}
+#ovl{transition:opacity .34s var(--ease);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+#panel .pbody>*{animation:panelIn .4s var(--ease) both}
+#panel .pbody>*:nth-child(2){animation-delay:.05s}
+#panel .pbody>*:nth-child(3){animation-delay:.09s}
+#panel .pbody>*:nth-child(4){animation-delay:.13s}
+@keyframes panelIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+#panel.dragging{transition:none}
+.pGrab{display:none}
+/* 이미지 */
+.pcImg img,.gMain img{transition:transform .5s var(--ease),opacity .35s var(--ease)}
+.pCard:hover .pcImg img{transform:scale(1.05)}
+.gMain img{animation:imgIn .38s var(--ease) both}
+@keyframes imgIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+/* 막대·도넛 */
+.progress-fill,.mini-bar i,.brow .bar,.segBar i{transition:width .7s var(--ease)}
+.pipe .stage,.section-head{transition:background .2s var(--ease-soft)}
+svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
+/* 스켈레톤 */
+.skel{background:linear-gradient(90deg,var(--line) 25%,var(--hover) 37%,var(--line) 63%);background-size:400% 100%;animation:shim 1.3s ease-in-out infinite;border-radius:10px}
+@keyframes shim{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.skelGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:12px}
+.skelCard{background:var(--card);border-radius:14px;padding:10px;box-shadow:var(--sh)}
+.skelCard .a{height:150px;margin-bottom:9px}
+.skelCard .b{height:12px;margin-bottom:6px}
+.skelCard .c{height:12px;width:60%}
+@media(max-width:760px){
+  #panel{top:auto;bottom:-100%;right:10px;left:10px;width:auto;height:88vh;border-radius:22px 22px 0 0;transition:bottom .42s var(--ease),transform .42s var(--ease)}
+  #panel.on{bottom:0;right:10px}
+  .pGrab{display:block;width:38px;height:4px;border-radius:99px;background:var(--line-2);margin:8px auto 0}
+}
 </style>
 </head>
 <body>
@@ -394,6 +498,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
 
 <div id="ovl" onclick="closePanel()"></div>
 <div id="panel">
+  <div class="pGrab"></div>
   <div class="phead">
     <button class="pclose" onclick="closePanel()">✕</button>
     <div class="pb" id="pBrand"></div>
@@ -434,8 +539,8 @@ function amtNum(v){var n=parseFloat(String(v||'').replace(/[^0-9.\-]/g,''));retu
 function fmtUSD(n){return '$'+Math.round(n).toLocaleString('en-US')}
 function kFmt(n){ if(n>=1e6)return '$'+(n/1e6).toFixed(1)+'M'; if(n>=1e3)return '$'+Math.round(n/1e3)+'K'; return '$'+Math.round(n) }
 function nowYM(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
-function nextYM(){var d=new Date();d.setMonth(d.getMonth()+1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
-function prevYM(){var d=new Date();d.setMonth(d.getMonth()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function nextYM(){var d=new Date();d.setDate(1);d.setMonth(d.getMonth()+1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function prevYM(){var d=new Date();d.setDate(1);d.setMonth(d.getMonth()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 function parseYM(s){var m=String(s||'').match(/(20\d{2})\s*[-./]\s*(\d{1,2})/);return m?m[1]+'-'+m[2].padStart(2,'0'):null}
 function fmtYM(ym){if(!ym)return'';var p=ym.split('-');return p[0]+'년 '+parseInt(p[1],10)+'월'}
 function moLabel(ym){return parseInt(ym.split('-')[1],10)+'월'}
@@ -543,39 +648,70 @@ function go(view,f){
 
 
 /* ---- 브랜드별 매출 추이 (멀티라인) ---- */
-var BRAND_LINE=['#0B3D2C','#1B7A4F','#57B08A','#E0A030','#8A8F9A','#A9DCC3'];
+var BRAND_LINE=['#0B3D2C','#1B7A4F','#57B08A','#E0A030','#8FB8A8','#C2CBC6'];
+function smoothPath(pts,close,baseY){
+  if(!pts.length)return '';
+  if(pts.length<3){
+    var d0='M'+pts.map(function(p){return p[0]+','+p[1]}).join(' L');
+    return close?d0+' L'+pts[pts.length-1][0]+','+baseY+' L'+pts[0][0]+','+baseY+' Z':d0;
+  }
+  var d='M'+pts[0][0]+','+pts[0][1];
+  for(var i=0;i<pts.length-1;i++){
+    var p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+    var t=0.22;
+    var c1x=p1[0]+(p2[0]-p0[0])*t, c1y=p1[1]+(p2[1]-p0[1])*t;
+    var c2x=p2[0]-(p3[0]-p1[0])*t, c2y=p2[1]-(p3[1]-p1[1])*t;
+    d+=' C'+c1x.toFixed(1)+','+c1y.toFixed(1)+' '+c2x.toFixed(1)+','+c2y.toFixed(1)+' '+p2[0]+','+p2[1];
+  }
+  if(close)d+=' L'+pts[pts.length-1][0]+','+baseY+' L'+pts[0][0]+','+baseY+' Z';
+  return d;
+}
 function svgBrandTrend(brandMrev,brands,months){
   if(!months.length||!brands.length)return '<div class="empty">브랜드 매출 데이터 없음</div>';
-  var W=680,H=250,padL=54,padR=16,top=18,bottom=28;
+  var W=760,H=280,padL=8,padR=18,top=22,bottom=34;
   var plotW=W-padL-padR,plotH=H-top-bottom;
   var maxV=1;
   brands.forEach(function(b){months.forEach(function(m){var v=(brandMrev[b]||{})[m]||0;if(v>maxV)maxV=v;})});
-  var niceMax=Math.ceil(maxV/5e7)*5e7||maxV;
-  var xs=function(i){return padL+(months.length===1?plotW/2:plotW*(i/(months.length-1)))};
-  var ys=function(v){return H-bottom-plotH*(Math.max(0,v)/niceMax)};
-  var grid='';
-  for(var g=0;g<=4;g++){
-    var yv=niceMax/4*g,y=ys(yv);
-    grid+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#EDEFEE"/>'
-      +'<text x="'+(padL-8)+'" y="'+(y+4)+'" text-anchor="end" font-size="10" fill="#9AA3A6">'+(g?fmtAxis(yv):'0')+'</text>';
+  var niceMax=maxV*1.12;
+  var xs=function(i){return +(padL+(months.length===1?plotW/2:plotW*(i/(months.length-1)))).toFixed(1)};
+  var ys=function(v){return +(H-bottom-plotH*(Math.max(0,v)/niceMax)).toFixed(1)};
+  var cur=nowYM(), curI=months.indexOf(cur);
+  var grid='',defs='';
+  for(var g=1;g<=3;g++){
+    var y=ys(niceMax/3.4*g);
+    grid+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#EDEFEE" stroke-dasharray="1 7" stroke-linecap="round"/>';
   }
-  var cur=nowYM();
-  var lines=brands.map(function(b,bi){
+  if(curI>=0){
+    grid+='<line x1="'+xs(curI)+'" y1="'+top+'" x2="'+xs(curI)+'" y2="'+(H-bottom)+'" stroke="#D8DEDA" stroke-dasharray="3 5"/>';
+  }
+  var series=brands.map(function(b,bi){
     var col=BRAND_LINE[bi%BRAND_LINE.length];
-    var pts=months.map(function(m,i){return xs(i)+','+ys((brandMrev[b]||{})[m]||0)}).join(' ');
-    var dots=months.map(function(m,i){
-      var v=(brandMrev[b]||{})[m]||0;
-      return '<circle cx="'+xs(i)+'" cy="'+ys(v)+'" r="'+(m===cur?4:2.6)+'" fill="'+col+'"><title>'+esc(b)+' · '+fmtYM(m)+' · '+fmtKR(v)+'</title></circle>';
-    }).join('');
-    return '<g class="bl" data-go="brand" data-f="b:'+esc(b)+'" style="cursor:pointer">'
-      +'<polyline points="'+pts+'" fill="none" stroke="'+col+'" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>'
-      +dots+'</g>';
+    var pts=months.map(function(m,i){return [xs(i),ys((brandMrev[b]||{})[m]||0)]});
+    var gid='bg'+bi;
+    defs+='<linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0%" stop-color="'+col+'" stop-opacity="'+(bi<2?0.22:0.10)+'"/>'
+      +'<stop offset="100%" stop-color="'+col+'" stop-opacity="0"/></linearGradient>';
+    var last=pts[pts.length-1];
+    return '<g class="btSeries" data-go="brand" data-f="b:'+esc(b)+'" style="cursor:pointer">'
+      +'<path d="'+smoothPath(pts,true,H-bottom)+'" fill="url(#'+gid+')"/>'
+      +'<path d="'+smoothPath(pts)+'" fill="none" stroke="'+col+'" stroke-width="'+(bi<2?3:2.2)+'" stroke-linecap="round" stroke-linejoin="round" opacity="'+(bi<2?1:0.85)+'"/>'
+      +'<circle cx="'+last[0]+'" cy="'+last[1]+'" r="5.5" fill="#fff"/>'
+      +'<circle cx="'+last[0]+'" cy="'+last[1]+'" r="3.6" fill="'+col+'"><title>'+esc(b)+'</title></circle>'
+      +'</g>';
   }).join('');
   var xlab=months.map(function(m,i){
-    return '<text x="'+xs(i)+'" y="'+(H-9)+'" text-anchor="middle" font-size="10.5" font-weight="'+(m===cur?'800':'500')+'" fill="'+(m===cur?'#0B3D2C':'#9AA3A6')+'">'+moLabel(m)+'</text>';
+    var isC=m===cur;
+    return '<text x="'+xs(i)+'" y="'+(H-11)+'" text-anchor="middle" font-size="10.5" font-weight="'+(isC?'800':'500')+'" fill="'+(isC?'#0B3D2C':'#A8B0AC')+'">'+moLabel(m)+'</text>';
   }).join('');
-  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">'+grid+lines+xlab
-    +'<line x1="'+padL+'" y1="'+(H-bottom)+'" x2="'+(W-padR)+'" y2="'+(H-bottom)+'" stroke="#E2E6E4"/></svg>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet"><defs>'+defs+'</defs>'+grid+series+xlab+'</svg>';
+}
+function sparkline(map,months,col){
+  var w=54,hh=20,vals=months.map(function(m){return Math.max(0,map[m]||0)});
+  var mx=Math.max.apply(null,vals.concat([1]));
+  var pts=vals.map(function(v,i){return [+(i/(vals.length-1)*w).toFixed(1),+(hh-2-(hh-4)*(v/mx)).toFixed(1)]});
+  return '<svg class="spk" viewBox="0 0 '+w+' '+hh+'" preserveAspectRatio="none">'
+    +'<path d="'+smoothPath(pts,true,hh)+'" fill="'+col+'" opacity=".13"/>'
+    +'<path d="'+smoothPath(pts)+'" fill="none" stroke="'+col+'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 }
 function brandTrendSection(a){
   var months=trendMonths(a.mrev,12);
@@ -589,22 +725,24 @@ function brandTrendSection(a){
   var grand=ranked.reduce(function(s,b){return s+totals[b]},0)||1;
   var cur=nowYM(),prv=prevYM();
   var legend=top.map(function(b,i){
+    var col=BRAND_LINE[i%BRAND_LINE.length];
     var c=Math.max(0,(a.brandMrev[b]||{})[cur]||0), p=Math.max(0,(a.brandMrev[b]||{})[prv]||0);
     var mom=p?Math.round((c-p)/p*100):null;
-    return '<div class="dRow" data-go="brand" data-f="b:'+esc(b)+'">'
-      +'<span class="sw" style="background:'+BRAND_LINE[i%BRAND_LINE.length]+'"></span>'
-      +'<span style="font-weight:700">'+esc(b)+'</span>'
-      +'<span class="a">'+Math.round(totals[b]/grand*100)+'%</span>'
-      +'<b>'+kFmtKR(totals[b])+'</b>'
-      +'<span style="width:52px;text-align:right;font-size:.75rem;font-weight:700;color:'+(mom==null?'var(--ink-3)':(mom>=0?'var(--g600)':'var(--red-tx)'))+'">'
-      +(mom==null?'—':(mom>=0?'▲'+mom+'%':'▼'+Math.abs(mom)+'%'))+'</span></div>';
+    var up=mom!=null&&mom>=0;
+    return '<div class="btRow" data-go="brand" data-f="b:'+esc(b)+'">'
+      +'<span class="btDot" style="background:'+col+'"></span>'
+      +'<div class="btName"><b>'+esc(b)+'</b><span>'+Math.round(totals[b]/grand*100)+'% · '+kFmtKR(c)+'</span></div>'
+      +sparkline(a.brandMrev[b]||{},months,col)
+      +'<div class="btVal"><b>'+kFmtKR(totals[b])+'</b>'
+      +'<span class="'+(mom==null?'flat':(up?'up':'dn'))+'">'+(mom==null?'—':(up?'▲':'▼')+Math.abs(mom)+'%')+'</span></div>'
+      +'</div>';
   }).join('');
-  return '<section class="card" style="margin-bottom:14px"><div class="section-head"><h3>브랜드별 매출 추이</h3>'
-    +'<span class="sub">최근 12개월 · 상위 6개 브랜드 · 클릭 시 브랜드 상세</span></div>'
-    +'<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:0;align-items:center">'
-    +'<div class="chartWrap">'+svgBrandTrend(a.brandMrev,top,months)+'</div>'
-    +'<div style="padding:8px 20px 18px"><div class="dLegend">'+legend+'</div>'
-    +'<div style="margin-top:12px;font-size:.75rem;color:var(--ink-3)">'+ranked.length+'개 브랜드 · 12개월 합계 '+fmtKR(grand)+'</div></div>'
+  return '<section class="card btCard" style="margin-bottom:14px"><div class="section-head"><h3>브랜드별 매출 추이</h3>'
+    +'<span class="sub">최근 12개월 · 상위 6개 · 클릭 시 브랜드 상세</span></div>'
+    +'<div class="btWrap">'
+    +'<div class="chartWrap" style="padding-bottom:6px">'+svgBrandTrend(a.brandMrev,top,months)+'</div>'
+    +'<div class="btLegend">'+legend
+    +'<div class="btFoot">'+ranked.length+'개 브랜드 · 12개월 합계 '+kFmtKR(grand)+'</div></div>'
     +'</div></section>';
 }
 function kFmtKR(n){
@@ -1108,7 +1246,7 @@ function exportCatNewXlsx(){
 
 /* ================= 상품 마스터 (영업DB + 재고 조인) ================= */
 var ms={status:'loading',list:[],err:''};
-state.mf={q:'',brand:'',stock:''};
+state.mf={q:'',brand:'',stock:''};state.mView='grid';
 state.sf={cls:'',urg:'',brand:'',q:'',inc:false};
 function fetchMaster(){
   /* 1순위: 외부 master-data.json (있으면 최신 데이터로 갱신) · 2순위: 내장 데이터 */
@@ -1446,7 +1584,9 @@ function masterFiltered(){
     }
     if(f.stock){
       var lv=liveStockOf(o), s=stockOf(o);
-      if(f.stock==='nocat'){ if(inCatalog(o)!==false||!normBc(o.bc))return false; }
+      if(f.stock==='img'){ if(!imgList(exOf(o)).length)return false; }
+      else if(f.stock==='noimg'){ if(imgList(exOf(o)).length)return false; }
+      else if(f.stock==='nocat'){ if(inCatalog(o)!==false||!normBc(o.bc))return false; }
       else if(f.stock==='none'){ if(lv||s)return false; }
       else if(f.stock==='has'){ if(!(lv&&lv.q>0)&&!(s&&s.it.cur>0))return false; }
       else if(f.stock==='zero'){ if(!lv||lv.q>0)return false; }
@@ -1471,7 +1611,8 @@ function certBadges(o){
 function vMaster(){
   var h=pageHead('상품 마스터','영업DB '+ms.list.length.toLocaleString()+'종 · 재고_RAW 실시간 연동');
   if(ms.status==='loading'){
-    return h+'<div class="card"><div class="empty"><div class="spin" style="display:inline-block;vertical-align:-4px;margin-right:9px"></div>상품 데이터 불러오는 중…</div></div>';
+    var sk='';for(var si=0;si<10;si++)sk+='<div class="skelCard"><div class="skel a"></div><div class="skel b"></div><div class="skel c"></div></div>';
+    return h+'<div class="skelGrid">'+sk+'</div>';
   }
   if(ms.status==='error'){
     return h+'<div class="card"><div class="empty">상품 데이터(master-data.json) 로드 실패 — '+esc(ms.err)
@@ -1502,8 +1643,11 @@ function vMaster(){
   var brandsMap={};ms.list.forEach(function(o){if(o.br)brandsMap[o.br]=1});
   var fl=masterFiltered();
   var LIMIT=300;
-  var chips=[['','전체'],['has','재고보유'],['zero','재고소진'],['nocat','카탈로그 미등록 '+catN],['발주필요','발주필요'],['품절위험','품절위험'],['과잉/악성','과잉·악성'],['none','미연동']];
+  var imgN=0; ms.list.forEach(function(o){ if(imgList(exOf(o)).length)imgN++; });
+  var chips=[['','전체'],['img','이미지 등록 '+imgN],['noimg','이미지 미등록'],['has','재고보유'],['zero','재고소진'],['nocat','카탈로그 미등록 '+catN],['발주필요','발주필요'],['품절위험','품절위험'],['과잉/악성','과잉·악성'],['none','미연동']];
   h+='<div class="toolbar">'
+    +'<div class="seg"><button data-mv="grid" class="'+(state.mView==='grid'?'on':'')+'">'+icon('layout-grid')+'카드</button>'
+    +'<button data-mv="list" class="'+(state.mView==='list'?'on':'')+'">'+icon('list')+'리스트</button></div>'
     +'<input type="text" id="mq" placeholder="상품명·품번·바코드·KC번호 검색" value="'+esc(state.mf.q)+'">'
     +'<select id="mbrand"><option value="">브랜드 전체</option>'+Object.keys(brandsMap).sort().map(function(b){return '<option'+(state.mf.brand===b?' selected':'')+'>'+esc(b)+'</option>'}).join('')+'</select>'
     +'<div class="chips">'+chips.map(function(c){return '<button class="chip'+(state.mf.stock===c[0]?' on':'')+'" data-ms="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>'
@@ -1512,6 +1656,28 @@ function vMaster(){
     +'<button class="btnDl" data-dl="all" style="background:var(--card);color:var(--ink-2);border:1px solid var(--line)" title="영업DB 전체 '+ms.list.length+'종">'+icon('file-spreadsheet')+'전체</button>'
     +'<div class="sum"><b>'+fl.length.toLocaleString()+'</b>종'+(fl.length>LIMIT?' · 상위 '+LIMIT+'개 표시(검색으로 좁히기)':'')+'</div>'
     +'</div>';
+
+  if(state.mView==='grid'){
+    var GLIM=120;
+    h+='<div class="pGrid">'+(fl.length?fl.slice(0,GLIM).map(function(o){
+      var ids=imgList(exOf(o)), lv=liveStockOf(o), s=stockOf(o), cd=catDetail(o);
+      var thumb=ids.length
+        ? '<img src="'+driveThumb(ids[0],400)+'" alt="" loading="lazy">'
+        : '<div class="pcNo">'+icon('image-off')+'<span>이미지 없음</span></div>';
+      return '<div class="pCard" data-mi="'+ms.list.indexOf(o)+'">'
+        +'<div class="pcTop"><span class="pcBrand">'+esc(o.br||'')+'</span>'
+        +(ids.length>1?'<span class="pcImgN">'+ids.length+'</span>':'')+'</div>'
+        +'<div class="pcImg">'+thumb+'</div>'
+        +'<div class="pcName" title="'+esc(o.name||'')+'">'+esc(o.name||'')+'</div>'
+        +'<div class="pcBc">'+esc(o.bc||o.no||'')+'</div>'
+        +'<div class="pcFoot"><span class="pcPrice">'+(o.rrp?Number(o.rrp).toLocaleString()+'원':'—')+'</span>'
+        +'<span class="pcAge">'+esc((cd&&cd.ag)||'')+'</span></div>'
+        +'<div class="pcBadges">'+certBadges(o)+(lv?'<span class="pcStk'+(lv.q<=0?' zero':'')+'">재고 '+lv.q.toLocaleString()+'</span>':'')+'</div>'
+        +'</div>';
+    }).join(''):'<div class="empty" style="grid-column:1/-1">조건에 맞는 상품이 없습니다</div>')+'</div>'
+    +(fl.length>GLIM?'<div style="font-size:.75rem;color:var(--ink-3);margin-top:12px">상위 '+GLIM+'개 표시 · 검색·필터로 좁혀보세요</div>':'');
+    return h;
+  }
 
   h+='<div class="card tblWrap" style="max-height:70vh"><table class="tbl"><thead><tr>'
     +'<th>브랜드</th><th>품번</th><th>상품명</th><th>바코드</th><th>인증</th><th class="num">소비자가</th><th class="num">입수</th><th class="num">가용재고</th><th class="num">입고예정</th><th>재고상태</th><th class="num">재고금액</th>'
@@ -2895,6 +3061,9 @@ function bindView(){
       go(goV,goV==='orders'?nf:state.f);
     });
   });
+  v.querySelectorAll('[data-mv]').forEach(function(b){
+    b.addEventListener('click',function(e){e.stopPropagation();state.mView=b.dataset.mv;render();});
+  });
   v.querySelectorAll('[data-om]').forEach(function(b){
     b.addEventListener('click',function(e){e.stopPropagation();state.omode=b.dataset.om;render();});
   });
@@ -3055,6 +3224,35 @@ function openPanel(sheetRow){
 }
 function closePanel(){state._specEdit=false;$('#ovl').classList.remove('on');$('#panel').classList.remove('on');}
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closePanel();});
+
+
+/* 패널 스와이프 닫기 (모바일) */
+(function(){
+  var p=document.getElementById('panel'); if(!p)return;
+  var sx=0,sy=0,dx=0,dy=0,drag=false,vert=false;
+  var head=function(t){ return t.closest('.phead')||t.closest('.pGrab')||t.closest('.pbody'); };
+  p.addEventListener('touchstart',function(e){
+    if(e.touches.length!==1)return;
+    var b=p.querySelector('.pbody');
+    vert=window.innerWidth<=760;
+    if(vert&&b&&b.scrollTop>4&&!e.target.closest('.pGrab')&&!e.target.closest('.phead'))return;
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY; dx=0; dy=0; drag=true;
+    p.classList.add('dragging');
+  },{passive:true});
+  p.addEventListener('touchmove',function(e){
+    if(!drag)return;
+    dx=e.touches[0].clientX-sx; dy=e.touches[0].clientY-sy;
+    if(vert){ if(dy>0)p.style.transform='translateY('+dy+'px)'; }
+    else if(dx>0){ p.style.transform='translateX('+dx+'px)'; }
+  },{passive:true});
+  p.addEventListener('touchend',function(){
+    if(!drag)return;
+    drag=false; p.classList.remove('dragging');
+    var close=vert?dy>90:dx>90;
+    p.style.transform='';
+    if(close)closePanel();
+  });
+})();
 
 /* ================= 시작 ================= */
 initCat();buildYearSeg();refreshIcons();
