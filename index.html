@@ -249,6 +249,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
 .pcBc{font-size:.7rem;color:var(--ink-3);font-variant-numeric:tabular-nums;margin-bottom:7px}
 .pcFoot{display:flex;align-items:baseline;margin-bottom:8px}
 .pcPrice{font-size:.98rem;font-weight:800;color:var(--red)}
+.pcSp{font-size:.76rem;font-weight:700;color:var(--g600);margin-left:6px}
 .pcAge{margin-left:auto;font-size:.68rem;color:var(--ink-3)}
 .pcBadges{display:flex;align-items:center;gap:5px;margin-top:auto}
 .pcStk{margin-left:auto;font-size:.68rem;font-weight:800;color:var(--g700);background:var(--g100);padding:2px 8px;border-radius:99px}
@@ -1360,7 +1361,11 @@ function exportMasterXlsx(scope){
     var lv=liveStockOf(o), s=stockOf(o);
     return {
       '브랜드':o.br||'', '품번':o.no||'', '한글상품명':o.name||'', '바코드':o.bc||'',
-      '소비자가':o.rrp?Number(o.rrp):'', '입수':o.pack?Number(o.pack)||o.pack:'',
+      '소비자가':o.rrp?Number(o.rrp):'',
+      '판매가':(function(){var c=catDetail(o);return c&&c.sp?Number(String(c.sp).replace(/[^0-9.]/g,'')):''})(),
+      '평균공급가':(function(){var a=supplyPrice(o);return a?a.unit:''})(),
+      '재고단가':costPrice(o)||'',
+      '입수':o.pack?Number(o.pack)||o.pack:'',
       '대분류':o.c1||'', '소분류':o.c2||'',
       '코리안넷':o.knet||'', '롯데안전':o.lotte||'', 'KC인증명':o.kcn||'', 'KC인증번호':o.kcno||'',
       '가용재고':lv?lv.q:'', '입고예정':(s&&s.it.inc)?s.it.inc:'',
@@ -1679,6 +1684,14 @@ function vMaster(){
     +metric('재고 보유',rt.status==='ok'?hasStock.toLocaleString():'…','종',rt.status==='ok'?liveQty.toLocaleString()+'pcs 가용':'재고 로딩 중','warehouse','','')
     +metric('재고 소진',rt.status==='ok'?zeroStock.toLocaleString():'…','종','가용재고 0 이하','package-x','','',zeroStock>0)
     +metric('카탈로그 미등록',catx.ready?catN.toLocaleString():'…','종',catNoBc?'바코드 없음 '+catNoBc+'종 제외':'등록 가능 대상','layout-grid','','',catN>0)
+    +(function(){
+        var sp=0,ap=0;
+        ms.list.forEach(function(o){
+          var cd=catDetail(o);
+          if(cd&&cd.sp)sp++; else if(supplyPrice(o))ap++;
+        });
+        return metric('판매가 확보',(sp+ap).toLocaleString(),'종','카탈로그 '+sp+' · 실거래 '+ap,'tag','','');
+      })()
     +'</div>';
   if(rt.status==='error'){
     h+='<div id="notice" class="err" style="display:block">재고_RAW 로드 실패 — '+esc(rt.err)
@@ -1717,6 +1730,13 @@ function vMaster(){
         +'<div class="pcName" title="'+esc(o.name||'')+'">'+esc(o.name||'')+'</div>'
         +'<div class="pcBc">'+esc(displayBc(o.bc,o.br)||o.no||'')+'</div>'
         +'<div class="pcFoot"><span class="pcPrice">'+(o.rrp?Number(o.rrp).toLocaleString()+'원':'—')+'</span>'
+        +(function(){
+            var sp=cd&&cd.sp?Number(String(cd.sp).replace(/[^0-9.]/g,'')):null;
+            var a=sp?null:supplyPrice(o);
+            var v=sp||(a?a.unit:null);
+            if(!v||(o.rrp&&Math.abs(Number(o.rrp)-v)<1))return '';
+            return '<span class="pcSp" title="판매가">'+v.toLocaleString()+'</span>';
+          })()
         +'<span class="pcAge">'+esc((cd&&cd.ag)||'')+'</span></div>'
         +'<div class="pcBadges">'+certBadges(o)+(lv?'<span class="pcStk'+(lv.q<=0?' zero':'')+'">재고 '+lv.q.toLocaleString()+'</span>':'')+'</div>'
         +'</div>';
@@ -1726,7 +1746,7 @@ function vMaster(){
   }
 
   h+='<div class="card tblWrap" style="max-height:70vh"><table class="tbl"><thead><tr>'
-    +'<th>브랜드</th><th>품번</th><th>상품명</th><th>바코드</th><th>인증</th><th class="num">소비자가</th><th class="num">입수</th><th class="num">가용재고</th><th class="num">입고예정</th><th>재고상태</th><th class="num">재고금액</th>'
+    +'<th>브랜드</th><th>품번</th><th class="thCol"></th><th>상품명</th><th>바코드</th><th>인증</th><th class="num">소비자가</th><th class="num">판매가</th><th class="num">입수</th><th class="num">가용재고</th><th class="num">입고예정</th><th>재고상태</th><th class="num">재고금액</th>'
     +'</tr></thead><tbody>'
     +(fl.length?fl.slice(0,LIMIT).map(function(o){
       var lv=liveStockOf(o), s=stockOf(o);
@@ -1742,12 +1762,18 @@ function vMaster(){
         +'<td style="font-variant-numeric:tabular-nums">'+esc(displayBc(o.bc,o.br))+'</td>'
         +'<td>'+certBadges(o)+'</td>'
         +'<td class="num">'+(o.rrp?Number(o.rrp).toLocaleString()+'원':'')+'</td>'
+        +'<td class="num">'+(function(){
+            var cd=catDetail(o), sp=cd&&cd.sp?Number(String(cd.sp).replace(/[^0-9.]/g,'')):null;
+            if(sp)return '<b>'+sp.toLocaleString()+'</b>';
+            var a=supplyPrice(o);
+            return a?'<span style="color:var(--ink-3)" title="실거래 평균 공급가">~'+a.unit.toLocaleString()+'</span>':'—';
+          })()+'</td>'
         +'<td class="num">'+esc(o.pack||'')+'</td>'
         +'<td class="num" style="font-weight:700">'+qCell+'</td>'
         +'<td class="num">'+(s&&s.it.inc?s.it.inc.toLocaleString():'—')+'</td>'
         +'<td>'+(s?stockBadge(s.it):(lv?'<span class="badge b-ordered">재고연동</span>':'<span style="color:var(--ink-3);font-size:.78rem">미연동</span>'))+'</td>'
         +'<td class="num">'+(s&&s.it.amt?fmtKR(s.it.amt):'—')+'</td></tr>';
-    }).join(''):'<tr><td colspan="12"><div class="empty">조건에 맞는 상품이 없습니다</div></td></tr>')
+    }).join(''):'<tr><td colspan="13"><div class="empty">조건에 맞는 상품이 없습니다</div></td></tr>')
     +'</tbody></table></div>'
     +(rt.status==='ok'?'<div style="font-size:.73rem;color:var(--ink-3);margin-top:10px">가용재고 기준: 재고_RAW · '+new Date(rt.updated).toLocaleString('ko-KR')+' (10분 캐시, 상단 새로고침으로 즉시 갱신) · 입고예정/재고금액/재고상태는 재고·발주 대시보드 연동</div>':'');
   return h;
@@ -1889,10 +1915,39 @@ function mergeOrderProducts(){
   return added;
 }
 var _msIdx=null;
+
+/* ---- 실거래 평균 공급가 (재고/발주 DB 매출 기준) ---- */
+function supplyPrice(o){
+  if(hy.status!=='ok')return null;
+  var s=stockOf(o); if(!s)return null;
+  var chy=s.it.chy||{};
+  var years=Object.keys(chy).sort().reverse();
+  for(var i=0;i<years.length;i++){
+    var y=years[i],q=0,r=0;
+    Object.keys(chy[y]).forEach(function(ch){
+      var v=chy[y][ch]||[]; q+=(v[0]||0); r+=(v[1]||0);
+    });
+    if(q>=3&&r>0)return {year:y,qty:q,rev:r,unit:Math.round(r/q)};
+  }
+  for(var j=0;j<years.length;j++){
+    var y2=years[j],q2=0,r2=0;
+    Object.keys(chy[y2]).forEach(function(ch){
+      var v=chy[y2][ch]||[]; q2+=(v[0]||0); r2+=(v[1]||0);
+    });
+    if(q2>0&&r2>0)return {year:y2,qty:q2,rev:r2,unit:Math.round(r2/q2),few:true};
+  }
+  return null;
+}
+function costPrice(o){
+  if(hy.status!=='ok')return null;
+  var s=stockOf(o);
+  return (s&&s.it.dp)?Math.round(s.it.dp):null;
+}
 /* ---- 상품 스펙 (편집 가능) ---- */
 var SPEC_F=[
   ['name','상품명','text'],['item','아이템번호','text'],['bc','바코드','ro'],['lb','물류바코드','text'],
-  ['rrp','소비자가','text'],['sz','사이즈','text'],['ctn','카톤 사이즈','text'],['ctwt','카톤 중량','text'],
+  ['rrp','소비자가','text'],['sp','판매가','text'],['avg','평균 공급가','ro'],['cost','재고단가(원가)','ro'],
+  ['sz','사이즈','text'],['ctn','카톤 사이즈','text'],['ctwt','카톤 중량','text'],
   ['wt','무게(g)','text'],['pack','입수','text'],
   ['oc','제조국','text'],['ag','권장연령','text'],
   ['kcn','KC 인증명','text'],['kcno','KC 인증번호','text'],
@@ -1927,6 +1982,12 @@ function specValues(o){
     bc:displayBc(o.bc||(m&&m.bc)||'',brd),
     lb:(cd&&cd.lb)||o.lbc||od.lbc||'',
     rrp:money(o.rrp||(m&&m.rrp)),
+    sp:money(cd&&cd.sp),
+    avg:(function(){
+      var a=supplyPrice(o);
+      return a?(Number(a.unit).toLocaleString()+'원  ('+a.year+'년 '+a.qty.toLocaleString()+'개 기준'+(a.few?' · 표본 적음':'')+')'):'';
+    })(),
+    cost:(function(){ var c=costPrice(o); return c?Number(c).toLocaleString()+'원':''; })(),
     sz:(cd&&cd.sz)||kn.sz||'',
     wt:toGram((cd&&cd.wt)||kn.wt),
     pack:(o.pack||od.pack||(m&&m.pack)||(cd&&cd.ct)||''),
