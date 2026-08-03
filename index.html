@@ -1296,12 +1296,12 @@ function fetchMaster(){
     return r.json();
   }).then(function(arr){
     if(!Array.isArray(arr)||!arr.length)throw new Error('empty');
-    ms.list=arr;ms.status='ok';ms.src='외부 파일';
+    ms.list=arr;ms.status='ok';ms.src='외부 파일';_msIdx=null;mergeOrderProducts();
     if(state.view==='master'||state.view==='dash')render();
   }).catch(function(){
     try{
       ms.list=JSON.parse(document.getElementById('masterData').textContent);
-      ms.status='ok';ms.src='내장 데이터';
+      ms.status='ok';ms.src='내장 데이터';_msIdx=null;mergeOrderProducts();
     }catch(e){ ms.status='error';ms.err=String(e.message||e); }
     if(state.view==='master'||state.view==='dash')render();
   });
@@ -1654,7 +1654,7 @@ function certBadges(o){
     +'</span>';
 }
 function vMaster(){
-  var h=pageHead('상품 마스터','영업DB '+ms.list.length.toLocaleString()+'종 · 재고_RAW 실시간 연동');
+  var h=pageHead('상품 마스터',ms.list.length.toLocaleString()+'종 · 영업DB + 오더 RAW 통합'+(ms.added?' (오더 신규 '+ms.added+'종)':'')+' · 재고_RAW 연동');
   if(ms.status==='loading'){
     var sk='';for(var si=0;si<10;si++)sk+='<div class="skelCard"><div class="skel a"></div><div class="skel b"></div><div class="skel c"></div></div>';
     return h+'<div class="skelGrid">'+sk+'</div>';
@@ -1674,7 +1674,7 @@ function vMaster(){
   });
   var rtNote=rt.status==='ok'?('재고_RAW '+rt.count.toLocaleString()+'품목'):(rt.status==='loading'?'불러오는 중…':'연결 실패');
   h+='<div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">'
-    +metric('전체 상품',ms.list.length.toLocaleString(),'종','영업DB 기준','boxes','','')
+    +metric('전체 상품',ms.list.length.toLocaleString(),'종',ms.added?'영업DB + 오더 '+ms.added+'종':'영업DB + 오더 통합','boxes','','')
     +metric('재고 연동',rt.status==='ok'?linked.toLocaleString():'…','종',rtNote,'link','','')
     +metric('재고 보유',rt.status==='ok'?hasStock.toLocaleString():'…','종',rt.status==='ok'?liveQty.toLocaleString()+'pcs 가용':'재고 로딩 중','warehouse','','')
     +metric('재고 소진',rt.status==='ok'?zeroStock.toLocaleString():'…','종','가용재고 0 이하','package-x','','',zeroStock>0)
@@ -1757,8 +1757,8 @@ function vMaster(){
 
 function msByBc(bc){
   var b=normBc(bc); if(!b||ms.status!=='ok')return null;
-  for(var i=0;i<ms.list.length;i++) if(normBc(ms.list[i].bc)===b) return ms.list[i];
-  return null;
+  if(!_msIdx){ _msIdx={}; ms.list.forEach(function(o){var k=normBc(o.bc);if(k&&!_msIdx[k])_msIdx[k]=o;}); }
+  return _msIdx[b]||null;
 }
 function priceRow(o){
   var cd=catDetail(o), m=msByBc(o.bc);
@@ -1857,6 +1857,38 @@ function displayBc(bc,br){
   if((b==='펀코'||b==='MGA')&&/^0[0-9]{12}$/.test(s))return s.slice(1);
   return s;
 }
+
+/* ---- 상품 목록 = 영업DB + 오더 RAW(3개년) 합집합 ---- */
+function mergeOrderProducts(){
+  if(ms.status!=='ok')return;
+  var idx={};
+  ms.list.forEach(function(o){ var b=normBc(o.bc); if(b)idx[b]=o; });
+  var added=0;
+  YEARS.slice().sort().forEach(function(y){
+    (state.data[y]||[]).forEach(function(r){
+      var b=normBc(r.bc); if(!b)return;
+      var name=r.name||r.desc||'';
+      if(idx[b]){
+        var t=idx[b];
+        if(!t.name&&name)t.name=name;
+        if(!t.no&&r.code)t.no=r.code;
+        if(!t.pack&&r.pack)t.pack=r.pack;
+        if(!t.kcno&&r.kcno)t.kcno=r.kcno;
+        if(!t.kcn&&r.kcname)t.kcn=r.kcname;
+        if(!t.knet&&r.knet)t.knet=r.knet;
+        if(!t.lotte&&r.lotte)t.lotte=r.lotte;
+        return;
+      }
+      if(!name)return;
+      var o={bc:r.bc,name:name,no:r.code||'',br:r.br||'',pack:r.pack||'',
+        kcno:r.kcno||'',kcn:r.kcname||'',knet:r.knet||'',lotte:r.lotte||'',_src:'order'};
+      idx[b]=o; ms.list.push(o); added++;
+    });
+  });
+  if(added){ ms.added=(ms.added||0)+added; _msIdx=null; }
+  return added;
+}
+var _msIdx=null;
 /* ---- 상품 스펙 (편집 가능) ---- */
 var SPEC_F=[
   ['name','상품명','text'],['item','아이템번호','text'],['bc','바코드','ro'],['lb','물류바코드','text'],
@@ -2670,7 +2702,7 @@ function ensureAllYears(){
   if(!missing.length)return;
   _allYearsReq=true;
   Promise.all(missing.map(function(y){return loadYear(y)})).then(function(){
-    _ordIdx=null;
+    _ordIdx=null; mergeOrderProducts();
     if(state.view==='master')render();
     refreshOpenPanel();
   });
