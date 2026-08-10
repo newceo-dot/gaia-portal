@@ -191,6 +191,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
 
 .tbl th.thCol{width:44px;padding:9px 6px}
 .tbl td.thCell{width:44px;padding:5px 6px}
+
+.yTag{display:inline-block;font-size:.68rem;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--g100);color:var(--g700)}
 .rowTh{width:34px;height:34px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:8px;display:block;transition:transform .2s var(--ease)}
 .tbl tbody tr:hover .rowTh{transform:scale(1.5);box-shadow:var(--sh-md);position:relative;z-index:3}
 .tbl td.name{max-width:320px;overflow:hidden;text-overflow:ellipsis;font-weight:600}
@@ -568,7 +570,17 @@ function kcStateOf(r){
   if(r.kct||r.kcname)return'prog';
   return'none';
 }
-function rows(){return state.data[state.year]||[]}
+var _allRows=null,_allKey='';
+function rows(){
+  if(state.year!=='ALL')return state.data[state.year]||[];
+  var key=YEARS.filter(function(y){return state.data[y]}).join(',');
+  if(_allRows&&_allKey===key)return _allRows;
+  var out=[];
+  YEARS.slice().sort().reverse().forEach(function(y){
+    (state.data[y]||[]).forEach(function(r){ r._y=y; out.push(r); });
+  });
+  _allRows=out;_allKey=key;return out;
+}
 function refreshIcons(){try{lucide.createIcons();}catch(e){}}
 
 function derive(rs){
@@ -630,14 +642,20 @@ function hideNotice(){var n=$('#notice');n.className='';n.innerHTML=''}
 
 /* ================= 상단/내비 ================= */
 function buildYearSeg(){
-  $('#yearSeg').innerHTML=YEARS.map(function(y){
-    return '<button data-y="'+y+'" class="'+(y===state.year?'on':'')+'">'+y+'</button>';
+  var opts=YEARS.map(function(y){return [y,y]}).concat([['ALL','전체']]);
+  $('#yearSeg').innerHTML=opts.map(function(o){
+    return '<button data-y="'+o[0]+'" class="'+(o[0]===state.year?'on':'')+'">'+o[1]+'</button>';
   }).join('');
 }
 $('#yearSeg').addEventListener('click',function(e){
   var b=e.target.closest('button[data-y]');if(!b)return;
-  state.year=b.dataset.y;buildYearSeg();
-  loadYear(state.year).then(render);
+  state.year=b.dataset.y;buildYearSeg();_allRows=null;
+  if(state.year==='ALL'){
+    $('#loading').classList.add('on');
+    Promise.all(YEARS.map(function(y){return loadYear(y)})).then(function(){
+      $('#loading').classList.remove('on');_allRows=null;_ordIdx=null;render();
+    });
+  } else loadYear(state.year).then(render);
 });
 $('#btnRefresh').addEventListener('click',function(){_rtSuf=null;fetchStock(true);fetchCert(true);loadYear(state.year,true).then(render);});
 $('#btnMeeting').addEventListener('click',function(){
@@ -647,7 +665,19 @@ $('#btnMeeting').addEventListener('click',function(){
   this.querySelector('span').textContent=on?'회의 종료':'회의 모드';
 });
 $('#gq').addEventListener('keydown',function(e){
-  if(e.key==='Enter'&&!e.isComposing){state.f={q:this.value.trim(),brand:'',status:'',im:''};go('orders');}
+  if(e.key==='Enter'&&!e.isComposing){
+    var q=this.value.trim();
+    state.f={q:q,brand:'',status:'',im:''};
+    if(state.year!=='ALL'){
+      state.year='ALL';buildYearSeg();_allRows=null;
+      $('#loading').classList.add('on');
+      Promise.all(YEARS.map(function(y){return loadYear(y)})).then(function(){
+        $('#loading').classList.remove('on');_allRows=null;_ordIdx=null;go('orders');
+      });
+      return;
+    }
+    go('orders');
+  }
 });
 document.querySelectorAll('.nav-item[data-view]').forEach(function(b){
   b.addEventListener('click',function(){go(b.dataset.view);});
@@ -2179,7 +2209,8 @@ function render(){
   var sheetHref=m?'https://docs.google.com/spreadsheets/d/'+m.sheetId+'/edit#gid='+m.gid:'#';
   $('#btnSheet').href=sheetHref;
   var bs=$('#btnSheetSide');if(bs)bs.href=sheetHref;
-  $('#updated').textContent=m?'데이터 기준: '+new Date(m.updated).toLocaleString('ko-KR')+' · '+m.count+'행 · 10분 캐시(새로고침으로 즉시 갱신)':'';
+  $('#updated').textContent=m?('데이터 기준: '+new Date(m.updated).toLocaleString('ko-KR')+' · '
+    +(state.year==='ALL'?(rows().length+'행 (3개년 통합)'):(m.count+'행'))+' · 10분 캐시(새로고침으로 즉시 갱신)'):'';
   var rs=rows(),d=derive(rs);
   var co=$('#cntOrders');if(co)co.textContent=d.open.length||'';
   var lg=$('#cntLogi');if(lg){lg.textContent=d.delayed.length||'';lg.className='cnt'+(d.delayed.length?' hot':'');}
@@ -2475,17 +2506,19 @@ function vOrders(rs,d){
   }
 
   h+='<div class="card tblWrap" style="max-height:70vh"><table class="tbl"><thead><tr>'
+    +(state.year==='ALL'?'<th>년도</th>':'')
     +'<th>발주일</th><th>브랜드</th><th class="thCol"></th><th>품목명</th><th>ITEM#</th><th class="num">수량</th><th class="num">금액</th><th>입고예정</th><th>ETD</th><th>입고일</th><th>상태</th>'
     +'</tr></thead><tbody>'
     +(fl.length?fl.map(function(r){
       var st=r._dl?'<span class="badge b-delay">지연</span>':'<span class="badge '+ST[r._st].cls+'">'+ST[r._st].label+'</span>';
-      return '<tr class="'+(r._dl?'rowDelay':'')+'" data-r="'+r.r+'">'
+      return '<tr class="'+(r._dl?'rowDelay':'')+'" data-r="'+r.r+'" data-y="'+esc(r._y||state.year)+'">'
+        +(state.year==='ALL'?'<td><span class="yTag">'+esc(r._y||'')+'</span></td>':'')
         +'<td>'+esc(r.od||'')+'</td><td>'+esc(r.br||'')+'</td>'
         +rowThumb(r.bc)
         +'<td class="name" title="'+esc(r.name||r.desc||'')+'">'+esc(r.name||r.desc||'')+'</td>'
         +'<td>'+esc(r.item||'')+'</td><td class="num">'+esc(r.qty||'')+'</td><td class="num">'+esc(r.amt||'')+'</td>'
         +'<td>'+esc(r.im||'')+'</td><td>'+esc(r.etd||'')+'</td><td>'+esc(r.ind||'')+'</td><td>'+st+'</td></tr>';
-    }).join(''):'<tr><td colspan="11"><div class="empty">조건에 맞는 오더가 없습니다</div></td></tr>')
+    }).join(''):'<tr><td colspan="'+(state.year==='ALL'?12:11)+'"><div class="empty">조건에 맞는 오더가 없습니다</div></td></tr>')
     +'</tbody></table></div>';
   return h;
 }
@@ -3416,6 +3449,7 @@ function bindView(){
   v.querySelectorAll('[data-r]').forEach(function(el){
     el.addEventListener('click',function(e){
       if(e.target.closest('a')||e.target.closest('[data-om]'))return;
+      state._panelY=el.dataset.y||null;
       openPanel(parseInt(el.dataset.r,10));
     });
   });
@@ -3430,8 +3464,10 @@ function refreshOrders(){
 function openPanel(sheetRow){
   ensurePGrid();
   ensureAllYears(); ensureKcMaster();
-  var r=rows().find(function(x){return x.r===sheetRow});if(!r)return;
-  $('#pBrand').textContent=(r.br||'')+(r._dl?'  ·  ⚠ 지연':'');
+  var r=rows().find(function(x){return x.r===sheetRow&&(!state._panelY||x._y===state._panelY)})
+        ||rows().find(function(x){return x.r===sheetRow});
+  if(!r)return;
+  $('#pBrand').textContent=(r.br||'')+(r._y?'  ·  '+r._y:'')+(r._dl?'  ·  ⚠ 지연':'');
   $('#pName').textContent=r.name||r.desc||'(품목명 없음)';
   var order=['item','desc','code','bc','lbc','price','qty','pack','amt','od','sc','lc','im','etd','eta','ind','load','bl','obl','req','kct','sales','knet','lotte','kcname','kcno','kcs','sm','memo'];
   state._panelRow=sheetRow; state._panelMi=null;
@@ -3439,7 +3475,8 @@ function openPanel(sheetRow){
   var skip={bc:1,lbc:1,price:1,pack:1,knet:1,lotte:1,kcno:1,kcname:1,name:1,item:1};
   var pairs=order.filter(function(f){return r[f]&&!skip[f]}).map(function(f){return [FIELD_KO[f],r[f]]});
   renderPanelBody(po,pairs);
-  var m=state.meta[state.year];
+  var yy=r._y||state.year;
+  var m=state.meta[yy]||state.meta[state.year];
   $('#pLink').href=m?'https://docs.google.com/spreadsheets/d/'+m.sheetId+'/edit#gid='+m.gid+'&range=A'+r.r:'#';
   $('#pLink').textContent='시트에서 이 행 열기 ↗';
   $('#ovl').classList.add('on');$('#panel').classList.add('on');
