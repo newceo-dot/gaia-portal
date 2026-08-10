@@ -6,6 +6,7 @@
 <title>CO Draft 대조 검증 · GAIA</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --ink:#0B3D2C; --bg:#F4F5F4; --panel:#fff; --panel2:#F7F8F7; --line:#E2E6E4;
@@ -105,14 +106,14 @@ tr.bad td{background:#FEF7F7}
   <div class="topbar"><a class="back" href="../">← GAIA 포털</a></div>
   <header>
     <h1>CO Draft 대조 검증 <span class="tag">CO · Invoice · Packing List</span></h1>
-    <div class="lead">서류를 올리면 브라우저에서 품목 단위로 대조합니다. 서버 전송·API 키 없이 동작합니다.</div>
+    <div class="lead">서류를 올리면 브라우저에서 품목 단위로 대조합니다. PDF·엑셀·이미지 지원 · 서버 전송이나 API 키 없이 동작합니다.</div>
   </header>
 
   <label class="dropzone" id="dz">
     <div class="dz-icon">📄</div>
-    <div class="dz-main">PDF를 끌어다 놓거나 클릭해 선택</div>
-    <div class="dz-sub">CO draft · Invoice · Packing List를 한 번에 · 문서 종류 자동 판별 · DRAFT 워터마크 자동 제거</div>
-    <input type="file" id="fileInput" accept="application/pdf" multiple>
+    <div class="dz-main">PDF · 엑셀 · 이미지를 끌어다 놓거나 클릭해 선택</div>
+    <div class="dz-sub">CO draft · Invoice · Packing List · B/L을 한 번에 · 종류 자동 판별 · DRAFT 워터마크 제거 · 스캔본은 문자 인식(OCR) 자동 전환</div>
+    <input type="file" id="fileInput" accept=".pdf,.xlsx,.xlsm,.xls,.csv,.png,.jpg,.jpeg,.gif,.webp,.bmp,.tif,.tiff" multiple>
   </label>
 
   <div id="fileList" class="files"></div>
@@ -141,11 +142,8 @@ function up(s){return String(s||'').toUpperCase()}
 function nz(s){var n=String(s==null?'':s).replace(/[^0-9.\-]/g,'');var f=parseFloat(n);return isFinite(f)?f:null}
 function fmt(n,d){ if(n==null)return '—';
   return Number(n).toLocaleString(undefined,{minimumFractionDigits:d||0,maximumFractionDigits:d||0}); }
-function r2(n){return n==null?null:Math.round(n*100)/100}
 
-/* ===== PDF 텍스트 추출 =====
-   워터마크 판별: 글자 크기가 아니라 '회전 여부'로 판단한다.
-   (DRAFT 워터마크는 대각선 회전, 인보이스 제목은 크지만 수평이므로 보존) */
+/* ===== PDF 텍스트 추출 (워터마크 제거) ===== */
 function readPdf(file){
   return new Promise(function(res,rej){
     var fr=new FileReader();
@@ -159,15 +157,14 @@ function readPdf(file){
         pages.forEach(function(tc){
           var its=tc.items.filter(function(it){return it.str&&it.str.trim()});
           if(!its.length)return;
+          /* 글자 크기 중앙값 대비 지나치게 큰 텍스트 = 워터마크/로고 → 제외 */
           var sizes=its.map(function(it){return Math.abs(it.transform[3])||it.height||10}).slice().sort(function(a,b){return a-b});
           var med=sizes[Math.floor(sizes.length/2)]||10;
           var keep=its.filter(function(it){
             var s=Math.abs(it.transform[3])||it.height||10;
-            var rot=Math.abs(it.transform[1])>0.5||Math.abs(it.transform[2])>0.5;
-            var drop=(rot&&s>=med*1.3)                       /* 회전된 큰 글씨 = 워터마크 */
-                   ||(s>med*4&&/DRAFT|COPY|SPECIMEN|SAMPLE|VOID/i.test(it.str));
-            if(drop)dropped++;
-            return !drop;
+            var ok=(s<=med*1.9)||(s<=14);
+            if(!ok)dropped++;
+            return ok;
           });
           var rows={};
           keep.forEach(function(it){
@@ -186,6 +183,126 @@ function readPdf(file){
     };
     fr.onerror=function(){rej(new Error('파일을 읽을 수 없습니다'))};
     fr.readAsArrayBuffer(file);
+  });
+}
+
+
+/* ===== 라이브러리 지연 로드 ===== */
+var _libs={};
+function loadLib(src,check){
+  if(check())return Promise.resolve();
+  if(_libs[src])return _libs[src];
+  _libs[src]=new Promise(function(res,rej){
+    var s=document.createElement('script');
+    s.src=src; s.onload=function(){res()};
+    s.onerror=function(){rej(new Error('라이브러리를 불러오지 못했습니다'))};
+    document.head.appendChild(s);
+  });
+  return _libs[src];
+}
+function ensureOCR(){
+  return loadLib('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js',
+    function(){return typeof Tesseract!=='undefined'});
+}
+var _ocrWorker=null;
+function ocrWorker(){
+  if(_ocrWorker)return _ocrWorker;
+  _ocrWorker=ensureOCR().then(function(){
+    return Tesseract.createWorker('eng',1,{logger:function(){}});
+  });
+  return _ocrWorker;
+}
+function ocrCanvas(cv,label){
+  return ocrWorker().then(function(w){
+    setStatus('<span class="spin"></span>'+esc(label)+' 문자 인식 중… (최초 1회는 30초 정도 걸립니다)');
+    return w.recognize(cv);
+  }).then(function(r){
+    return String((r&&r.data&&r.data.text)||'').split('\n')
+      .map(function(x){return x.replace(/\s+/g,' ').trim()}).filter(Boolean);
+  });
+}
+function setStatus(html){ statusLine.innerHTML=html?'<div class="info-box">'+html+'</div>':''; }
+
+/* ===== 엑셀 ===== */
+function readExcel(file){
+  return new Promise(function(res,rej){
+    var fr=new FileReader();
+    fr.onload=function(){
+      try{
+        var wb=XLSX.read(new Uint8Array(fr.result),{type:'array'});
+        var lines=[];
+        wb.SheetNames.forEach(function(nm){
+          var rows=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,blankrows:false,defval:''});
+          if(wb.SheetNames.length>1)lines.push('['+nm+']');
+          rows.forEach(function(r){
+            var t=r.map(function(c){return String(c==null?'':c).trim()})
+                  .filter(function(x){return x!==''}).join(' ').replace(/\s+/g,' ').trim();
+            if(t)lines.push(t);
+          });
+        });
+        res({lines:lines,dropped:0,kind:'excel'});
+      }catch(e){ rej(new Error('엑셀을 읽을 수 없습니다')); }
+    };
+    fr.onerror=function(){rej(new Error('파일을 읽을 수 없습니다'))};
+    fr.readAsArrayBuffer(file);
+  });
+}
+
+/* ===== 이미지 OCR ===== */
+function readImage(file){
+  return new Promise(function(res,rej){
+    var url=URL.createObjectURL(file), im=new Image();
+    im.onload=function(){
+      var scale=Math.min(2200/Math.max(im.width,im.height),2);
+      if(!isFinite(scale)||scale<1)scale=1;
+      var cv=document.createElement('canvas');
+      cv.width=Math.round(im.width*scale); cv.height=Math.round(im.height*scale);
+      var cx=cv.getContext('2d');
+      cx.fillStyle='#fff'; cx.fillRect(0,0,cv.width,cv.height);
+      cx.drawImage(im,0,0,cv.width,cv.height);
+      URL.revokeObjectURL(url);
+      ocrCanvas(cv,file.name).then(function(lines){res({lines:lines,dropped:0,kind:'ocr'})}).catch(rej);
+    };
+    im.onerror=function(){URL.revokeObjectURL(url);rej(new Error('이미지를 열 수 없습니다'))};
+    im.src=url;
+  });
+}
+
+/* ===== 스캔 PDF OCR (텍스트가 없을 때) ===== */
+function ocrPdf(file){
+  return new Promise(function(res,rej){
+    var fr=new FileReader();
+    fr.onload=function(){
+      pdfjsLib.getDocument({data:new Uint8Array(fr.result)}).promise.then(function(pdf){
+        var n=Math.min(pdf.numPages,3), out=[], chain=Promise.resolve();
+        for(var i=1;i<=n;i++)(function(pg){
+          chain=chain.then(function(){
+            return pdf.getPage(pg).then(function(p){
+              var vp=p.getViewport({scale:2});
+              var cv=document.createElement('canvas');
+              cv.width=vp.width; cv.height=vp.height;
+              return p.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise.then(function(){
+                return ocrCanvas(cv,file.name+' ('+pg+'/'+n+'p)');
+              }).then(function(ls){ out=out.concat(ls); });
+            });
+          });
+        })(i);
+        return chain.then(function(){res({lines:out,dropped:0,kind:'ocr'})});
+      }).catch(rej);
+    };
+    fr.onerror=function(){rej(new Error('파일을 읽을 수 없습니다'))};
+    fr.readAsArrayBuffer(file);
+  });
+}
+
+function readAny(file){
+  var n=file.name.toLowerCase();
+  if(/\.(xlsx|xlsm|xls|csv)$/.test(n)||/spreadsheet|excel|csv/.test(file.type))return readExcel(file);
+  if(/\.(png|jpe?g|gif|webp|bmp|tiff?)$/.test(n)||/^image\//.test(file.type))return readImage(file);
+  return readPdf(file).then(function(r){
+    if(r.lines.length>=3)return r;
+    setStatus('<span class="spin"></span>'+esc(file.name)+' 은 스캔 이미지입니다 — 문자 인식으로 전환합니다');
+    return ocrPdf(file).catch(function(){return r});
   });
 }
 
@@ -209,13 +326,13 @@ function detectRole(t){
 }
 
 /* ===== 공통 유틸 ===== */
-var CODE_SRC='(\\d{10}(?:[A-Z][A-Z0-9]{0,2})?)';
-var ITEM_SRC='\\b'+CODE_SRC+'(?![\\dA-Z])';
+var ITEM_SRC='\\b(\\d{10}(?:[A-Z][A-Z0-9]{0,2})?)(?![\\dA-Z])';
 function itemCodes(t){
   var rx=new RegExp(ITEM_SRC,'g'),m,out=[],seen={};
   while((m=rx.exec(t))!==null){ if(!seen[m[1]]){seen[m[1]]=1;out.push(m[1]);} }
   return out;
 }
+function allNums(t,re){var rx=new RegExp(re.source,'g'),m,out=[];while((m=rx.exec(t))!==null)out.push(nz(m[1]));return out}
 function pick(t,re){var m=t.match(re);return m?String(m[1]).trim():''}
 function normDate(s){
   if(!s)return '';
@@ -228,6 +345,14 @@ function normDate(s){
   if(m)return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);
   return t;
 }
+function segments(t,codes){
+  var pos=codes.map(function(c){return {c:c,i:t.indexOf(c)}}).filter(function(p){return p.i>=0});
+  pos.sort(function(a,b){return a.i-b.i});
+  return pos.map(function(p,k){
+    return {code:p.c, pre:t.slice(Math.max(0,p.i-46),p.i),
+            body:t.slice(p.i+p.c.length, k+1<pos.length?pos[k+1].i:t.length)};
+  });
+}
 function hsOf(t){
   var hs={};
   (t.match(/H\.?\s?S\.?\s*(?:CODE|NO)?[.\s:]*([\d.]{6,13})/gi)||[]).forEach(function(x){
@@ -235,88 +360,8 @@ function hsOf(t){
   });
   return Object.keys(hs).sort();
 }
-/* 같은 코드가 여러 줄에 나오면 무조건 합산 (분할 선적·중복 라인 대응) */
-function accum(d,code,o,meta){
-  var it=d.items[code];
-  if(!it){ it=d.items[code]={rows:0,nos:[],pages:[]}; d.order.push(code); }
-  ['qty','ctns','gw','nw','val','cbm'].forEach(function(k){
-    if(o[k]!=null)it[k]=r2((it[k]||0)+o[k]);
-  });
-  if(it.price==null&&o.price!=null)it.price=o.price;
-  it.rows++;
-  if(meta){ if(meta.no!=null)it.nos.push(meta.no); if(meta.page!=null)it.pages.push(meta.page); }
-  return it;
-}
-function dupNote(d){
-  var n=0;Object.keys(d.items||{}).forEach(function(c){if(d.items[c].rows>1)n++});
-  return n;
-}
 
-/* ===== CO 파서 (행 단위) ===== */
-function coRows(t){
-  var lines=t.split('\n'),page=1,rows=[],cur=null;
-  var rxPage=/Page\s*[:：]?\s*(\d+)\s*(?:of|\/)\s*\d+/i;
-  var rxKg=/([\d,]+(?:\.\d+)?)\s*(?:KGM|KGS|KG)\b/i;
-  var rxUsd=/([\d,]+\.\d{2})\s*(?:USD|USD\*|US\$)/i;
-  var rxCode=new RegExp(ITEM_SRC);
-  var rxNo=/^\s*(\d{1,3})\s+(?=.*(?:HS[.\s]*CODE|RVC|KGM))/i;
-  lines.forEach(function(L){
-    var mp=L.match(rxPage); if(mp)page=parseInt(mp[1],10);
-    if(/^\s*TOTAL\s*[:：]/i.test(L))return;              /* 합계 문구는 품목 아님 */
-    var mk=L.match(rxKg);
-    if(mk){
-      var mn=L.match(rxNo);
-      cur={no:mn?parseInt(mn[1],10):null,page:page,gw:nz(mk[1]),val:null,code:null};
-      rows.push(cur);
-    }
-    if(!cur)return;
-    if(cur.val==null){var mu=L.match(rxUsd);if(mu)cur.val=nz(mu[1]);}
-    if(!cur.code){var mc=L.match(rxCode);if(mc)cur.code=mc[1];}
-  });
-  return rows.filter(function(r){return r.code});
-}
-function parseCO(t){
-  var d={role:'CO',items:{},order:[]};
-  var rows=coRows(t);
-  d.rowCount=rows.length;
-  if(rows.length){
-    rows.forEach(function(r,i){
-      accum(d,r.code,{gw:r.gw,val:r.val},{no:(r.no!=null?r.no:i+1),page:r.page});
-    });
-    var sg=0,ng=0,sv=0,nv=0;
-    rows.forEach(function(r){ if(r.gw!=null){sg+=r.gw;ng++} if(r.val!=null){sv+=r.val;nv++} });
-    d.totalGw=ng?r2(sg):null;
-    d.sumVal=nv?r2(sv):null;
-  } else {
-    /* 예비 경로: 행 인식 실패 시 코드 순서 기준 */
-    var codes=itemCodes(t);
-    var gws=[],vals=[],m,rg=/([\d,]+\.\d+)\s*KGM/g,rv=/([\d,]+\.\d{2})\s*USD/g;
-    while((m=rg.exec(t))!==null)gws.push(nz(m[1]));
-    while((m=rv.exec(t))!==null)vals.push(nz(m[1]));
-    codes.forEach(function(c,i){accum(d,c,{gw:gws[i],val:vals[i]},{no:i+1,page:null})});
-    var s=0,n=0;gws.forEach(function(v){if(v!=null){s+=v;n++}});
-    d.totalGw=n?r2(s):null; d.sumVal=null; d.rowCount=codes.length;
-  }
-  d.totalAmount=nz(pick(t,/\(([\d,]+\.\d{2})\)\s*USD/));
-  if(d.totalAmount==null)d.totalAmount=d.sumVal;
-  d.totalCtns=nz(pick(t,/\(([\d,]+)\)\s*CARTON/i));
-  var cnt={},mm,rx=/\b(\d{8})\b/g;
-  while((mm=rx.exec(t))!==null)cnt[mm[1]]=(cnt[mm[1]]||0)+1;
-  var bi='',bc=1;Object.keys(cnt).forEach(function(k){if(cnt[k]>bc){bc=cnt[k];bi=k}});
-  d.invNo=bi;
-  var dc={},rd=/\b(\d{2}\/\d{2}\/\d{4})\b/g;
-  while((mm=rd.exec(t))!==null)dc[mm[1]]=(dc[mm[1]]||0)+1;
-  var bd='',bdc=0;Object.keys(dc).forEach(function(k){if(dc[k]>bdc){bdc=dc[k];bd=k}});
-  d.invDate=normDate(bd);
-  d.hs=hsOf(t);
-  d.exporter=pick(t,/consigned\s*from[^\n]*\n\s*([^\n]{5,70})/i);
-  d.consignee=pick(t,/consigned\s*to[^\n]*\n\s*([^\n]{5,70})/i);
-  d.vessel=pick(t,/Vessel[^\n]{0,30}\n\s*([^\n]{4,45})/i);
-  d.discharge=pick(t,/Port\s*of\s*Discharge\s*\n?\s*([^\n]{4,45})/i);
-  d.origin=coCountry(t);
-  d.criterion=pick(t,/(RVC\s?[\d.]+%|origin\s*criteri(?:on|a)[.:\s]*([A-Z0-9\-() ]{1,16}))/i);
-  return d;
-}
+/* ===== 문서별 파서 ===== */
 var CTRY=['THAILAND','CHINA','VIET NAM','VIETNAM','KOREA','INDONESIA','MALAYSIA','JAPAN',
   'TAIWAN','INDIA','HONG KONG','SINGAPORE','PHILIPPINES','CAMBODIA','POLAND','GERMANY'];
 function firstCountry(s){
@@ -330,6 +375,56 @@ function coCountry(t){
   if(c)return c;
   m=t.match(/Issued\s*in\s*([\s\S]{0,60})/i);
   return m?firstCountry(m[1]):'';
+}
+function coPositions(t){
+  var lines=t.split('\n'), page=1, no=null, map={};
+  var rxPage=/Page\s*[:：]?\s*(\d+)\s*(?:of|\/)\s*\d+/i;
+  var rxNo=/^\s*(\d{1,3})\s+(?=.*(?:HS[.\s]*CODE|RVC|KGM))/i;
+  var rxCode=new RegExp(ITEM_SRC);
+  lines.forEach(function(L){
+    var mp=L.match(rxPage); if(mp)page=parseInt(mp[1],10);
+    var mn=L.match(rxNo); if(mn)no=parseInt(mn[1],10);
+    var mc=L.match(rxCode);
+    if(mc&&!map[mc[1]])map[mc[1]]={no:no,page:page};
+  });
+  return map;
+}
+function parseCO(t){
+  var d={role:'CO',items:{},order:[]};
+  var codes=itemCodes(t);
+  var posMap=coPositions(t);
+  var gws=allNums(t,/([\d,]+\.\d+)\s*KGM/);
+  var vals=allNums(t,/([\d,]+\.\d{2})\s*USD/);
+  d.totalAmount=nz(pick(t,/\(([\d,]+\.\d{2})\)\s*USD/));
+  d.totalCtns=nz(pick(t,/\(([\d,]+)\)\s*CARTON/i));
+  if(d.totalAmount!=null){
+    var i=vals.indexOf(d.totalAmount);
+    if(i>=codes.length)vals.splice(i,1);
+  }
+  codes.forEach(function(c,i){
+    var pm=posMap[c]||{};
+    d.items[c]={val:vals[i]!=null?vals[i]:null, gw:gws[i]!=null?gws[i]:null,
+                no:(pm.no!=null?pm.no:(i+1)), page:pm.page||null};
+    d.order.push(c);
+  });
+  var s=0,n=0;gws.slice(0,codes.length).forEach(function(v){if(v!=null){s+=v;n++}});
+  d.totalGw=n?Math.round(s*100)/100:null;
+  var cnt={},m,rx=/\b(\d{8})\b/g;
+  while((m=rx.exec(t))!==null)cnt[m[1]]=(cnt[m[1]]||0)+1;
+  var bi='',bc=1;Object.keys(cnt).forEach(function(k){if(cnt[k]>bc){bc=cnt[k];bi=k}});
+  d.invNo=bi;
+  var dc={},rd=/\b(\d{2}\/\d{2}\/\d{4})\b/g;
+  while((m=rd.exec(t))!==null)dc[m[1]]=(dc[m[1]]||0)+1;
+  var bd='',bdc=0;Object.keys(dc).forEach(function(k){if(dc[k]>bdc){bdc=dc[k];bd=k}});
+  d.invDate=normDate(bd);
+  d.hs=hsOf(t);
+  d.exporter=pick(t,/consigned\s*from[^\n]*\n\s*([^\n]{5,70})/i);
+  d.consignee=pick(t,/consigned\s*to[^\n]*\n\s*([^\n]{5,70})/i);
+  d.vessel=pick(t,/Vessel[^\n]{0,26}\n\s*([^\n]{4,45})/i);
+  d.discharge=pick(t,/Port\s*of\s*Discharge\s*\n?\s*([^\n]{4,45})/i);
+  d.origin=coCountry(t);
+  d.criterion=pick(t,/(RVC\s?[\d.]+%|origin\s*criteri(?:on|a)[.:\s]*([A-Z0-9\-() ]{1,16}))/i);
+  return d;
 }
 /* Messers/Consignee 블록에서 회사명 줄만 추출 */
 function consigneeOf(t){
@@ -349,38 +444,17 @@ function consigneeOf(t){
   }
   return '';
 }
-
-/* ===== Invoice 파서 (행 단위) ===== */
 function parseINV(t){
   var d={role:'Invoice',items:{},order:[]};
-  var lines=t.split('\n');
-  var rxRow=new RegExp('^\\s*([\\d,]+)\\s*PCS?\\s+'+CODE_SRC+'\\s+([\\d,]+\\.\\d{2})\\s+([\\d,]+\\.\\d{2})','i');
-  var rxCtn=/([\d,]+)\s*Cartons?\b/i;
-  var cur=null,rowN=0;
-  lines.forEach(function(L){
-    var m=L.match(rxRow);
-    if(m){
-      rowN++;
-      cur=accum(d,m[2],{qty:nz(m[1]),price:nz(m[3]),val:nz(m[4])},null);
-      cur._ctnDone=false;
-      return;
-    }
-    if(!cur||cur._ctnDone)return;
-    if(/^\s*Total\b/i.test(L))return;
-    var c=L.match(rxCtn);
-    if(c){ cur.ctns=r2((cur.ctns||0)+nz(c[1])); cur._ctnDone=true; }
+  segments(t,itemCodes(t)).forEach(function(sg){
+    var o={},q=sg.pre.match(/([\d,]+)\s*PCS?\s*$/i);
+    if(q)o.qty=nz(q[1]);
+    var pa=sg.body.match(/^\s*([\d,]+\.\d{2})\s+([\d,]+\.\d{2})/);
+    if(pa){o.price=nz(pa[1]);o.val=nz(pa[2]);}
+    var ct=sg.body.match(/([\d,]+)\s*Cartons?\b/i);
+    if(ct)o.ctns=nz(ct[1]);
+    d.items[sg.code]=o; d.order.push(sg.code);
   });
-  d.rowCount=rowN;
-  if(!rowN){ /* 예비 경로 */
-    itemCodes(t).forEach(function(c){
-      var i=t.indexOf(c),pre=t.slice(Math.max(0,i-46),i),body=t.slice(i+c.length,i+300);
-      var o={},q=pre.match(/([\d,]+)\s*PCS?\s*$/i); if(q)o.qty=nz(q[1]);
-      var pa=body.match(/^\s*([\d,]+\.\d{2})\s+([\d,]+\.\d{2})/); if(pa){o.price=nz(pa[1]);o.val=nz(pa[2])}
-      var ct=body.match(rxCtn); if(ct)o.ctns=nz(ct[1]);
-      accum(d,c,o,null);
-    });
-  }
-  Object.keys(d.items).forEach(function(c){delete d.items[c]._ctnDone});
   d.invNo=pick(t,/Invoice\s*No[.:\s]*([A-Z0-9][A-Z0-9\-\/_]*)/i);
   d.invDate=normDate(pick(t,/Date[:\s]*(\d{1,2}[.\-\/][A-Z]{3}[.\-\/]\d{4})/i)
                    ||pick(t,/Date[:\s]*([^\n]{6,22})/i));
@@ -393,28 +467,21 @@ function parseINV(t){
   d.hs=hsOf(t);
   return d;
 }
-
-/* ===== Packing List 파서 (행 단위) ===== */
 function parsePL(t){
   var d={role:'PL',items:{},order:[]};
-  var lines=t.split('\n');
-  var rxRow=new RegExp('^\\s*([\\d,]+)\\s*PCS?\\s+'+CODE_SRC+'(?![\\dA-Z])','i');
-  var cur=null,rowN=0;
-  lines.forEach(function(L){
-    var m=L.match(rxRow);
-    if(m){ rowN++; cur=accum(d,m[2],{qty:nz(m[1])},null); cur._c=false; return; }
-    if(!cur)return;
-    if(/Total\s*(Cartons|Quantity|Gross|Net|Volume)/i.test(L))return;   /* 문서 합계 줄 제외 */
-    if(!cur._c){ var c=L.match(/([\d,]+)\s*Ctns?\b/i); if(c){cur.ctns=r2((cur.ctns||0)+nz(c[1]));cur._c=true;} }
-    var gw=L.match(/Gross\s*Weight[:\s]*([\d,]+\.?\d*)\s*KG/i);
-    if(gw)cur.gw=r2((cur.gw||0)+nz(gw[1]));
-    var nw=L.match(/Net\s*Weight[:\s]*([\d,]+\.?\d*)\s*KG/i);
-    if(nw)cur.nw=r2((cur.nw||0)+nz(nw[1]));
-    var cb=L.match(/Total\s*Measurement[:\s]*([\d,]+\.?\d*)/i);
-    if(cb)cur.cbm=r2((cur.cbm||0)+nz(cb[1]));
+  segments(t,itemCodes(t)).forEach(function(sg){
+    var o={},q=sg.pre.match(/([\d,]+)\s*PCS?\s*$/i);
+    if(q)o.qty=nz(q[1]);
+    var ct=sg.body.match(/([\d,]+)\s*Ctns?\b/i);
+    if(ct)o.ctns=nz(ct[1]);
+    var gw=sg.body.match(/Gross\s*Weight[:\s]*([\d,]+\.?\d*)\s*KG/i);
+    if(gw)o.gw=nz(gw[1]);
+    var nw=sg.body.match(/Net\s*Weight[:\s]*([\d,]+\.?\d*)\s*KG/i);
+    if(nw)o.nw=nz(nw[1]);
+    var cb=sg.body.match(/Total\s*Measurement[:\s]*([\d,]+\.?\d*)/i);
+    if(cb)o.cbm=nz(cb[1]);
+    d.items[sg.code]=o; d.order.push(sg.code);
   });
-  d.rowCount=rowN;
-  Object.keys(d.items).forEach(function(c){delete d.items[c]._c});
   d.totalCtns=nz(pick(t,/Total\s*Cartons?[:\s]*([\d,]+)/i));
   d.totalQty=nz(pick(t,/Total\s*Quantity[:\s]*([\d,]+)/i));
   d.totalGw=nz(pick(t,/Total\s*Gross\s*Weight[:\s]*([\d,]+\.?\d*)/i));
@@ -462,7 +529,7 @@ function mergeDocs(ds){
   if(!ds.length)return null;
   if(ds.length===1)return ds[0];
   var out={role:ds[0].role,items:{},order:[],merged:ds.length};
-  var sumF=['totalCtns','totalQty','totalGw','totalNw','totalCbm','totalAmount','rowCount','sumVal'];
+  var sumF=['totalCtns','totalQty','totalGw','totalNw','totalCbm','totalAmount'];
   sumF.forEach(function(f){
     var s=null;
     ds.forEach(function(d){ if(d[f]!=null){s=(s||0)+d[f]} });
@@ -477,11 +544,17 @@ function mergeDocs(ds){
   ds.forEach(function(d){
     d.order.forEach(function(c){
       var src=d.items[c]||{};
-      accum(out,c,src,null);
+      if(!out.items[c]){out.items[c]=JSON.parse(JSON.stringify(src));out.order.push(c);return}
       var t=out.items[c];
-      t.rows=(t.rows||0)+((src.rows||1)-1);
-      (src.nos||[]).forEach(function(n){t.nos.push(n)});
-      (src.pages||[]).forEach(function(p){t.pages.push(p)});
+      ['qty','ctns','gw','nw','val','cbm'].forEach(function(k){
+        if(src[k]!=null)t[k]=(t[k]||0)+src[k];
+      });
+      if(t.price==null&&src.price!=null)t.price=src.price;
+    });
+  });
+  Object.keys(out.items).forEach(function(c){
+    ['gw','nw','val','cbm'].forEach(function(k){
+      if(out.items[c][k]!=null)out.items[c][k]=Math.round(out.items[c][k]*1000)/1000;
     });
   });
   return out;
@@ -518,12 +591,6 @@ function buildReport(co,inv,pl,bl){
     addH('총 카톤 수',co.totalCtns,inv.totalCtns,'Invoice',{num:true,tol:0.5,fmt:function(v){return fmt(v)}});
   }
   if(pl&&!inv)addH('총 카톤 수',co.totalCtns,pl.totalCtns,'Packing List',{num:true,tol:0.5,fmt:function(v){return fmt(v)}});
-  /* CO 자체 합계 검산 */
-  if(co.sumVal!=null&&co.totalAmount!=null&&Math.abs(co.sumVal-co.totalAmount)>0.01){
-    head.push({f:'CO 품목 금액 합계',a:fmt(co.sumVal,2),b:fmt(co.totalAmount,2),st:'mismatch',src:'CO 자체',
-      note:'품목 합계와 CO 표기 총액이 다름'});
-    issues.push('CO 품목 금액 합계('+fmt(co.sumVal,2)+')와 CO 표기 총액('+fmt(co.totalAmount,2)+')이 다릅니다');
-  }
   /* 총중량 — CO >= 상대 서류 규칙 */
   var wRef=(inv&&inv.totalGw!=null)?{d:inv,n:'Invoice'}:((pl&&pl.totalGw!=null)?{d:pl,n:'Packing List'}:null);
   if(wRef){
@@ -532,13 +599,12 @@ function buildReport(co,inv,pl,bl){
     if(gv.st==='mismatch')issues.push('총 중량 — '+wRef.n+'('+fmt(wRef.d.totalGw,2)+'kg)이 CO('+fmt(co.totalGw,2)+'kg)보다 큽니다');
   }
   if(bl){
+    var gb=gwVerdict(co.totalGw,bl.totalGw);
     if(bl.totalGw!=null){
-      var gb=gwVerdict(co.totalGw,bl.totalGw);
       head.push({f:'총 중량 G.W (kg)',a:fmt(co.totalGw,2),b:fmt(bl.totalGw,2),st:gb.st,src:'B/L',note:gb.note});
       if(gb.st==='mismatch')issues.push('총 중량 — B/L이 CO보다 큽니다');
     }
     addH('총 카톤 수',co.totalCtns,bl.totalCtns,'B/L',{num:true,tol:0.5,fmt:function(v){return fmt(v)}});
-    if(bl.vessel)addH('선박(Vessel)',co.vessel,bl.vessel,'B/L');
   }
   if(ref){
     addH('수하인(Consignee)',co.consignee,ref.consignee,inv?'Invoice':'Packing List');
@@ -550,17 +616,15 @@ function buildReport(co,inv,pl,bl){
     issues.push('Invoice와 Packing List의 총 수량이 다릅니다');
   }
   var hsRef=(inv&&inv.hs.length)?inv:((pl&&pl.hs.length)?pl:null);
-  if(co.hs.length&&hsRef){
-    var oh=hsRef.hs;
+  if(co.hs.length||(hsRef&&hsRef.hs.length)){
+    var oh=hsRef?hsRef.hs:[];
     var onlyCo=co.hs.filter(function(x){return oh.indexOf(x)===-1});
     var onlyOt=oh.filter(function(x){return co.hs.indexOf(x)===-1});
-    var st=(onlyCo.length||onlyOt.length)?'mismatch':'match';
-    head.push({f:'HS 코드 (6자리)',a:co.hs.join(', '),b:oh.join(', '),st:st,
-      src:hsRef.role==='Invoice'?'Invoice':'Packing List',
+    var st=(co.hs.length&&oh.length)?((onlyCo.length||onlyOt.length)?'mismatch':'match'):'check';
+    head.push({f:'HS 코드 (6자리)',a:co.hs.join(', ')||'—',b:oh.join(', ')||'—',st:st,
+      src:hsRef?(hsRef.role==='Invoice'?'Invoice':'Packing List'):'—',
       note:st==='mismatch'?('CO만 '+(onlyCo.join(',')||'-')+' / 상대만 '+(onlyOt.join(',')||'-')):''});
     if(st==='mismatch')issues.push('HS 코드가 서로 다릅니다');
-  } else if(co.hs.length){
-    head.push({f:'HS 코드 (6자리)',a:co.hs.join(', '),b:'—',st:'check',src:'—',note:'상대 서류에 HS 코드 없음 (대조 불가)'});
   }
 
   /* 품목 단위 */
@@ -570,32 +634,26 @@ function buildReport(co,inv,pl,bl){
     var a=co.items[c]||null, b=(inv&&inv.items[c])||null, p=(pl&&pl.items[c])||null;
     var otherGw=(b&&b.gw!=null)?b.gw:((p&&p.gw!=null)?p.gw:null);
     var gwSrc=(b&&b.gw!=null)?'Invoice':'P/L';
-    var nos=(a&&a.nos)?a.nos.filter(function(v){return v!=null}):[];
-    var pages=(a&&a.pages)?a.pages.filter(function(v){return v!=null}):[];
     var r={code:c,coVal:a?a.val:null,invVal:b?b.val:null,coGw:a?a.gw:null,plGw:p?p.gw:null,
            qtyI:b?b.qty:null,qtyP:p?p.qty:null,ctnI:b?b.ctns:null,ctnP:p?p.ctns:null,
-           otherGw:otherGw,gwSrc:gwSrc,nos:nos,pages:pages,
-           coRows:a?(a.rows||1):0,invRows:b?(b.rows||1):0,plRows:p?(p.rows||1):0,flags:[]};
-    r.noLabel=nos.length?('#'+nos.join(', #')):'—';
-    var tag=(nos.length?('CO 항목 '+r.noLabel+(pages.length?' (p.'+pages[0]+')':'')+' · '):'')+c;
+           otherGw:otherGw,gwSrc:gwSrc,no:a?a.no:null,page:a?a.page:null,flags:[]};
+    var tag=(r.no!=null?('CO 항목 #'+r.no+(r.page?' (p.'+r.page+')':'')+' · '):'')+c;
     if(!a)r.flags.push('CO 누락');
     if(inv&&!b)r.flags.push('Invoice 누락');
     if(pl&&!p)r.flags.push('P/L 누락');
-    if(r.coRows>1||r.invRows>1||r.plRows>1)r.flags.push('중복 라인 합산(CO '+r.coRows+'/INV '+r.invRows+'/PL '+r.plRows+')');
     r.valOk=(r.coVal!=null&&r.invVal!=null)?(Math.abs(r.coVal-r.invVal)<0.01):null;
     var gv=gwVerdict(r.coGw,r.otherGw);
     r.gwSt=gv.st; r.gwOver=(r.coGw!=null&&r.otherGw!=null)?(r.otherGw-r.coGw):null;
     r.qtyOk=(r.qtyI!=null&&r.qtyP!=null)?(Math.abs(r.qtyI-r.qtyP)<0.5):null;
     r.ctnOk=(r.ctnI!=null&&r.ctnP!=null)?(Math.abs(r.ctnI-r.ctnP)<0.5):null;
-    r.bad=(r.valOk===false)||(r.qtyOk===false)||(r.ctnOk===false)||(r.gwSt==='mismatch');
+    r.bad=(r.valOk===false)||(r.qtyOk===false)||(r.ctnOk===false)||(r.gwSt==='mismatch')||r.flags.length>0;
     items.push(r);
     if(r.valOk===false)issues.push(tag+' 금액 불일치 — CO '+fmt(r.coVal,2)+' / Invoice '+fmt(r.invVal,2));
     if(r.qtyOk===false)issues.push(tag+' 수량 불일치 — Invoice '+fmt(r.qtyI)+' / P/L '+fmt(r.qtyP));
     if(r.ctnOk===false)issues.push(tag+' 카톤 불일치 — Invoice '+fmt(r.ctnI)+' / P/L '+fmt(r.ctnP));
     if(r.gwSt==='mismatch')
       issues.push(tag+' 중량 역전 — CO '+fmt(r.coGw,2)+'kg < '+r.gwSrc+' '+fmt(r.otherGw,2)+'kg (초과 '+fmt(r.gwOver,2)+'kg)');
-    var miss=r.flags.filter(function(x){return /누락/.test(x)});
-    if(miss.length)issues.push(tag+' — '+miss.join(', '));
+    if(r.flags.length)issues.push(tag+' — '+r.flags.join(', '));
   });
   return {head:head,items:items,issues:issues};
 }
@@ -603,39 +661,39 @@ function buildReport(co,inv,pl,bl){
 /* ===== 파일 UI ===== */
 function addFiles(list){
   var arr=Array.prototype.slice.call(list).filter(function(f){
-    return /pdf$/i.test(f.type)||/\.pdf$/i.test(f.name);
+    return /\.(pdf|xlsx|xlsm|xls|csv|png|jpe?g|gif|webp|bmp|tiff?)$/i.test(f.name);
   });
-  if(!arr.length){showErr('PDF 파일만 지원합니다.');return}
+  if(!arr.length){showErr('PDF · 엑셀 · 이미지 파일만 지원합니다.');return}
   errBox.innerHTML='';
-  statusLine.innerHTML='<div class="info-box"><span class="spin"></span>파일 분석 중…</div>';
-  var jobs=arr.map(function(f){
-    return readPdf(f).then(function(r){
-      var t=r.lines.join('\n');
-      var empty=r.lines.length<3;
-      var role=empty?'unknown':detectRole(t);
-      files.push({name:f.name,size:f.size,lines:r.lines,text:t,dropped:r.dropped,
-        role:role,doc:empty?null:parseDoc(t,role),empty:empty});
-    }).catch(function(e){
-      files.push({name:f.name,size:f.size,lines:[],text:'',role:'unknown',err:e.message,doc:null});
+  setStatus('<span class="spin"></span>파일 분석 중…');
+  var chain=Promise.resolve();
+  arr.forEach(function(f){
+    chain=chain.then(function(){
+      return readAny(f).then(function(r){
+        var t=r.lines.join('\n');
+        var role=detectRole(t);
+        files.push({name:f.name,size:f.size,lines:r.lines,text:t,dropped:r.dropped||0,
+          kind:r.kind||'pdf',role:role,doc:parseDoc(t,role),empty:r.lines.length<3});
+      }).catch(function(e){
+        files.push({name:f.name,size:f.size,lines:[],text:'',role:'unknown',err:e.message,doc:null});
+      }).then(function(){ renderFiles(); });
     });
   });
-  Promise.all(jobs).then(function(){statusLine.innerHTML='';renderFiles()});
+  chain.then(function(){ setStatus(''); renderFiles(); });
 }
 function renderFiles(){
-  var scanned=0;
   fileList.innerHTML=files.map(function(f,i){
     var map={CO:['co','CO'],Invoice:['inv','INVOICE'],PL:['pl','PACKING'],BL:['bl','B/L']};
     var m=map[f.role]||['un','미판별'];
-    if(f.empty)scanned++;
-    var rows=f.doc&&f.doc.rowCount!=null?(' · 품목 '+f.doc.rowCount+'행'):'';
+    var kindTx={excel:'엑셀',ocr:'문자인식(OCR)',pdf:'PDF'}[f.kind||'pdf'];
     var meta=f.err?('오류: '+f.err)
-      :(f.empty?'스캔 PDF · 텍스트 없음 (OCR 필요)'
-      :(f.lines.length+'줄'+rows+(f.dropped?' · 워터마크 '+f.dropped+'조각 제외':'')));
+      :(f.empty?'내용을 읽지 못함':(kindTx+' · '+f.lines.length+'줄'
+        +(f.dropped?' · 워터마크 '+f.dropped+'개 제외':'')));
     return '<div class="frow">'
       +'<span class="frole '+m[0]+'">'+m[1]+'</span>'
       +'<span class="fname" title="'+esc(f.name)+'">'+esc(f.name)+'</span>'
       +'<span class="fmeta">'+esc(meta)+'</span>'
-      +'<select class="fsel" data-i="'+i+'"'+(f.empty?' disabled':'')+'>'
+      +'<select class="fsel" data-i="'+i+'">'
       +[['CO','CO'],['Invoice','Invoice'],['PL','Packing List'],['BL','B/L'],['unknown','미판별']].map(function(r){
           return '<option value="'+r[0]+'"'+(f.role===r[0]?' selected':'')+'>'+r[1]+'</option>';
         }).join('')
@@ -653,12 +711,11 @@ function renderFiles(){
   });
   dz.classList.toggle('filled',files.length>0);
   var n={CO:0,Invoice:0,PL:0,BL:0};
-  files.forEach(function(f){if(n[f.role]!==undefined&&f.doc)n[f.role]++});
+  files.forEach(function(f){if(n[f.role]!==undefined)n[f.role]++});
   runBtn.disabled=!(n.CO>=1&&(n.Invoice>=1||n.PL>=1));
-  var scanMsg=scanned?(' · 스캔본 '+scanned+'건은 대조에서 제외됩니다'):'';
   hintRow.textContent=files.length
     ?('CO '+n.CO+' · Invoice '+n.Invoice+' · Packing '+n.PL+' · B/L '+n.BL
-      +(runBtn.disabled?' — CO와 Invoice(또는 P/L)가 필요합니다':'')+scanMsg)
+      +(runBtn.disabled?' — CO와 Invoice(또는 P/L)가 필요합니다':''))
     :'CO draft와 Invoice 또는 Packing List가 필요합니다';
 }
 function showErr(m){errBox.innerHTML='<div class="err-box">'+esc(m)+'</div>'}
@@ -684,30 +741,27 @@ runBtn.addEventListener('click',function(){
   var cos=g('CO'),invs=g('Invoice'),pls=g('PL'),bls=g('BL');
   if(!cos.length||(!invs.length&&!pls.length)){showErr('CO와 Invoice(또는 Packing List)를 지정해 주세요.');return}
   errBox.innerHTML='';
+  var co=cos[0];
   var coDoc=mergeDocs(cos.map(function(f){return f.doc}));
   var invDoc=mergeDocs(invs.map(function(f){return f.doc}));
   var plDoc=mergeDocs(pls.map(function(f){return f.doc}));
   var blDoc=mergeDocs(bls.map(function(f){return f.doc}));
+  var inv=invs[0]||null,pl=pls[0]||null,bl=bls[0]||null;
   var R=buildReport(coDoc,invDoc,plDoc,blDoc);
   var mm=R.head.filter(function(x){return x.st==='mismatch'}).length
-        +R.items.filter(function(x){return x.bad||x.flags.filter(function(s){return /누락/.test(s)}).length}).length;
+        +R.items.filter(function(x){return x.valOk===false||x.qtyOk===false||x.ctnOk===false||x.flags.length}).length;
   var mt=R.head.filter(function(x){return x.st==='match'}).length
-        +R.items.filter(function(x){return !x.bad}).length;
+        +R.items.filter(function(x){return x.valOk===true}).length;
   var ck=R.head.filter(function(x){return x.st==='check'}).length;
   var pass=mm===0;
 
   var h='';
-  var scanned=files.filter(function(f){return f.empty});
-  if(scanned.length)h+='<div class="info-box">스캔 PDF '+scanned.length+'건('
-    +esc(scanned.map(function(f){return f.name}).join(', '))+')은 텍스트가 없어 대조에서 제외했습니다. OCR 후 다시 올리거나 육안으로 확인해 주세요.</div>';
   var mnote=[];
   if(cos.length>1)mnote.push('CO '+cos.length+'개');
   if(invs.length>1)mnote.push('Invoice '+invs.length+'개');
   if(pls.length>1)mnote.push('Packing List '+pls.length+'개');
   if(bls.length>1)mnote.push('B/L '+bls.length+'개');
   if(mnote.length)h+='<div class="info-box">'+mnote.join(' · ')+'를 합산해 대조했습니다. (품목별 수량·중량·금액 합계 기준)</div>';
-  var dupN=R.items.filter(function(x){return x.coRows>1||x.invRows>1||x.plRows>1}).length;
-  if(dupN)h+='<div class="info-box">같은 품목코드가 여러 줄에 나뉜 항목 '+dupN+'건은 합산해서 비교했습니다.</div>';
   h+='<div class="verdict '+(pass?'pass':'fail')+'"><span>'+(pass?'✅':'⚠️')+'</span><span>'
     +(pass?'주요 항목과 전 품목에서 불일치가 발견되지 않았습니다.':'확인이 필요한 항목이 '+mm+'건 있습니다.')+'</span></div>';
   h+='<div class="summary">'
@@ -729,7 +783,7 @@ runBtn.addEventListener('click',function(){
   h+='</tbody></table>';
 
   h+='<div class="section-title">품목별 대조 ('+R.items.length+'개)</div>';
-  h+='<table><thead><tr><th>CO #</th><th>품목코드</th><th class="num">CO 금액</th><th class="num">INV 금액</th><th>금액</th>'
+  h+='<table><thead><tr><th class="num">CO #</th><th>품목코드</th><th class="num">CO 금액</th><th class="num">INV 금액</th><th>금액</th>'
     +'<th class="num">CO 중량</th><th class="num">CI·P/L 중량</th><th>중량 판정</th>'
     +'<th class="num">수량 I/P</th><th class="num">카톤 I/P</th><th>비고</th></tr></thead><tbody>';
   R.items.forEach(function(x){
@@ -750,8 +804,7 @@ runBtn.addEventListener('click',function(){
       ?fmt(x.qtyI)+' / '+fmt(x.qtyP)+(x.qtyOk===false?' ⚠':''):'—';
     var ctn=(x.ctnI!=null||x.ctnP!=null)
       ?fmt(x.ctnI)+' / '+fmt(x.ctnP)+(x.ctnOk===false?' ⚠':''):'—';
-    h+='<tr'+(x.bad?' class="bad"':'')+'><td class="src">'+esc(x.noLabel)+'</td>'
-      +'<td class="field">'+esc(x.code)+'</td>'
+    h+='<tr'+(x.bad?' class="bad"':'')+'><td class="field">'+esc(x.code)+'</td>'
       +'<td class="num">'+fmt(x.coVal,2)+'</td><td class="num">'+fmt(x.invVal,2)+'</td><td>'+vb+'</td>'
       +'<td class="num">'+fmt(x.coGw,2)+'</td>'+gwCell+'<td>'+gwBadge+'</td>'
       +'<td class="num">'+qty+'</td><td class="num">'+ctn+'</td>'
