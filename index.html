@@ -220,6 +220,24 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
 /* 브랜드 카드 */
 
 
+
+.fxBar{display:flex;align-items:center;margin-bottom:12px;padding:3px 4px;overflow-x:auto}
+.fxBar.err{padding:13px 18px}
+.fxErr{display:flex;align-items:center;gap:8px;font-size:.83rem;color:var(--red-tx)}
+.fxLab{display:flex;align-items:center;gap:7px;padding:10px 16px;font-size:.79rem;font-weight:800;color:var(--ink-2);white-space:nowrap}
+.fxLab svg{color:var(--g600)}
+.fxCell{padding:9px 20px;border-left:1px solid var(--line);min-width:152px}
+.fxTop{display:flex;align-items:center;gap:6px}
+.fxFlag{font-size:.95rem}
+.fxCur{font-size:.74rem;font-weight:800;color:var(--ink-2)}
+.fxUnit{font-size:.66rem;color:var(--ink-3);margin-left:auto}
+.fxVal{font-size:1.14rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:3px}
+body.meeting .fxVal{font-size:1.5rem}
+.fxName{font-size:.67rem;color:var(--ink-3);margin-top:1px}
+.fxMeta{margin-left:auto;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:.69rem;color:var(--ink-3);white-space:nowrap}
+.fxBtn{width:28px;height:28px;border-radius:9px;background:var(--bg);color:var(--ink-2);display:flex;align-items:center;justify-content:center;flex:none}
+.fxBtn:hover{background:var(--g100);color:var(--g700)}
+@media(max-width:760px){.fxLab,.fxMeta span{display:none}.fxCell{min-width:126px;padding:9px 13px}.fxCell:first-of-type{border-left:none}}
 .btWrap{display:grid;grid-template-columns:1.55fr 1fr;gap:0;align-items:center}
 @media(max-width:1000px){.btWrap{grid-template-columns:1fr}}
 .btLegend{padding:6px 18px 18px;display:flex;flex-direction:column;gap:2px}
@@ -475,7 +493,6 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
 
     <div class="nav-label">상품</div>
     <button class="nav-item" data-view="master"><i data-lucide="package-search"></i><span class="tx">상품 마스터</span><span class="cnt" id="cntMaster"></span></button>
-    <a class="nav-item" href="https://gaiacatalog-4n3mekcg.manus.space/?code=6q8PbzYNYPfMPETtqBVzFZ" target="_blank" rel="noopener"><i data-lucide="layout-grid"></i><span class="tx">상품 카탈로그</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
     <button class="nav-item" data-view="brands"><i data-lucide="tags"></i><span class="tx">브랜드 현황</span></button>
 
     <div class="nav-label">실무 도구</div>
@@ -657,7 +674,7 @@ $('#yearSeg').addEventListener('click',function(e){
     });
   } else loadYear(state.year).then(render);
 });
-$('#btnRefresh').addEventListener('click',function(){_rtSuf=null;fetchStock(true);fetchCert(true);loadYear(state.year,true).then(render);});
+$('#btnRefresh').addEventListener('click',function(){_rtSuf=null;fetchStock(true);fetchCert(true);fetchFx(true);loadYear(state.year,true).then(render);});
 $('#btnMeeting').addEventListener('click',function(){
   document.body.classList.toggle('meeting');
   var on=document.body.classList.contains('meeting');
@@ -1078,6 +1095,78 @@ function normBrand(b){
   }
   if(/^(완구기타|기타|미지정)$/.test(out))out='기타';
   _bnCache[b]=out;return out;
+}
+
+
+/* ================= 실시간 환율 ================= */
+var fx={status:'loading',rate:{},updated:'',src:'',err:''};
+var FX_KEY='gaia_fx_v1';
+function fxApply(r,updated,src){
+  fx.rate=r; fx.updated=updated||''; fx.src=src||''; fx.status='ok';
+  try{ localStorage.setItem(FX_KEY,JSON.stringify({t:Date.now(),r:r,u:fx.updated,s:fx.src})); }catch(e){}
+  if(state.view==='dash')render();
+}
+function fetchFx(force){
+  if(!force){
+    try{
+      var c=JSON.parse(localStorage.getItem(FX_KEY)||'null');
+      if(c&&c.t&&(Date.now()-c.t)<30*60*1000){
+        fx.rate=c.r;fx.updated=c.u;fx.src=c.s;fx.status='ok';
+        return Promise.resolve();
+      }
+    }catch(e){}
+  }
+  fx.status='loading';
+  return fetch('https://open.er-api.com/v6/latest/USD').then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status); return r.json();
+  }).then(function(d){
+    if(!d||!d.rates||!d.rates.KRW)throw new Error('데이터 형식 오류');
+    var K=d.rates.KRW;
+    fxApply({usd:K, jpy100:K/d.rates.JPY*100, cny:K/d.rates.CNY},
+      d.time_last_update_utc||'', 'open.er-api.com');
+  }).catch(function(){
+    return fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/krw.json')
+      .then(function(r){ if(!r.ok)throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(d){
+        var k=d.krw||{};
+        if(!k.usd)throw new Error('데이터 없음');
+        fxApply({usd:1/k.usd, jpy100:(1/k.jpy)*100, cny:1/k.cny}, d.date||'', 'currency-api');
+      });
+  }).catch(function(e){
+    var c2=null;
+    try{ c2=JSON.parse(localStorage.getItem(FX_KEY)||'null'); }catch(e2){}
+    if(c2&&c2.r){ fx.rate=c2.r;fx.updated=c2.u;fx.src=(c2.s||'')+' · 저장된 값';fx.status='ok'; }
+    else { fx.status='error'; fx.err=String(e.message||e); }
+    if(state.view==='dash')render();
+  });
+}
+var FX_DEF=[
+  {k:'usd',   cur:'USD', flag:'🇺🇸', name:'미국 달러', unit:'1 USD'},
+  {k:'jpy100',cur:'JPY', flag:'🇯🇵', name:'일본 엔',   unit:'100 JPY'},
+  {k:'cny',   cur:'CNY', flag:'🇨🇳', name:'중국 위안', unit:'1 CNY'}
+];
+function fxBanner(){
+  if(fx.status==='error'){
+    return '<section class="card fxBar err"><div class="fxErr">'+icon('triangle-alert')
+      +'환율 정보를 불러오지 못했습니다 — '+esc(fx.err)+'</div>'
+      +'<button class="fxBtn" id="fxRefresh" style="margin-left:auto">'+icon('refresh-cw')+'</button></section>';
+  }
+  var cells=FX_DEF.map(function(f){
+    var v=fx.rate[f.k];
+    return '<div class="fxCell">'
+      +'<div class="fxTop"><span class="fxFlag">'+f.flag+'</span>'
+      +'<span class="fxCur">'+f.cur+'</span><span class="fxUnit">'+f.unit+'</span></div>'
+      +'<div class="fxVal">'+(v?('₩'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}))
+        :'<span class="skel" style="display:inline-block;width:84px;height:17px"></span>')+'</div>'
+      +'<div class="fxName">'+f.name+'</div></div>';
+  }).join('');
+  var when=fx.updated?String(fx.updated).replace(/\s*\(.*\)\s*/,'').trim():'';
+  return '<section class="card fxBar">'
+    +'<div class="fxLab">'+icon('banknote')+'<span>실시간 환율</span></div>'
+    +cells
+    +'<div class="fxMeta"><span>'+(fx.status==='loading'?'불러오는 중…':esc(when))+'</span>'
+    +'<button class="fxBtn" id="fxRefresh" title="환율 새로고침">'+icon('refresh-cw')+'</button></div>'
+    +'</section>';
 }
 
 /* ================= 실시간 재고 (재고_RAW) ================= */
@@ -2306,10 +2395,12 @@ function vDash(rs,d){
     +(hy.agg?' · 재고 기준일 '+esc(hy.agg.gen):'')+'</p></div></div>';
 
   if(hy.status==='loading'){
+    h+=fxBanner();
     h+='<div class="card"><div class="empty"><div class="spin" style="display:inline-block;vertical-align:-4px;margin-right:9px"></div>매출·재고 데이터 분석 중…</div></div>';
     return h;
   }
   if(hy.status==='error'){
+    h+=fxBanner();
     h+='<div class="card"><div class="empty">재고·매출 데이터 로드 실패 — '+esc(hy.err)
       +'<br><a href="https://gaia-hyhong.github.io/Hayoung-MD-Dashboard/" target="_blank" style="color:var(--info-tx);font-weight:700">원본 대시보드 열기 ↗</a></div></div>';
     return h;
@@ -2319,7 +2410,8 @@ function vDash(rs,d){
   var months=trendMonths(a.mrev,12);
   var mTot=function(m){var s=0,o=a.mrev[m]||{};chs.forEach(function(c){s+=Math.max(0,o[c]||0)});return s};
 
-  /* ===== 0. 브랜드별 매출 추이 (최상단) ===== */
+  /* ===== 0. 환율 · 브랜드별 매출 추이 ===== */
+  h+=fxBanner();
   h+=brandTrendSection(a);
 
   /* ===== 1. 매출 추이 ===== */
@@ -3306,6 +3398,8 @@ function bindView(){
       go(goV,goV==='orders'?nf:state.f);
     });
   });
+  var fxb=$('#fxRefresh');
+  if(fxb)fxb.addEventListener('click',function(e){e.stopPropagation();fetchFx(true);});
   var isy=$('#imgSync');
   if(isy)isy.addEventListener('click',function(){
     var b=isy; b.disabled=true; b.textContent='동기화 중…';
@@ -3515,7 +3609,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closePanel()
 
 /* ================= 시작 ================= */
 initCat();initKn();buildYearSeg();refreshIcons();
-[fetchHayoung,fetchMaster,fetchStock,fetchCert,fetchExtra].forEach(function(fn){
+[fetchHayoung,fetchMaster,fetchStock,fetchCert,fetchExtra,fetchFx].forEach(function(fn){
   try{ fn(); }catch(e){ console.warn('init',fn.name,e); }
 });
 loadYear(state.year).then(render);
