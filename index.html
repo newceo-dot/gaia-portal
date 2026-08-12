@@ -75,9 +75,10 @@ svg.lucide{width:1.05em;height:1.05em;stroke-width:1.9;flex:none;vertical-align:
 .fxHd{font-size:.71rem;font-weight:800;color:var(--ink-2);background:var(--hover);padding:7px 12px;border-bottom:1px solid var(--line)}
 .fxMainRow{padding:10px 12px 9px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
 .fxMainTx{flex:1;min-width:0}
-.fxFlagC{width:30px;height:30px;border-radius:50%;background:#fff;border:1px solid var(--line-2);
-  display:flex;align-items:center;justify-content:center;font-size:1.12rem;line-height:1;flex:none;overflow:hidden}
-.fxFlagC.sm{width:24px;height:24px;font-size:.95rem}
+.fxFlagC{width:30px;height:30px;border-radius:50%;border:1px solid var(--line-2);flex:none;overflow:hidden;
+  display:block;background:#fff}
+.fxFlagC svg{width:100%;height:100%;display:block}
+.fxFlagC.sm{width:24px;height:24px}
 .fxMainNm{display:block;font-size:.72rem;font-weight:700;color:var(--ink-2);margin-bottom:1px}
 .fxMainVal{display:flex;align-items:baseline;gap:6px;font-size:1.22rem;font-weight:800;
   letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--red)}
@@ -358,6 +359,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
   font-size:.85rem;font-weight:600;color:var(--ink-2);background:none}
 .ddItem:hover{background:var(--hover)}
 .ddItem.on{background:var(--g50);color:var(--g900);font-weight:800}
+.ddBrandMenu{min-width:246px;max-height:64vh}
+.ddItem .bnm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.favS{width:22px;height:22px;border-radius:6px;background:none;color:var(--ink-3);font-size:.82rem;
+  line-height:1;flex:none;margin-right:4px;display:flex;align-items:center;justify-content:center}
+.favS:hover{background:var(--amber-bg);color:var(--amber)}
+.favS.on{color:var(--amber)}
 .ddItem span{margin-left:auto;font-size:.74rem;color:var(--ink-3);font-variant-numeric:tabular-nums}
 .ddItem.on span{color:var(--g600)}
 .chipOn{display:inline-flex;align-items:center;gap:7px;padding:6px 10px 6px 11px;border-radius:99px;
@@ -1431,13 +1438,13 @@ function renderSideInfo(){
     fxTx='<div class="fxCard">'
       +'<div class="fxHd">환전 고시 환율</div>'
       +'<div class="fxMainRow">'
-        +'<span class="fxFlagC">'+m.flag+'</span>'
+        +'<span class="fxFlagC">'+flagOf(m.k)+'</span>'
         +'<div class="fxMainTx"><span class="fxMainNm">'+m.name+m.cur+'</span>'
         +'<span class="fxMainVal">₩'+fxNum(m.price)
         +'<em class="'+fxCls(m.dir)+'">'+fxArrow(m.dir)+fxNum(Math.abs(m.change==null?0:m.change))+'</em></span></div>'
       +'</div>'
       +'<div class="fxRows">'+rest.map(function(f){
-          return '<div class="fxLine"><span class="fxFlagC sm">'+f.flag+'</span>'
+          return '<div class="fxLine"><span class="fxFlagC sm">'+flagOf(f.k)+'</span>'
             +'<span class="nm">'+f.cur+(f.unit?'<i>'+f.unit.replace(/[()]/g,'')+'</i>':'')+'</span>'
             +'<span class="vl">₩'+fxNum(f.price)
             +'<em class="'+fxCls(f.dir)+'">'+fxArrow(f.dir)+fxNum(Math.abs(f.change==null?0:f.change))+'</em></span></div>';
@@ -1701,7 +1708,7 @@ function exportCatNewXlsx(){
 
 /* ================= 상품 마스터 (영업DB + 재고 조인) ================= */
 var ms={status:'loading',list:[],err:''};
-state.mf={q:'',brand:'',stock:'has'};state.mView='grid';state.mSort='img';state.favEdit=false;state.page={};state.perPage={};state.mFilterOpen=false;state.mSortOpen=false;state.mDlOpen=false;
+state.mf={q:'',brand:'',stock:'has'};state.mView='grid';state.mSort='img';state.favEdit=false;state.page={};state.perPage={};state.mFilterOpen=false;state.mSortOpen=false;state.mDlOpen=false;state.mBrandOpen=false;
 state.sf={cls:'',urg:'',brand:'',q:'',inc:false};
 function fetchMaster(){
   /* 1순위: 외부 master-data.json (있으면 최신 데이터로 갱신) · 2순위: 내장 데이터 */
@@ -2163,8 +2170,26 @@ function vMaster(){
     +'<div class="seg"><button data-mv="grid" class="'+(state.mView==='grid'?'on':'')+'">'+icon('layout-grid')+'카드</button>'
     +'<button data-mv="list" class="'+(state.mView==='list'?'on':'')+'">'+icon('list')+'리스트</button></div>'
     +'<div class="srchBox">'+icon('search')+'<input type="text" id="mq" placeholder="상품명·품번·바코드·KC번호·인증명 검색" value="'+esc(state.mf.q)+'"></div>'
-    +'<select id="mbrand" class="ddSel"><option value="">브랜드 전체</option>'
-      +Object.keys(brandsMap).sort().map(function(b){return '<option'+(state.mf.brand===b?' selected':'')+'>'+esc(b)+'</option>'}).join('')+'</select>'
+    +(function(){
+        var all=Object.keys(brandsMap).sort();
+        var fav=favList().filter(function(b){return all.indexOf(b)!==-1});
+        var rest=all.filter(function(b){return fav.indexOf(b)===-1});
+        var cnt={}; ms.list.forEach(function(o){ if(o.br)cnt[o.br]=(cnt[o.br]||0)+1; });
+        var row=function(b){
+          return '<div class="ddItem'+(state.mf.brand===b?' on':'')+'" data-mb="'+esc(b)+'">'
+            +'<button class="favS'+(favHas(b)?' on':'')+'" data-favb="'+esc(b)+'" title="주요 브랜드로 고정">'
+            +(favHas(b)?'★':'☆')+'</button>'
+            +'<span class="bnm">'+esc(b)+'</span><span>'+(cnt[b]||0)+'</span></div>';
+        };
+        return '<div class="dd'+(state.mBrandOpen?' open':'')+'" id="ddBrand">'
+          +'<button class="ddBtn'+(state.mf.brand?' act':'')+'" data-dd="brand">'+icon('tag')
+          +esc(state.mf.brand||'브랜드 전체')+icon('chevron-down')+'</button>'
+          +'<div class="ddMenu ddBrandMenu">'
+          +'<div class="ddItem'+(state.mf.brand===''?' on':'')+'" data-mb=""><span class="bnm" style="padding-left:26px">브랜드 전체</span><span>'+ms.list.length.toLocaleString()+'</span></div>'
+          +(fav.length?'<div class="ddGroup">★ 주요 브랜드</div>'+fav.map(row).join(''):'')
+          +'<div class="ddGroup">'+(fav.length?'전체 브랜드':'브랜드')+'</div>'+rest.map(row).join('')
+          +'</div></div>';
+      })()
     /* 필터 드롭다운 */
     +'<div class="dd'+(state.mFilterOpen?' open':'')+'" id="ddFilter">'
       +'<button class="ddBtn'+(state.mf.stock?' act':'')+'" data-dd="filter">'+icon('sliders-horizontal')+'필터'
@@ -3826,6 +3851,41 @@ function vBrandDetail(){
 
 /* ----- 브랜드 현황 ----- */
 
+
+/* 국기 SVG (이모지 미지원 환경 대응) */
+var FLAG_SVG={
+  usd:'<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#fff"/>'
+     +'<g fill="#B22234"><rect y="0" width="24" height="1.85"/><rect y="3.7" width="24" height="1.85"/>'
+     +'<rect y="7.4" width="24" height="1.85"/><rect y="11.1" width="24" height="1.85"/>'
+     +'<rect y="14.8" width="24" height="1.85"/><rect y="18.5" width="24" height="1.85"/>'
+     +'<rect y="22.2" width="24" height="1.8"/></g>'
+     +'<rect width="11" height="9.25" fill="#3C3B6E"/>'
+     +'<g fill="#fff"><circle cx="2" cy="2" r=".7"/><circle cx="5.5" cy="2" r=".7"/><circle cx="9" cy="2" r=".7"/>'
+     +'<circle cx="3.7" cy="4.2" r=".7"/><circle cx="7.2" cy="4.2" r=".7"/>'
+     +'<circle cx="2" cy="6.4" r=".7"/><circle cx="5.5" cy="6.4" r=".7"/><circle cx="9" cy="6.4" r=".7"/></g></svg>',
+  jpy:'<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#fff"/>'
+     +'<circle cx="12" cy="12" r="6.4" fill="#BC002D"/></svg>',
+  eur:'<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#003399"/>'
+     +'<g fill="#FFCC00">'
+     +'<circle cx="12" cy="5.2" r="1.05"/><circle cx="12" cy="18.8" r="1.05"/>'
+     +'<circle cx="5.2" cy="12" r="1.05"/><circle cx="18.8" cy="12" r="1.05"/>'
+     +'<circle cx="7.2" cy="7.2" r="1.05"/><circle cx="16.8" cy="7.2" r="1.05"/>'
+     +'<circle cx="7.2" cy="16.8" r="1.05"/><circle cx="16.8" cy="16.8" r="1.05"/>'
+     +'<circle cx="8.3" cy="4.6" r="1.05" opacity=".9"/><circle cx="15.7" cy="4.6" r="1.05" opacity=".9"/>'
+     +'<circle cx="4.6" cy="15.7" r="1.05" opacity=".9"/><circle cx="19.4" cy="15.7" r="1.05" opacity=".9"/>'
+     +'</g></svg>',
+  cny:'<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#DE2910"/>'
+     +'<g fill="#FFDE00">'
+     +'<path d="M6 4.2l1.05 3.24-2.76-2h3.42l-2.76 2z"/>'
+     +'<circle cx="11.6" cy="3.4" r=".95"/><circle cx="13.6" cy="5.6" r=".95"/>'
+     +'<circle cx="13.6" cy="8.6" r=".95"/><circle cx="11.6" cy="10.7" r=".95"/>'
+     +'</g></svg>',
+  krw:'<svg viewBox="0 0 24 24"><rect width="24" height="24" fill="#fff"/>'
+     +'<circle cx="12" cy="12" r="5" fill="#CD2E3A"/>'
+     +'<path d="M7 12a5 5 0 0 1 10 0" fill="#0047A0"/></svg>'
+};
+function flagOf(k){ return FLAG_SVG[k]||'' }
+
 /* ---- 주요 브랜드 (즐겨찾기) ---- */
 var FAV_KEY='gaia_favbrand_v1';
 var favB=null;
@@ -4130,13 +4190,24 @@ function bindView(){
     b.addEventListener('click',function(e){
       e.stopPropagation();
       var k=b.dataset.dd;
-      var open=(k==='filter'?state.mFilterOpen:(k==='sort'?state.mSortOpen:state.mDlOpen));
-      state.mFilterOpen=state.mSortOpen=state.mDlOpen=false;
+      var open=(k==='filter'?state.mFilterOpen:(k==='sort'?state.mSortOpen:(k==='brand'?state.mBrandOpen:state.mDlOpen)));
+      state.mFilterOpen=state.mSortOpen=state.mDlOpen=state.mBrandOpen=false;
       if(k==='filter')state.mFilterOpen=!open;
       else if(k==='sort')state.mSortOpen=!open;
+      else if(k==='brand')state.mBrandOpen=!open;
       else state.mDlOpen=!open;
       render();
     });
+  });
+  v.querySelectorAll('[data-mb]').forEach(function(b){
+    b.addEventListener('click',function(e){
+      if(e.target.closest('[data-favb]'))return;
+      e.stopPropagation();
+      state.mf.brand=b.dataset.mb; state.mBrandOpen=false; state.page.master=1; render();
+    });
+  });
+  v.querySelectorAll('[data-favb]').forEach(function(b){
+    b.addEventListener('click',function(e){e.stopPropagation();favToggle(b.dataset.favb);render();});
   });
   v.querySelectorAll('[data-clr]').forEach(function(b){
     b.addEventListener('click',function(e){
@@ -4305,8 +4376,8 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closePanel()
 
 document.addEventListener('click',function(e){
   if(e.target.closest('.dd'))return;
-  if(state.mFilterOpen||state.mSortOpen||state.mDlOpen){
-    state.mFilterOpen=state.mSortOpen=state.mDlOpen=false;
+  if(state.mFilterOpen||state.mSortOpen||state.mDlOpen||state.mBrandOpen){
+    state.mFilterOpen=state.mSortOpen=state.mDlOpen=state.mBrandOpen=false;
     if(state.view==='master')render();
   }
 });
