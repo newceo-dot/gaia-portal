@@ -1243,8 +1243,11 @@ function resizeImg(file,maxW){
         var w=im.width,hh=im.height;
         if(w>maxW){ hh=Math.round(hh*maxW/w); w=maxW; }
         var cv=document.createElement('canvas'); cv.width=w; cv.height=hh;
-        cv.getContext('2d').drawImage(im,0,0,w,hh);
-        var du=cv.toDataURL('image/jpeg',0.85);
+        var cx=cv.getContext('2d');
+        /* 투명 PNG가 검게 변하지 않도록 흰 배경을 먼저 채움 */
+        cx.fillStyle='#FFFFFF'; cx.fillRect(0,0,w,hh);
+        cx.drawImage(im,0,0,w,hh);
+        var du=cv.toDataURL('image/jpeg',0.9);
         res(du.split(',')[1]);
       };
       im.onerror=function(){rej(new Error('이미지를 읽을 수 없습니다'))};
@@ -1428,7 +1431,7 @@ function exportCatNewXlsx(){
 
 /* ================= 상품 마스터 (영업DB + 재고 조인) ================= */
 var ms={status:'loading',list:[],err:''};
-state.mf={q:'',brand:'',stock:''};state.mView='grid';
+state.mf={q:'',brand:'',stock:'has'};state.mView='grid';state.mSort='img';
 state.sf={cls:'',urg:'',brand:'',q:'',inc:false};
 function fetchMaster(){
   /* 1순위: 외부 master-data.json (있으면 최신 데이터로 갱신) · 2순위: 내장 데이터 */
@@ -1788,6 +1791,18 @@ function masterFiltered(){
       else { if(!s||s.it.cls!==f.stock)return false; }
     }
     return true;
+  }).sort(function(a,b){
+    if(state.mSort==='name')return String(a.name||'').localeCompare(String(b.name||''));
+    var ia=imgList(exOf(a)).length?1:0, ib=imgList(exOf(b)).length?1:0;
+    if(ia!==ib)return ib-ia;
+    var la=liveStockOf(a), lb=liveStockOf(b);
+    var sa=stockOf(a), sb=stockOf(b);
+    var qa=la?la.q:(sa?(sa.it.cur||0):0);
+    var qb=lb?lb.q:(sb?(sb.it.cur||0):0);
+    var ha=qa>0?1:0, hb=qb>0?1:0;
+    if(ha!==hb)return hb-ha;
+    if(qa!==qb)return qb-qa;
+    return String(a.name||'').localeCompare(String(b.name||''));
   });
 }
 
@@ -1857,6 +1872,8 @@ function vMaster(){
     +'<input type="text" id="mq" placeholder="상품명·품번·바코드·KC번호·인증명 검색" value="'+esc(state.mf.q)+'">'
     +'<select id="mbrand"><option value="">브랜드 전체</option>'+Object.keys(brandsMap).sort().map(function(b){return '<option'+(state.mf.brand===b?' selected':'')+'>'+esc(b)+'</option>'}).join('')+'</select>'
     +'<div class="chips">'+chips.map(function(c){return '<button class="chip'+(state.mf.stock===c[0]?' on':'')+'" data-ms="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>'
+    +'<div class="seg"><button data-msort="img" class="'+(state.mSort==='img'?'on':'')+'">'+icon('image')+'이미지·재고순</button>'
+    +'<button data-msort="name" class="'+(state.mSort==='name'?'on':'')+'">'+icon('a-arrow-down')+'이름순</button></div>'
     +'<button class="chip" id="imgSync" title="드라이브 폴더의 이미지를 파일명(바코드)으로 자동 연결">'+icon('refresh-cw')+' 드라이브 이미지 동기화</button>'
     +(state.mf.stock==='nocat'?'<button class="btnDl" data-dl="catnew" style="background:var(--g900)">'+icon('upload')+'카탈로그 등록양식 받기</button>':'')
     +'<button class="btnDl" data-dl="filtered" title="현재 조회 조건 '+fl.length+'종">'+icon('download')+'조회결과 다운로드</button>'
@@ -3576,6 +3593,9 @@ function bindView(){
   });
   bindSearch('mq',function(v){state.mf.q=v;});
   var mb=$('#mbrand');if(mb)mb.addEventListener('change',function(){state.mf.brand=this.value;render();});
+  v.querySelectorAll('[data-msort]').forEach(function(b){
+    b.addEventListener('click',function(e){e.stopPropagation();state.mSort=b.dataset.msort;render();});
+  });
   v.querySelectorAll('.chip[data-ms]').forEach(function(c){
     c.addEventListener('click',function(){state.mf.stock=c.dataset.ms;render();});
   });
