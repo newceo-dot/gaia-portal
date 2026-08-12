@@ -61,12 +61,27 @@ svg.lucide{width:1.05em;height:1.05em;stroke-width:1.9;flex:none;vertical-align:
 .nav-item .cnt{margin-left:auto;font-size:.68rem;font-weight:700;background:var(--g100);color:var(--g700);border-radius:99px;padding:2px 8px}
 .nav-item .cnt.hot{background:var(--red-bg);color:var(--red-tx)}
 .nav-item.sub{padding-left:36px;font-size:.84rem}
-.promo{margin-top:12px;background:var(--g900);border-radius:16px;padding:16px;color:#fff;position:relative;overflow:hidden}
+.sideInfo{margin-top:12px;background:var(--g900);border-radius:16px;padding:14px 15px;color:#fff}
+.siDate{font-size:.76rem;font-weight:700;opacity:.72;letter-spacing:.01em}
+.siWx{display:flex;align-items:baseline;gap:7px;margin-top:7px;flex-wrap:wrap}
+.siWx svg{color:var(--g200);width:1.05em;height:1.05em;align-self:center}
+.siWx b{font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
+.siWx span{font-size:.76rem;opacity:.8}
+.siWx em{font-style:normal;font-size:.7rem;opacity:.6;margin-left:auto}
+.siWx.dim{opacity:.5;font-size:.76rem}
+.siPop{font-size:.7rem;opacity:.72;margin-top:4px;display:flex;align-items:center;gap:5px}
+.siDiv{height:1px;background:rgba(255,255,255,.14);margin:11px 0 9px}
+.siFx{display:flex;align-items:center;gap:7px;font-size:.76rem;padding:2px 0}
+.siFx .k{width:30px;font-weight:800;opacity:.62;font-size:.68rem}
+.siFx b{font-weight:700;font-variant-numeric:tabular-nums}
+.siFx em{margin-left:auto;font-style:normal;font-size:.68rem;font-weight:800;font-variant-numeric:tabular-nums}
+.siFx em.up{color:#FF9B9B} .siFx em.dn{color:var(--g200)} .siFx em.flat{opacity:.45}
+.siFx.dim{opacity:.5}
 .promo::after{content:'';position:absolute;right:-30px;bottom:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.05)}
 .promo .pt{font-size:.88rem;font-weight:700;line-height:1.35}
 .promo .ps{font-size:.72rem;opacity:.62;margin-top:5px}
 .promo a{display:block;margin-top:12px;background:var(--g600);border-radius:9px;text-align:center;padding:8px;font-size:.8rem;font-weight:700;position:relative;z-index:2}
-body.meeting .nav-label,body.meeting .nav-item .tx,body.meeting .nav-item .cnt,body.meeting .nav-item .ext,body.meeting .brand b,body.meeting .promo{display:none}
+body.meeting .nav-label,body.meeting .nav-item .tx,body.meeting .nav-item .cnt,body.meeting .nav-item .ext,body.meeting .brand b,body.meeting .sideInfo{display:none}
 
 /* ---------- 메인 ---------- */
 #main{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
@@ -236,31 +251,30 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
 
 
 
-.fxBar{display:flex;align-items:center;margin:0;padding:2px 4px;overflow-x:auto;box-shadow:0 1px 2px rgba(16,24,20,.04)}
-.fxBar.err{padding:13px 18px}
+.fxBar{display:flex;align-items:stretch;margin:0;padding:0;overflow-x:auto;box-shadow:0 1px 2px rgba(16,24,20,.04)}
+.fxBar.err{padding:13px 18px;align-items:center}
 .fxErr{display:flex;align-items:center;gap:8px;font-size:.83rem;color:var(--red-tx)}
-.fxLab{display:flex;align-items:center;gap:7px;padding:8px 15px;font-size:.77rem;font-weight:800;color:var(--ink-2);white-space:nowrap}
+.fxLab{display:flex;align-items:center;gap:7px;padding:0 16px;font-size:.75rem;font-weight:800;color:var(--ink-3);white-space:nowrap}
 .fxLab svg{color:var(--g600)}
-.fxCell{padding:7px 18px;border-left:1px solid var(--line);min-width:142px}
+.fxCell{padding:11px 20px;border-left:1px solid var(--line);min-width:178px}
 .fxTop{display:flex;align-items:center;gap:6px}
-.fxFlag{font-size:.95rem}
-.fxCur{font-size:.74rem;font-weight:800;color:var(--ink-2)}
-.fxUnit{font-size:.66rem;color:var(--ink-3);margin-left:auto}
-.fxVal{font-size:1.02rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:3px}
-body.meeting .fxVal{font-size:1.5rem}
-.fxFoot{display:flex;align-items:center;gap:8px;margin-top:2px}
-.fxName{font-size:.67rem;color:var(--ink-3)}
-.fxChg{margin-left:auto;font-size:.68rem;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
-.fxChg em{font-style:normal;font-weight:700;opacity:.85}
+.fxFlag{font-size:1.05rem;line-height:1}
+.fxName{font-size:.79rem;font-weight:700;color:var(--ink-2)}
+.fxCur{font-size:.72rem;font-weight:800;color:var(--ink-3)}
+.fxVal{font-size:1.42rem;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;
+  margin-top:4px;line-height:1.15;color:var(--ink)}
+body.meeting .fxVal{font-size:1.8rem}
+.fxFoot{display:flex;align-items:baseline;gap:8px;margin-top:3px}
+.fxChg{font-size:.76rem;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fxChg em{font-style:normal;font-weight:700}
 .fxChg.up{color:var(--red)}
-.fxChg.dn{color:var(--blue,#2C6ECB)}
-.fxChg.flat{color:var(--ink-3)}
-.fxCell.isUp .fxVal{color:var(--red)}
-.fxCell.isDn .fxVal{color:#2C6ECB}
+.fxChg.dn{color:#2C6ECB}
+.fxChg.flat{color:var(--ink-3);font-weight:600}
+.fxUnit{margin-left:auto;font-size:.66rem;color:var(--ink-3);white-space:nowrap}
 .fxMeta{margin-left:auto;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:.69rem;color:var(--ink-3);white-space:nowrap}
 .fxBtn{width:28px;height:28px;border-radius:9px;background:var(--bg);color:var(--ink-2);display:flex;align-items:center;justify-content:center;flex:none}
 .fxBtn:hover{background:var(--g100);color:var(--g700)}
-@media(max-width:760px){.fxLab,.fxMeta span{display:none}.fxCell{min-width:126px;padding:9px 13px}.fxCell:first-of-type{border-left:none}}
+@media(max-width:760px){.fxLab,.fxMeta span,.fxUnit{display:none}.fxCell{min-width:148px;padding:10px 14px}.fxCell:first-of-type{border-left:none}.fxVal{font-size:1.24rem}}
 .btWrap{display:grid;grid-template-columns:1.55fr 1fr;gap:0;align-items:center}
 @media(max-width:1000px){.btWrap{grid-template-columns:1fr}}
 .btLegend{padding:6px 18px 18px;display:flex;flex-direction:column;gap:2px}
@@ -466,7 +480,7 @@ body.meeting .fxVal{font-size:1.5rem}
   #shell{flex-direction:column;padding:8px;gap:8px}
   #side{width:100%;min-width:100%;height:auto;position:static;padding:10px;border-radius:18px}
   #nav{display:flex;overflow-x:auto;margin:0}
-  .nav-label,.promo{display:none}
+  .nav-label,.sideInfo{display:none}
   .nav-item{margin-bottom:0}
   .nav-item.on::before{display:none}
   .nav-item .cnt{display:none}
@@ -588,11 +602,7 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
     <button class="nav-item" data-view="sales"><i data-lucide="chart-no-axes-combined"></i><span class="tx">판매 분석</span></button>
     <button class="nav-item" data-view="kc"><i data-lucide="shield-check"></i><span class="tx">KC 인증</span><span class="cnt" id="cntKc"></span></button>
   </nav>
-  <div class="promo">
-    <div class="pt">오더 원본 시트</div>
-    <div class="ps">구글 시트에서 직접 편집</div>
-    <a id="btnSheetSide" href="#" target="_blank" rel="noopener">시트 열기</a>
-  </div>
+  <div class="sideInfo" id="sideInfo"></div>
 </aside>
 
 <div id="main">
@@ -778,7 +788,7 @@ $('#yearSeg').addEventListener('click',function(e){
     });
   } else loadYear(state.year).then(render);
 });
-$('#btnRefresh').addEventListener('click',function(){_rtSuf=null;fetchStock(true);fetchCert(true);fetchFx(true);loadYear(state.year,true).then(render);});
+$('#btnRefresh').addEventListener('click',function(){_rtSuf=null;fetchStock(true);fetchCert(true);fetchFx(true);fetchWx(true);loadYear(state.year,true).then(render);});
 $('#btnMeeting').addEventListener('click',function(){
   document.body.classList.toggle('meeting');
   var on=document.body.classList.contains('meeting');
@@ -1218,6 +1228,7 @@ function fxApply(r,updated,src){
   fx.rate=r; fx.updated=updated||''; fx.src=src||''; fx.base=base; fx.status='ok';
   try{ localStorage.setItem(FX_KEY,JSON.stringify({t:Date.now(),r:r,u:fx.updated,s:fx.src,b:base})); }catch(e){}
   var ft=document.getElementById('fxTop'); if(ft)ft.innerHTML=fxBanner();
+  renderSideInfo();
 }
 function fetchFx(force){
   if(!force){
@@ -1272,15 +1283,15 @@ function fxBanner(){
     var pct=(diff!=null&&pv)?(diff/pv*100):null;
     var cls=diff==null?'flat':(diff>0.005?'up':(diff<-0.005?'dn':'flat'));
     var arrow=cls==='up'?'▲':(cls==='dn'?'▼':'—');
-    var chg=diff==null?'<span class="fxChg flat">—</span>'
+    var chg=diff==null?'<span class="fxChg flat">— 변동 없음</span>'
       :'<span class="fxChg '+cls+'">'+arrow+' '+Math.abs(diff).toFixed(2)
-        +' <em>'+(pct>=0?'+':'')+pct.toFixed(2)+'%</em></span>';
-    return '<div class="fxCell'+(cls==='up'?' isUp':(cls==='dn'?' isDn':''))+'">'
+        +' <em>'+Math.abs(pct).toFixed(2)+'%</em></span>';
+    return '<div class="fxCell">'
       +'<div class="fxTop"><span class="fxFlag">'+f.flag+'</span>'
-      +'<span class="fxCur">'+f.cur+'</span><span class="fxUnit">'+f.unit+'</span></div>'
-      +'<div class="fxVal">'+(v?('₩'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}))
-        :'<span class="skel" style="display:inline-block;width:84px;height:17px"></span>')+'</div>'
-      +'<div class="fxFoot"><span class="fxName">'+f.name+'</span>'+chg+'</div></div>';
+      +'<span class="fxName">'+f.name+'</span><span class="fxCur">'+f.cur+'</span></div>'
+      +'<div class="fxVal">'+(v?v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})
+        :'<span class="skel" style="display:inline-block;width:88px;height:20px"></span>')+'</div>'
+      +'<div class="fxFoot">'+chg+'<span class="fxUnit">'+f.unit+'</span></div></div>';
   }).join('');
   var when=fx.updated?String(fx.updated).replace(/\s*\(.*\)\s*/,'').trim():'';
   return '<section class="card fxBar">'
@@ -1291,6 +1302,74 @@ function fxBanner(){
     +'</section>';
 }
 
+
+/* ================= 날씨 · 사이드 정보 ================= */
+var wx={status:'loading',t:null,code:null,hi:null,lo:null,pop:null,err:''};
+var WX_KEY='gaia_wx_v1';
+var WX_LAT=37.2749, WX_LON=127.1444;   /* 용인 기흥 (본사) */
+var WMO={
+  0:['맑음','sun'],1:['대체로 맑음','sun'],2:['구름 조금','cloud-sun'],3:['흐림','cloudy'],
+  45:['안개','cloud-fog'],48:['짙은 안개','cloud-fog'],
+  51:['이슬비','cloud-drizzle'],53:['이슬비','cloud-drizzle'],55:['이슬비','cloud-drizzle'],
+  61:['비','cloud-rain'],63:['비','cloud-rain'],65:['강한 비','cloud-rain-wind'],
+  66:['진눈깨비','cloud-hail'],67:['진눈깨비','cloud-hail'],
+  71:['눈','cloud-snow'],73:['눈','cloud-snow'],75:['많은 눈','snowflake'],77:['싸락눈','snowflake'],
+  80:['소나기','cloud-rain'],81:['소나기','cloud-rain'],82:['강한 소나기','cloud-rain-wind'],
+  85:['눈보라','cloud-snow'],86:['눈보라','cloud-snow'],
+  95:['천둥번개','cloud-lightning'],96:['천둥번개','cloud-lightning'],99:['우박','cloud-hail']
+};
+function fetchWx(force){
+  if(!force){
+    try{
+      var c=JSON.parse(localStorage.getItem(WX_KEY)||'null');
+      if(c&&c.t&&(Date.now()-c.t)<30*60*1000){ wx=c.w; wx.status='ok'; return Promise.resolve(); }
+    }catch(e){}
+  }
+  return fetch('https://api.open-meteo.com/v1/forecast?latitude='+WX_LAT+'&longitude='+WX_LON
+    +'&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max'
+    +'&timezone=Asia%2FSeoul&forecast_days=1')
+    .then(function(r){ if(!r.ok)throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(d){
+      var cur=d.current||{}, dy=d.daily||{};
+      wx={status:'ok',t:Math.round(cur.temperature_2m),code:cur.weather_code,
+        hi:dy.temperature_2m_max?Math.round(dy.temperature_2m_max[0]):null,
+        lo:dy.temperature_2m_min?Math.round(dy.temperature_2m_min[0]):null,
+        pop:dy.precipitation_probability_max?dy.precipitation_probability_max[0]:null,err:''};
+      try{ localStorage.setItem(WX_KEY,JSON.stringify({t:Date.now(),w:wx})); }catch(e){}
+      renderSideInfo();
+    })
+    .catch(function(e){ wx.status='error'; wx.err=String(e.message||e); renderSideInfo(); });
+}
+function renderSideInfo(){
+  var el=document.getElementById('sideInfo'); if(!el)return;
+  var d=new Date();
+  var wd=['일','월','화','수','목','금','토'][d.getDay()];
+  var dateTx=d.getFullYear()+'. '+(d.getMonth()+1)+'. '+d.getDate()+' ('+wd+')';
+  var w=WMO[wx.code]||['—','cloud'];
+  var wxTx=wx.status==='ok'
+    ? '<div class="siWx">'+icon(w[1])+'<b>'+(wx.t!=null?wx.t+'°':'—')+'</b>'
+      +'<span>'+w[0]+'</span>'
+      +(wx.hi!=null?'<em>'+wx.hi+'° / '+wx.lo+'°</em>':'')+'</div>'
+      +(wx.pop!=null&&wx.pop>=30?'<div class="siPop">'+icon('umbrella')+'강수확률 '+wx.pop+'%</div>':'')
+    : (wx.status==='error'?'<div class="siWx dim">날씨 정보 없음</div>'
+      :'<div class="siWx dim"><span class="skel" style="width:90px;height:14px;display:inline-block"></span></div>');
+  var fxTx='';
+  if(fx.status==='ok'){
+    fxTx=FX_DEF.map(function(f){
+      var v=fx.rate[f.k];
+      var pv=(fx.base&&fx.base.r)?fx.base.r[f.k]:null;
+      var diff=(v&&pv)?(v-pv):null, pct=(diff!=null&&pv)?(diff/pv*100):null;
+      var cls=diff==null?'flat':(diff>0.005?'up':(diff<-0.005?'dn':'flat'));
+      return '<div class="siFx"><span class="k">'+f.cur+'</span>'
+        +'<b>'+(v?v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</b>'
+        +'<em class="'+cls+'">'+(pct==null?'—':(cls==='up'?'▲':(cls==='dn'?'▼':'—'))+Math.abs(pct).toFixed(2)+'%')+'</em></div>';
+    }).join('');
+  } else {
+    fxTx='<div class="siFx dim">환율 불러오는 중…</div>';
+  }
+  el.innerHTML='<div class="siDate">'+dateTx+'</div>'+wxTx
+    +'<div class="siDiv"></div>'+fxTx;
+}
 /* ================= 실시간 재고 (재고_RAW) ================= */
 var rt={status:'loading',stock:null,count:0,updated:'',err:''};
 function fetchStock(force){
@@ -2602,6 +2681,7 @@ function render(){
   var cm=$('#cntMaster');if(cm)cm.textContent=ms.status==='ok'?ms.list.length.toLocaleString():'';
   var cs=$('#cntStock');if(cs&&hy.status==='ok'){var urg=(hy.agg.cls['발주필요']||0)+(hy.agg.cls['품절위험']||0);cs.textContent=urg||'';cs.className='cnt'+(urg?' hot':'');}
   var ft=$('#fxTop'); if(ft)ft.innerHTML=fxBanner();
+  renderSideInfo();
   var v=$('#view');
   if(state.view==='dash')v.innerHTML=vDash(rs,d);
   else if(state.view==='orders')v.innerHTML=vOrders(rs,d);
@@ -4055,8 +4135,8 @@ document.addEventListener('click',function(e){
 })();
 
 /* ================= 시작 ================= */
-initCat();initKn();buildYearSeg();refreshIcons();
-[fetchHayoung,fetchMaster,fetchStock,fetchCert,fetchExtra,fetchFx].forEach(function(fn){
+initCat();initKn();buildYearSeg();renderSideInfo();refreshIcons();
+[fetchHayoung,fetchMaster,fetchStock,fetchCert,fetchExtra,fetchFx,fetchWx].forEach(function(fn){
   try{ fn(); }catch(e){ console.warn('init',fn.name,e); }
 });
 loadYear(state.year).then(render);
