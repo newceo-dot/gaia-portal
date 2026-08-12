@@ -462,7 +462,6 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
     <button class="tb-btn meet" id="btnMeeting"><i data-lucide="presentation"></i><span>회의 모드</span></button>
   </div>
 
-  <div id="fxTop"></div>
   </div>
 
   <div id="content">
@@ -1091,7 +1090,6 @@ function fxSave(){
   try{ localStorage.setItem(FX_KEY,JSON.stringify({t:Date.now(),l:fx.list,s:fx.src,a:fx.at,c:fx.cnt})); }catch(e){}
 }
 function fxPaint(){
-  var ft=document.getElementById('fxTop'); if(ft)ft.innerHTML=fxBanner();
   renderSideInfo();
 }
 function fetchFx(force){
@@ -1143,36 +1141,6 @@ function fetchFx(force){
 function fxNum(v,d){ return v==null?'—':Number(v).toLocaleString(undefined,{minimumFractionDigits:d==null?2:d,maximumFractionDigits:d==null?2:d}); }
 function fxArrow(dir){ return dir>0?'▲':(dir<0?'▼':'—'); }
 function fxCls(dir){ return dir>0?'up':(dir<0?'dn':'flat'); }
-function fxBanner(){
-  if(fx.status==='error'){
-    return '<section class="card fxBar err"><div class="fxErr">'+icon('triangle-alert')
-      +'환율 정보를 불러오지 못했습니다 — '+esc(fx.err)+'</div>'
-      +'<button class="fxBtn" id="fxRefresh" style="margin-left:auto">'+icon('refresh-cw')+'</button></section>';
-  }
-  if(fx.status!=='ok'||!fx.list.length){
-    return '<section class="card fxBar">'
-      +'<div class="fxLab">'+icon('banknote')+'<span>환전 고시 환율</span></div>'
-      +FX_ORDER.map(function(){return '<div class="fxCell"><span class="skel" style="display:block;width:110px;height:34px;border-radius:8px"></span></div>'}).join('')
-      +'</section>';
-  }
-  var cells=fx.list.map(function(f){
-    var cls=fxCls(f.dir);
-    return '<div class="fxCell">'
-      +'<div class="fxTop"><span class="fxFlag">'+f.flag+'</span>'
-      +'<span class="fxName">'+f.name+'<b>'+f.cur+'</b>'+(f.unit?'<em>'+f.unit+'</em>':'')+'</span></div>'
-      +'<div class="fxRow"><span class="fxVal">'+fxNum(f.price)+'<i>원</i></span>'
-      +'<span class="fxChg '+cls+'">'+fxArrow(f.dir)+fxNum(Math.abs(f.change==null?0:f.change))
-      +(f.rate!=null?'<em>'+(f.dir<0?'-':(f.dir>0?'+':''))+Math.abs(f.rate).toFixed(2)+'%</em>':'')+'</span></div>'
-      +'</div>';
-  }).join('');
-  var meta=(fx.at?esc(String(fx.at).replace('T',' ').slice(0,16)):'')
-    +(fx.cnt?' · '+esc(fx.cnt)+'회차':'')+(fx.src?'  |  '+esc(fx.src):'');
-  return '<section class="card fxBar">'
-    +'<div class="fxLab">'+icon('banknote')+'<span>환전 고시 환율</span></div>'
-    +cells
-    +'<div class="fxMeta"><span>'+meta+'</span>'
-    +'<button class="fxBtn" id="fxRefresh" title="환율 새로고침">'+icon('refresh-cw')+'</button></div></section>';
-}
 
 /* ================= 날씨 · 사이드 정보 ================= */
 var wx={status:'loading',t:null,code:null,hi:null,lo:null,pop:null,err:''};
@@ -2618,7 +2586,6 @@ function render(){
   var ck=$('#cntKc');if(ck)ck.textContent=d.kcTodo.length||'';
   var cm=$('#cntMaster');if(cm)cm.textContent=ms.status==='ok'?ms.list.length.toLocaleString():'';
   var cs=$('#cntStock');if(cs&&hy.status==='ok'){var urg=(hy.agg.cls['발주필요']||0)+(hy.agg.cls['품절위험']||0);cs.textContent=urg||'';cs.className='cnt'+(urg?' hot':'');}
-  var ft=$('#fxTop'); if(ft)ft.innerHTML=fxBanner();
   renderSideInfo();
   var v=$('#view');
   if(state.view==='dash')v.innerHTML=vDash(rs,d);
