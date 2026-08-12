@@ -1285,13 +1285,13 @@ function hyKcAggregate(kc){
 
 /* ================= 브랜드 통합 ================= */
 var BRAND_ALIAS=[
-  [/^(펀코|funko)/i,'펀코'],
+  [/^(펀코|funko)/i,'FUNKO'],
   [/^(리틀|little|mga|리틀타익스)/i,'MGA'],
-  [/^(디키|dickie)/i,'디키'],
+  [/^(디키|dickie)/i,'DICKIE'],
   [/^(마조렛|majorette|majo)/i,'마조렛'],
+  [/^(하이글로리|highglory|highgrory|hg)/i,'HIGH GLORY'],
   [/^(피카소|picasso)/i,'피카소'],
   [/^(핑크퐁|pinkfong)/i,'핑크퐁'],
-  [/^(하이글로리|highglory|hg)/i,'하이글로리'],
   [/^(msz)/i,'MSZ'],
   [/^(huada|화다)/i,'HUADA'],
   [/^(hktec)/i,'HKTEC'],
@@ -1717,12 +1717,12 @@ function fetchMaster(){
     return r.json();
   }).then(function(arr){
     if(!Array.isArray(arr)||!arr.length)throw new Error('empty');
-    ms.list=arr;ms.status='ok';ms.src='외부 파일';_msIdx=null;mergeOrderProducts();
+    ms.list=arr;ms.status='ok';ms.src='외부 파일';_msIdx=null;mergeOrderProducts();applyBrandRules();
     if(state.view==='master'||state.view==='dash')render();
   }).catch(function(){
     try{
       ms.list=JSON.parse(document.getElementById('masterData').textContent);
-      ms.status='ok';ms.src='내장 데이터';_msIdx=null;mergeOrderProducts();
+      ms.status='ok';ms.src='내장 데이터';_msIdx=null;mergeOrderProducts();applyBrandRules();
     }catch(e){ ms.status='error';ms.err=String(e.message||e); }
     if(state.view==='master'||state.view==='dash')render();
   });
@@ -2451,6 +2451,7 @@ function mergeOrderProducts(){
     });
   });
   if(added){ ms.added=(ms.added||0)+added; _msIdx=null; }
+  applyBrandRules();
   return added;
 }
 var _msIdx=null;
@@ -3885,6 +3886,20 @@ var FLAG_SVG={
      +'<path d="M7 12a5 5 0 0 1 10 0" fill="#0047A0"/></svg>'
 };
 function flagOf(k){ return FLAG_SVG[k]||'' }
+
+
+/* 상품 브랜드 확정 — 오더진행현황 기준, 마조렛 우선 */
+function applyBrandRules(){
+  if(ms.status!=='ok')return;
+  ms.list.forEach(function(o){
+    var od=ordAttr(o.bc)||{};
+    var ob=od.br?normBrand(od.br):'';
+    var mb=o.br?normBrand(o.br):'';
+    /* 오더진행현황에서 마조렛으로 잡히면 마조렛 우선 */
+    o.br=(ob==='마조렛')?'마조렛':(mb||ob||'기타');
+  });
+  _msIdx=null;
+}
 
 /* ---- 주요 브랜드 (즐겨찾기) ---- */
 var FAV_KEY='gaia_favbrand_v1';
