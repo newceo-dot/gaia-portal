@@ -548,6 +548,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
 .gAct{display:flex;gap:6px;margin-bottom:14px}
 .isBtn{flex:1;font-size:.74rem;font-weight:700;padding:7px 0;border-radius:9px;background:var(--bg);color:var(--ink-2);text-align:center;display:flex;align-items:center;justify-content:center;gap:5px}
 .isBtn:hover{background:var(--g100);color:var(--g700)}
+.isBtn.lk{color:var(--g700);background:var(--g50)}
+.isBtn.lk svg{width:.9em;height:.9em}
 .upWait{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:.76rem;color:var(--ink-2);height:100%}
 .ctBox{background:var(--bg);border-radius:12px;padding:12px 14px;margin-bottom:16px}
 .ctBox .ctT{font-size:.78rem;font-weight:800;margin-bottom:9px;display:flex;align-items:center;gap:6px}
@@ -1534,13 +1536,25 @@ function resizeImg(file,maxW){
     rd.readAsDataURL(file);
   });
 }
-function saveImgs(o,ids){
+function saveImgs(o,ids,lock){
   var g=document.querySelector('.gWrap');
   if(g)g.style.opacity='.5';
-  gasPost({action:'setImgs',bc:normBc(o.bc),imgs:ids.join(',')})
+  var want=ids.join(',');
+  gasPost({action:'setImgs',bc:normBc(o.bc),bcRaw:o.bc,name:o.name||'',imgs:want,lock:(lock===0?0:1)})
     .then(function(){ return new Promise(function(r){setTimeout(r,1600)}); })
     .then(function(){ return fetchExtra(true); })
-    .then(function(){ reopenPanel(o); })
+    .then(function(){
+      /* iframe POST는 서버 응답을 읽을 수 없어 저장 실패가 조용히 묻힌다.
+         실제 반영된 값을 다시 읽어 비교하고, 다르면 사용자에게 알린다. */
+      var e2=exOf(o);
+      var got=String((e2&&e2.img)||'').split(',').map(function(x){return x.trim()}).filter(Boolean).join(',');
+      if(got!==want){
+        alert('이미지 순서가 저장되지 않았습니다.\n\n요청한 순서: '+(want||'(없음)')
+          +'\n서버에 저장된 순서: '+(got||'(없음)')
+          +'\n\nApps Script "가이아MD 포털" 프로젝트의 최신 Code.gs가 배포되어 있는지 확인해 주세요.\n(배포 → 배포 관리 → 연필 아이콘 → 새 버전 → 배포)');
+      }
+      reopenPanel(o);
+    })
     .catch(function(e){ alert('처리 실패: '+(e.message||e)); reopenPanel(o); });
 }
 function doUpload(o,kind,file){
@@ -1649,6 +1663,7 @@ function gallery(o,e){
       +'<button class="gDel" data-del="'+i+'" title="삭제">✕</button></div>';
   }).join('');
   if(ids.length<IMG_MAX)thumbs+='<button class="gAdd" data-up="add" title="이미지 추가 ('+ids.length+'/'+IMG_MAX+')">+</button>';
+  var locked=!!(e&&e.lock);
   return '<div class="gWrap" data-drop="add">'
     +'<div class="gThumbs">'+thumbs+'</div>'
     +'<div class="gMain">'+main+'</div>'
@@ -1656,6 +1671,7 @@ function gallery(o,e){
     +(ids.length?'<div class="gAct">'
       +'<a class="isBtn" href="'+driveDown(ids[sel])+'" target="_blank" rel="noopener">'+icon('download')+' 다운로드</a>'
       +(sel>0?'<button class="isBtn" data-rep="'+sel+'">대표로 지정</button>':'')
+      +(locked?'<button class="isBtn lk" data-unlock="1" title="자동 동기화가 순서를 다시 정렬하도록 되돌립니다">'+icon('lock')+' 순서 고정됨</button>':'')
       +'</div>':'');
 }
 
@@ -2760,6 +2776,13 @@ function renderPanelBody(o,pairs){
       if(!confirm('이 이미지를 삭제할까요?'))return;
       ids.splice(i,1); state._imgSel=0;
       saveImgs(o,ids);
+    });
+  });
+  body.querySelectorAll('[data-unlock]').forEach(function(b){
+    b.addEventListener('click',function(){
+      if(!confirm('순서 고정을 해제할까요?\n해제하면 다음 동기화 때 파일명(_1·_2) 순서로 다시 정렬됩니다.'))return;
+      var ids=imgList(exOf(o));
+      saveImgs(o,ids,0);
     });
   });
   body.querySelectorAll('[data-rep]').forEach(function(b){
