@@ -339,10 +339,12 @@ body.meeting .fxVal{font-size:1.5rem}
 .covPill b{width:7px;height:7px;border-radius:50%;display:inline-block}
 
 
-.pSecT{display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:800;color:var(--ink);margin:18px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
+.pSecT{display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:800;color:var(--g900);margin:20px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
 .pSecT svg{color:var(--g600)}
 
 
+
+.pSecT .pSecSub{margin-left:auto;font-size:.7rem;font-weight:600;color:var(--ink-3)}
 .pSecT .pSecAct{margin-left:auto;display:flex;gap:6px}
 .pSecT .pSecAct .isBtn{padding:5px 11px;font-size:.73rem;flex:none}
 .spEdit{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
@@ -2248,10 +2250,97 @@ function exportSpecPDF(o){
     +'<script>setTimeout(function(){window.print()},900);<\/script></body></html>');
   w.document.close();
 }
+function secHtml(sec){
+  var rows=(sec.rows||[]).filter(function(p){return p[1]!==''&&p[1]!=null});
+  if(!rows.length)return '';
+  return (sec.t?('<div class="pSecT">'+icon(sec.i||'info')+esc(sec.t)
+      +(sec.sub?'<span class="pSecSub">'+esc(sec.sub)+'</span>':'')+'</div>'):'')
+    +dlHtml(rows);
+}
+
+/* 패널 공통 섹션 구성 — 상품 마스터·오더 화면 동일 */
+function findOrdersByBc(bc){
+  var b=normBc(bc); if(!b)return [];
+  var out=[];
+  YEARS.slice().sort().reverse().forEach(function(y){
+    (state.data[y]||[]).forEach(function(r){ if(normBc(r.bc)===b)out.push({y:y,r:r}); });
+  });
+  return out;
+}
+function stockRows_(o){
+  var lv=liveStockOf(o), s=stockOf(o), rows=[];
+  if(lv)rows.push(['가용재고',lv.q.toLocaleString()+'pcs']);
+  if(s){
+    if(!lv||Math.abs((s.it.cur||0)-lv.q)>0)rows.push(['대시보드 재고',(s.it.cur||0).toLocaleString()+'pcs']);
+    if(s.it.inc)rows.push(['입고예정',s.it.inc.toLocaleString()+'pcs']);
+    if(s.it.amt)rows.push(['재고금액',fmtKR(s.it.amt)]);
+    if(s.it.adps)rows.push(['일평균 판매',s.it.adps.toFixed(1)+'pcs']);
+    if(s.it.days!=null)rows.push(['재고 커버일',Math.round(s.it.days)+'일']);
+    if(s.it.rec)rows.push(['권장 발주',s.it.rec.toLocaleString()+'pcs']);
+  }
+  return rows;
+}
+function orderRows_(r,y){
+  if(!r)return [];
+  var st=r._dl?'지연':(ST[r._st]?ST[r._st].label:'');
+  return [
+    ['발주일자',(y?y+'. ':'')+(r.od||'')],
+    ['수량',r.qty||''],['금액',r.amt||''],['단가',r.price||''],
+    ['SC/PI#',r.sc||''],['LC/TT',r.lc||''],
+    ['입고 월',r.im||''],['ETD',r.etd||''],['ETA',r.eta||''],['입고일',r.ind||''],
+    ['BL#',r.bl||''],['진행 상태',st],
+    ['KC검사',r.kct||''],['영업팀 전달',r.sales||''],['비고',r.memo||'']
+  ];
+}
+function panelSections(o,curRow,curYear){
+  var od=ordAttr(o.bc)||{};
+  var secs=[{t:'',i:'',rows:[
+    ['ITEM#',o.item||od.item||''],
+    ['DESC.',o.desc||od.desc||''],
+    ['더존품목코드',o.no||o.code||od.code||''],
+    ['브랜드',o.br||od.br||'']
+  ]}];
+  var st=stockRows_(o);
+  if(st.length)secs.push({t:'재고',i:'boxes',sub:'재고_RAW · 재고/발주 연동',rows:st});
+  if(curRow){
+    secs.push({t:'이 오더',i:'truck',sub:(curYear||'')+' 발주',rows:orderRows_(curRow,null)});
+  }
+  var hist=findOrdersByBc(o.bc).filter(function(x){return !curRow||x.r!==curRow});
+  if(hist.length){
+    if(curRow){
+      /* 현재 오더가 있으면 이력은 한 줄 요약으로 */
+      secs.push({t:'이전 발주 이력',i:'clock',sub:hist.length+'건',
+        rows:hist.slice(0,6).map(function(x){
+          var r=x.r;
+          var st=r._dl?'지연':(ST[r._st]?ST[r._st].label:'');
+          return [x.y+'. '+(r.od||'—'),
+            [r.qty?r.qty+'pcs':'',r.amt||'',r.im?'입고 '+r.im:'',st].filter(Boolean).join(' · ')];
+        })});
+    } else {
+      var latest=hist[0];
+      secs.push({t:'최근 오더',i:'truck',sub:latest.y+(hist.length>1?' · 총 '+hist.length+'건':''),
+        rows:orderRows_(latest.r,null)});
+      if(hist.length>1){
+        secs.push({t:'이전 발주 이력',i:'clock',sub:(hist.length-1)+'건',
+          rows:hist.slice(1,6).map(function(x){
+            var r=x.r;
+            var st=r._dl?'지연':(ST[r._st]?ST[r._st].label:'');
+            return [x.y+'. '+(r.od||'—'),
+              [r.qty?r.qty+'pcs':'',r.amt||'',r.im?'입고 '+r.im:'',st].filter(Boolean).join(' · ')];
+          })});
+      }
+    }
+  }
+  return secs;
+}
 function renderPanelBody(o,pairs){
   var e=exOf(o);
   var cbm=(e&&e.cbm)?e.cbm:'';
-  var html=dlHtml(pairs);
+  var html=(pairs&&pairs.length&&Array.isArray(pairs[0])&&typeof pairs[0][0]==='string'&&pairs[0].length===2&&!pairs[0].rows)
+    ? dlHtml(pairs) : '';
+  if(!html&&pairs&&pairs.length&&pairs[0]&&pairs[0].rows!==undefined){
+    html=pairs.map(secHtml).join('');
+  } else if(!html){ html=dlHtml(pairs||[]); }
   if(normBc(o.bc)){
     html+='<div class="pSecT">'+icon('package')+'상품 정보'
       +'<span class="pSecAct">'
@@ -2314,29 +2403,14 @@ function openMasterPanel(mi){
   state._panelRow=null; state._panelMi=mi;
   ensureAllYears(); ensureKcMaster();
   var s=hy.status==='ok'?stockOf(o):null;
-  var lv=liveStockOf(o);
-  $('#pBrand').textContent=(o.br||'')+(s?'  ·  '+(s.it.cls||''):'');
+  $('#pBrand').textContent=(o.br||'')+(s&&s.it.cls?'  ·  '+s.it.cls:'');
   $('#pName').textContent=o.name||'(상품명 없음)';
-  var od0=ordAttr(o.bc)||{};
-  var pairs=[['ITEM#',od0.item||''],['DESC.',od0.desc||''],['더존품목코드',o.no||od0.code||''],
-    ['브랜드',o.br||'']];
-  if(lv){
-    pairs.push(['— 실시간 재고 —','재고_RAW 기준']);
-    pairs.push(['가용재고',lv.q.toLocaleString()+'pcs']);
-  }
-  if(s){
-    pairs.push(['— 재고 분석 —','재고/발주 대시보드 연동']);
-    pairs.push(['대시보드 재고',(s.it.cur||0).toLocaleString()+'pcs']);
-    if(s.it.inc)pairs.push(['입고예정',s.it.inc.toLocaleString()+'pcs']);
-    if(s.it.amt)pairs.push(['재고금액',fmtKR(s.it.amt)]);
-    if(s.it.adps)pairs.push(['일평균판매',s.it.adps.toFixed(1)+'pcs']);
-    if(s.it.days!=null)pairs.push(['재고 커버일',Math.round(s.it.days)+'일']);
-  }
-  renderPanelBody(o,pairs);
+  renderPanelBody(o,panelSections(o,null,null));
   $('#pLink').href='https://gaia-hyhong.github.io/Hayoung-MD-Dashboard/';
-  $('#pLink').textContent=s?'재고/발주 대시보드에서 보기 ↗':'재고/발주 대시보드 열기 ↗';
+  $('#pLink').textContent='재고/발주 대시보드에서 보기 ↗';
   $('#ovl').classList.add('on');$('#panel').classList.add('on');
 }
+
 
 /* ================= 렌더 ================= */
 function render(){
@@ -3727,20 +3801,21 @@ function openPanel(sheetRow){
   var r=rows().find(function(x){return x.r===sheetRow&&(!state._panelY||x._y===state._panelY)})
         ||rows().find(function(x){return x.r===sheetRow});
   if(!r)return;
+  state._panelRow=sheetRow; state._panelMi=null;
+  var yy=r._y||state.year;
+  var s=hy.status==='ok'?stockOf({bc:r.bc}):null;
   $('#pBrand').textContent=(r.br||'')+(r._y?'  ·  '+r._y:'')+(r._dl?'  ·  ⚠ 지연':'');
   $('#pName').textContent=r.name||r.desc||'(품목명 없음)';
-  var order=['item','desc','code','bc','lbc','price','qty','pack','amt','od','sc','lc','im','etd','eta','ind','load','bl','obl','req','kct','sales','knet','lotte','kcname','kcno','kcs','sm','memo'];
-  state._panelRow=sheetRow; state._panelMi=null;
-  var po={bc:r.bc||'',name:r.name||r.desc||'',no:r.code||'',br:r.br||r._br||''};
-  var skip={bc:1,lbc:1,price:1,pack:1,knet:1,lotte:1,kcno:1,kcname:1,name:1,item:1};
-  var pairs=order.filter(function(f){return r[f]&&!skip[f]}).map(function(f){return [FIELD_KO[f],r[f]]});
-  renderPanelBody(po,pairs);
-  var yy=r._y||state.year;
+  var po={bc:r.bc||'',name:r.name||r.desc||'',no:r.code||'',br:r.br||r._br||'',
+    item:r.item||'',desc:r.desc||'',lbc:r.lbc||'',pack:r.pack||'',
+    kcno:r.kcno||'',kcn:r.kcname||'',knet:r.knet||'',lotte:r.lotte||''};
+  renderPanelBody(po,panelSections(po,r,yy==='ALL'?null:yy));
   var m=state.meta[yy]||state.meta[state.year];
   $('#pLink').href=m?'https://docs.google.com/spreadsheets/d/'+m.sheetId+'/edit#gid='+m.gid+'&range=A'+r.r:'#';
   $('#pLink').textContent='시트에서 이 행 열기 ↗';
   $('#ovl').classList.add('on');$('#panel').classList.add('on');
 }
+
 function closePanel(){state._specEdit=false;$('#ovl').classList.remove('on');$('#panel').classList.remove('on');}
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closePanel();});
 
