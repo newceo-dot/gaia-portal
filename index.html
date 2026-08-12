@@ -577,6 +577,7 @@ var state = { year:'2026', view:'dash', omode:'list', data:{}, meta:{},
   f:{ q:'', brand:'', status:'', im:'' }, kcf:'', kccf:'', kcq:'' };
 
 var ST = {
+  carry:  {label:'이월',    cls:'b-ordered', color:'#A8AEB8'},
   ordered:{label:'발주',    cls:'b-ordered', color:'#C9CDD2'},
   prod:   {label:'생산중',  cls:'b-prod',    color:'#57B08A'},
   ship:   {label:'선적/통관',cls:'b-ship',   color:'#1B7A4F'},
@@ -602,8 +603,24 @@ function prevYM(){var d=new Date();d.setDate(1);d.setMonth(d.getMonth()-1);retur
 function parseYM(s){var m=String(s||'').match(/(20\d{2})\s*[-./]\s*(\d{1,2})/);return m?m[1]+'-'+m[2].padStart(2,'0'):null}
 function fmtYM(ym){if(!ym)return'';var p=ym.split('-');return p[0]+'년 '+parseInt(p[1],10)+'월'}
 function moLabel(ym){return parseInt(ym.split('-')[1],10)+'월'}
+function stBadge(r){
+  if(r._dl)return '<span class="badge b-delay">지연</span>';
+  if(r._cy)return '<span class="badge b-ordered" title="이전 년도 오더가 넘어온 건">이월</span>';
+  return '<span class="badge '+ST[r._st].cls+'">'+ST[r._st].label+'</span>';
+}
 function statusOf(r){if(r.ind)return'done';if(r.bl||r.obl||r.etd)return'ship';if(r.sc)return'prod';return'ordered'}
-function isDelayed(r){if(r.ind)return false;var ym=parseYM(r.im);return !!(ym&&ym<nowYM())}
+/* 이월 = 이전 년도 시트의 미입고 건 (다음 해 오더로 넘어간 것) */
+function isCarry(r){
+  if(r.ind)return false;
+  var sy=parseInt(r._sy||0,10);
+  return !!(sy&&sy<new Date().getFullYear());
+}
+function isDelayed(r){
+  if(r.ind)return false;
+  if(isCarry(r))return false;
+  var ym=parseYM(r.im);
+  return !!(ym&&ym<nowYM());
+}
 function kcStateOf(r){
   if((r.req&&r.req.indexOf('불필요')!==-1)||(r.lotte&&r.lotte.indexOf('불필요')!==-1)||(r.knet&&r.knet.indexOf('불필요')!==-1))return'na';
   if(r.kcno)return'done';
@@ -669,7 +686,7 @@ function loadYear(year,force){
   $('#loading').classList.add('on');
   return jsonp({action:'orders',year:year,refresh:force?'1':'0'}).then(function(d){
     if(!d.ok)throw new Error(d.error||'서버 오류');
-    d.rows.forEach(function(r){r._st=statusOf(r);r._dl=isDelayed(r);r._amt=amtNum(r.amt);r._kc=kcStateOf(r);r._br=normBrand(r.br);});
+    d.rows.forEach(function(r){r._sy=year;r._cy=false;r._st=statusOf(r);r._cy=isCarry(r);r._dl=isDelayed(r);r._amt=amtNum(r.amt);r._kc=kcStateOf(r);r._br=normBrand(r.br);});
     state.data[year]=d.rows;
     state.meta[year]={sheetId:d.sheetId,gid:d.gid,updated:d.updated,count:d.count};
     hideNotice();
@@ -2675,6 +2692,7 @@ function filtered(rs){
     if(f.brand&&(r._br||'기타')!==f.brand)return false;
     if(f.im&&parseYM(r.im)!==f.im)return false;
     if(f.status==='delay'){if(!r._dl)return false;}
+    else if(f.status==='carry'){if(!r._cy)return false;}
     else if(f.status==='etdmiss'){var y=parseYM(r.im);if(!(y&&y<=nextYM()&&!r.etd&&!r.ind))return false;}
     else if(f.status&&r._st!==f.status)return false;
     if(f.q){
@@ -2701,7 +2719,7 @@ function vOrders(rs,d){
   var fl=filtered(rs);
   var amt=fl.reduce(function(a,r){return a+r._amt},0);
   var qty=fl.reduce(function(a,r){return a+amtNum(r.qty)},0);
-  var chips=[['','전체'],['ordered','발주'],['prod','생산중'],['ship','선적/통관'],['done','입고완료'],['delay','지연'],['etdmiss','ETD 미확정']];
+  var chips=[['','전체'],['ordered','발주'],['prod','생산중'],['ship','선적/통관'],['done','입고완료'],['delay','지연'],['carry','이월'],['etdmiss','ETD 미확정']];
 
   var h=pageHead('오더 관리','발주부터 입고 완료까지 오더 단위 추적');
   h+='<div class="toolbar">'
@@ -2723,7 +2741,7 @@ function vOrders(rs,d){
         +'<div class="bbody">'+(g.length?g.map(function(r){
           return '<div class="bcard'+(r._dl?' dl':'')+'" data-r="'+r.r+'"><div class="t">'+esc(r.name||r.desc||'')+'</div>'
             +'<div class="m"><span>'+esc(r.br||'')+'</span><span>'+esc(r.qty||'')+'pcs</span>'
-            +(r.im?'<span>입고 '+esc(r.im)+'</span>':'')+(r._dl?'<span style="color:var(--red);font-weight:700">지연</span>':'')+'</div></div>';
+            +(r.im?'<span>입고 '+esc(r.im)+'</span>':'')+(r._dl?'<span style="color:var(--red);font-weight:700">지연</span>':(r._cy?'<span style="color:var(--ink-3);font-weight:700">이월</span>':''))+'</div></div>';
         }).join(''):'<div class="empty" style="padding:20px">없음</div>')+'</div></div>';
     }).join('')+'</div>';
     return h;
@@ -2734,7 +2752,7 @@ function vOrders(rs,d){
     +'<th>발주일</th><th>브랜드</th><th class="thCol"></th><th>품목명</th><th>ITEM#</th><th class="num">수량</th><th class="num">금액</th><th>입고예정</th><th>ETD</th><th>입고일</th><th>상태</th>'
     +'</tr></thead><tbody>'
     +(fl.length?fl.map(function(r){
-      var st=r._dl?'<span class="badge b-delay">지연</span>':'<span class="badge '+ST[r._st].cls+'">'+ST[r._st].label+'</span>';
+      var st=stBadge(r);
       return '<tr class="'+(r._dl?'rowDelay':'')+'" data-r="'+r.r+'" data-y="'+esc(r._y||state.year)+'">'
         +(state.year==='ALL'?'<td><span class="yTag">'+esc(r._y||'')+'</span></td>':'')
         +'<td>'+esc(r.od||'')+'</td><td>'+esc(r.br||'')+'</td>'
@@ -2774,7 +2792,7 @@ function vLogi(rs,d){
       +'<span class="ms">'+g.length+'건 · '+fmtUSD(a)+' · 입고완료 '+doneN+'/'+g.length+'</span></div>'
       +'<div class="tblWrap"><table class="tbl"><thead><tr><th>브랜드</th><th>품목명</th><th class="num">수량</th><th class="num">금액</th><th>ETD</th><th>ETA</th><th>입고일</th><th>BL#</th><th>상태</th></tr></thead><tbody>'
       +g.map(function(r){
-        var st=r._dl?'<span class="badge b-delay">지연</span>':'<span class="badge '+ST[r._st].cls+'">'+ST[r._st].label+'</span>';
+        var st=stBadge(r);
         return '<tr class="'+(r._dl?'rowDelay':'')+'" data-r="'+r.r+'"><td>'+esc(r.br||'')+'</td>'
           +'<td class="name" title="'+esc(r.name||r.desc||'')+'">'+esc(r.name||r.desc||'')+'</td>'
           +'<td class="num">'+esc(r.qty||'')+'</td><td class="num">'+esc(r.amt||'')+'</td>'
@@ -3429,7 +3447,7 @@ function vBrandDetail(){
       +'<span class="sub">'+ord.length+'건 · '+fmtUSD(oAmt)+'</span></div>'
       +'<div class="tblWrap" style="max-height:46vh"><table class="tbl"><thead><tr><th>발주일</th><th>품목명</th><th>ITEM#</th><th class="num">수량</th><th class="num">금액</th><th>입고예정</th><th>상태</th></tr></thead><tbody>'
       +ord.slice(0,60).map(function(r){
-        var st=r._dl?'<span class="badge b-delay">지연</span>':'<span class="badge '+ST[r._st].cls+'">'+ST[r._st].label+'</span>';
+        var st=stBadge(r);
         return '<tr class="'+(r._dl?'rowDelay':'')+'" data-r="'+r.r+'"><td>'+esc(r.od||'')+'</td>'
           +'<td class="name" title="'+esc(r.name||r.desc||'')+'">'+esc(r.name||r.desc||'')+'</td>'
           +'<td>'+esc(r.item||'')+'</td><td class="num">'+esc(r.qty||'')+'</td><td class="num">'+esc(r.amt||'')+'</td>'
@@ -3812,7 +3830,7 @@ function openPanel(sheetRow){
   state._panelRow=sheetRow; state._panelMi=null;
   var yy=r._y||state.year;
   var s=hy.status==='ok'?stockOf({bc:r.bc}):null;
-  $('#pBrand').textContent=(r.br||'')+(r._y?'  ·  '+r._y:'')+(r._dl?'  ·  ⚠ 지연':'');
+  $('#pBrand').textContent=(r.br||'')+(r._y?'  ·  '+r._y:'')+(r._dl?'  ·  ⚠ 지연':(r._cy?'  ·  이월':''));
   $('#pName').textContent=r.name||r.desc||'(품목명 없음)';
   var po={bc:r.bc||'',name:r.name||r.desc||'',no:r.code||'',br:r.br||r._br||'',
     item:r.item||'',desc:r.desc||'',lbc:r.lbc||'',pack:r.pack||'',
