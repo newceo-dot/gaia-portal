@@ -39,7 +39,9 @@ svg.lucide{width:1.05em;height:1.05em;stroke-width:1.9;flex:none;vertical-align:
 .brand b{font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
 #nav{flex:1;overflow-y:auto;margin:0 -12px;padding:0 12px}
 #nav::-webkit-scrollbar{width:0}
-.nav-label{font-size:.66rem;letter-spacing:.11em;color:var(--ink-3);font-weight:700;padding:16px 12px 8px;white-space:nowrap}
+.nav-label{font-size:.84rem;letter-spacing:.01em;color:var(--g900);font-weight:800;padding:20px 12px 9px;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.nav-label::after{content:'';flex:1;height:1px;background:var(--line)}
+.nav-label:first-child{padding-top:6px}
 .nav-item{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:10px 12px;border-radius:11px;font-size:.9rem;font-weight:500;color:var(--ink-2);white-space:nowrap;margin-bottom:2px;position:relative}
 .nav-item:hover{background:var(--hover);color:var(--ink)}
 .nav-item.on{background:var(--g50);color:var(--g900);font-weight:700}
@@ -274,6 +276,18 @@ body.meeting .fxVal{font-size:1.5rem}
 .pcBadges{display:flex;align-items:center;gap:5px;margin-top:auto}
 .pcStk{margin-left:auto;font-size:.68rem;font-weight:800;color:var(--g700);background:var(--g100);padding:2px 8px;border-radius:99px}
 .pcStk.zero{color:var(--red-tx);background:var(--red-bg)}
+
+.gWrap2{padding:6px 18px 16px}
+.gSub{font-size:.7rem;font-weight:800;color:var(--ink-3);margin-bottom:5px}
+.gRow{display:flex;align-items:center;gap:9px;padding:5px 6px;border-radius:9px;cursor:pointer;font-size:.83rem}
+.gRow:hover{background:var(--hover)}
+.gName{width:76px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gTrack{flex:1;height:7px;border-radius:99px;background:var(--line);overflow:hidden}
+.gTrack i{display:block;height:100%;border-radius:99px}
+.gTrack i.up{background:var(--g600)} .gTrack i.dn{background:var(--red)}
+.gRow b{width:52px;text-align:right;font-variant-numeric:tabular-nums;font-size:.8rem}
+.gRow b.up{color:var(--g600)} .gRow b.dn{color:var(--red)}
+.brandCard .spk{width:100%;height:26px;margin-top:8px}
 .brandGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:12px}
 .brandCard{padding:17px 18px;cursor:pointer;transition:transform .14s,box-shadow .14s}
 .brandCard:hover{transform:translateY(-2px);box-shadow:var(--sh-md)}
@@ -489,13 +503,13 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
     <a class="nav-item" href="https://gaia-hyhong.github.io/Hayoung-MD-Dashboard/" target="_blank" rel="noopener"><i data-lucide="warehouse"></i><span class="tx">재고/발주</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
     <a class="nav-item" href="https://newceo-dot.github.io/inbound-dashboard/" target="_blank" rel="noopener"><i data-lucide="container"></i><span class="tx">입고관리 시스템</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
     <button class="nav-item" data-view="stock"><i data-lucide="boxes"></i><span class="tx">재고 현황</span><span class="cnt" id="cntStock"></span></button>
-    <button class="nav-item" data-view="sheets"><i data-lucide="folder-open"></i><span class="tx">공유 시트</span></button>
 
     <div class="nav-label">상품</div>
     <button class="nav-item" data-view="master"><i data-lucide="package-search"></i><span class="tx">상품 마스터</span><span class="cnt" id="cntMaster"></span></button>
     <button class="nav-item" data-view="brands"><i data-lucide="tags"></i><span class="tx">브랜드 현황</span></button>
 
     <div class="nav-label">실무 도구</div>
+    <button class="nav-item" data-view="sheets"><i data-lucide="folder-open"></i><span class="tx">공유 시트</span></button>
     <button class="nav-item" data-view="freight"><i data-lucide="calculator"></i><span class="tx">수입 물류비 계산</span></button>
     <a class="nav-item" href="tools/kc-checker.html" target="_blank" rel="noopener"><i data-lucide="file-check-2"></i><span class="tx">KC×SM 크로스체커</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
     <a class="nav-item" href="tools/co-checker.html" target="_blank" rel="noopener"><i data-lucide="file-search"></i><span class="tx">CO·인보이스 대조</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
@@ -514,7 +528,7 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
 
 <div id="main">
   <div id="topbar">
-    <div class="tb-search"><i data-lucide="search"></i><input id="gq" type="text" placeholder="품목명 · ITEM# · 바코드 · BL# 검색"></div>
+    <div class="tb-search"><i data-lucide="search"></i><input id="gq" type="text" placeholder="품목명 · ITEM# · 바코드 · KC번호 · BL# 통합검색"></div>
     <div class="yearSeg" id="yearSeg"></div>
     <button class="tb-btn" id="btnRefresh" title="새로고침"><i data-lucide="refresh-cw"></i></button>
     <a class="tb-btn" id="btnSheet" href="#" target="_blank" rel="noopener" title="구글 시트"><i data-lucide="external-link"></i></a>
@@ -1429,7 +1443,7 @@ function fetchMaster(){
 var _hyIdx=null;
 function hyIndex(){
   if(_hyIdx)return _hyIdx;
-  if(hy.status!=='ok')return null;
+  if(hy.status!=='ok'||!hy.db)return null;
   var byCode={},bySuf={};
   Object.keys(hy.db.items).forEach(function(c){
     byCode[c]=c;
@@ -1570,7 +1584,7 @@ function vSales(){
   var maxCh=Math.max.apply(null,chRows.map(function(x){return x.rev}).concat([1]));
 
   /* 품목별 TOP */
-  var items=hy.db.items,tops=[];
+  var items=(hy.db&&hy.db.items)||{},tops=[];
   Object.keys(items).forEach(function(c){
     var it=items[c],mo=(it.monthly||{})[ym];
     if(!mo)return;
@@ -1624,7 +1638,7 @@ function vSales(){
 
 /* ----- 재고 현황 (재고/발주 데이터 품목 조회) ----- */
 function stockRows(){
-  if(hy.status!=='ok')return [];
+  if(hy.status!=='ok'||!hy.db)return [];
   var f=state.sf,items=hy.db.items;
   var out=[];
   Object.keys(items).forEach(function(c){
@@ -1639,7 +1653,9 @@ function stockRows(){
     if(f.brand&&normBrand(it.brand)!==f.brand)return;
     if(f.q){
       var q=f.q.toLowerCase();
-      if([it.name,c,it.brand].join(' ').toLowerCase().indexOf(q)===-1)return;
+      var _o=ordAttr(String(c).split('-').slice(1).join('-'))||{};
+      if([it.name,c,it.brand,_o.kcno,_o.kcname,_o.item,_o.bc]
+        .filter(Boolean).join(' ').toLowerCase().indexOf(q)===-1)return;
     }
     out.push({code:c,it:it});
   });
@@ -1670,11 +1686,12 @@ function vStock(){
     +'<div class="card metric"><div class="ml">'+icon('shopping-cart')+'<span>권장 발주금액</span></div><div class="mv">'+(sumRec?fmtKR(sumRec):'—')+'</div></div>'
     +'</div>';
 
-  var brandsMap={};Object.keys(hy.db.items).forEach(function(c){brandsMap[normBrand(hy.db.items[c].brand)]=1});
+  var _it=(hy.db&&hy.db.items)||{};
+  var brandsMap={};Object.keys(_it).forEach(function(c){brandsMap[normBrand(_it[c].brand)]=1});
   var clsChips=[['','전체']].concat(HY_ORDER.filter(function(k){return a.cls[k]}).map(function(k){return [k,k+' '+a.cls[k]]}));
   var urgChips=[['','긴급도 전체'],['now','긴급'],['soon','시급'],['plan','여유']];
   h+='<div class="toolbar">'
-    +'<input type="text" id="sq" placeholder="품목명·아마란스코드 검색" value="'+esc(f.q)+'">'
+    +'<input type="text" id="sq" placeholder="품목명·아마란스코드·KC번호 검색" value="'+esc(f.q)+'">'
     +'<select id="sbrand"><option value="">브랜드 전체</option>'+Object.keys(brandsMap).sort().map(function(b){return '<option'+(f.brand===b?' selected':'')+'>'+esc(b)+'</option>'}).join('')+'</select>'
     +'<div class="chips">'+clsChips.map(function(c){
         var col=c[0]&&HY_CLS[c[0]]?HY_CLS[c[0]].color:'';
@@ -1745,7 +1762,12 @@ function masterFiltered(){
     if(f.brand&&(o.br||'')!==f.brand)return false;
     if(f.q){
       var q=f.q.toLowerCase();
-      var hay=[o.name,o.no,o.bc,o.br,o.kcno].join(' ').toLowerCase();
+      var _od=ordAttr(o.bc)||{}, _cd=catDetail(o)||{}, _kn=knOf(o.bc)||{};
+      var _ct=certOf(o.kcno||_od.kcno||_kn.kc||_cd.kc, o.kcn||_od.kcname);
+      var hay=[o.name,o.no,o.bc,o.br,o.kcno,o.kcn,_od.item,_od.kcno,_od.kcname,
+        _kn.kc,_cd.kc,_od.knet,_od.lotte,
+        _ct&&_ct.kcno,_ct&&_ct.series,_ct&&_ct.maker,_ct&&_ct.report]
+        .filter(Boolean).join(' ').toLowerCase();
       if(hay.indexOf(q)===-1)return false;
     }
     if(f.stock){
@@ -1825,7 +1847,7 @@ function vMaster(){
   h+='<div class="toolbar">'
     +'<div class="seg"><button data-mv="grid" class="'+(state.mView==='grid'?'on':'')+'">'+icon('layout-grid')+'카드</button>'
     +'<button data-mv="list" class="'+(state.mView==='list'?'on':'')+'">'+icon('list')+'리스트</button></div>'
-    +'<input type="text" id="mq" placeholder="상품명·품번·바코드·KC번호 검색" value="'+esc(state.mf.q)+'">'
+    +'<input type="text" id="mq" placeholder="상품명·품번·바코드·KC번호·인증명 검색" value="'+esc(state.mf.q)+'">'
     +'<select id="mbrand"><option value="">브랜드 전체</option>'+Object.keys(brandsMap).sort().map(function(b){return '<option'+(state.mf.brand===b?' selected':'')+'>'+esc(b)+'</option>'}).join('')+'</select>'
     +'<div class="chips">'+chips.map(function(c){return '<button class="chip'+(state.mf.stock===c[0]?' on':'')+'" data-ms="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>'
     +'<button class="chip" id="imgSync" title="드라이브 폴더의 이미지를 파일명(바코드)으로 자동 연결">'+icon('refresh-cw')+' 드라이브 이미지 동기화</button>'
@@ -2551,7 +2573,11 @@ function filtered(rs){
     else if(f.status&&r._st!==f.status)return false;
     if(f.q){
       var q=f.q.toLowerCase();
-      var hay=[r.name,r.item,r.desc,r.code,r.bc,r.br,r.sc,r.bl].join(' ').toLowerCase();
+      var _c=certOf(r.kcno,r.kcname);
+      var hay=[r.name,r.item,r.desc,r.code,r.bc,r.lbc,r.br,r.sc,r.bl,
+        r.kcno,r.kcname,r.knet,r.lotte,r.kct,r.req,
+        _c&&_c.series,_c&&_c.maker,_c&&_c.report]
+        .filter(Boolean).join(' ').toLowerCase();
       if(hay.indexOf(q)===-1)return false;
     }
     return true;
@@ -2575,7 +2601,7 @@ function vOrders(rs,d){
   h+='<div class="toolbar">'
     +'<div class="seg"><button data-om="list" class="'+(state.omode==='list'?'on':'')+'">'+icon('list')+'리스트</button>'
     +'<button data-om="board" class="'+(state.omode==='board'?'on':'')+'">'+icon('kanban')+'보드</button></div>'
-    +'<input type="text" id="fq" placeholder="품목명·ITEM#·바코드·BL# 검색" value="'+esc(state.f.q)+'">'
+    +'<input type="text" id="fq" placeholder="품목명·ITEM#·바코드·KC번호·BL# 검색" value="'+esc(state.f.q)+'">'
     +'<select id="fbrand"><option value="">브랜드 전체</option>'+Object.keys(brandsMap).sort().map(function(b){return '<option'+(state.f.brand===b?' selected':'')+'>'+esc(b)+'</option>'}).join('')+'</select>'
     +'<select id="fim"><option value="">입고월 전체</option>'+Object.keys(ims).sort().map(function(m){return '<option'+(state.f.im===m?' selected':'')+'>'+m+'</option>'}).join('')+'</select>'
     +'<div class="chips">'+chips.map(function(c){return '<button class="chip'+(state.f.status===c[0]?' on':'')+'" data-st="'+c[0]+'">'+c[1]+'</button>'}).join('')+'</div>'
@@ -3229,7 +3255,7 @@ function vBrandDetail(){
   var bo=a.brand[b]||{cnt:0,amt:0,need:0,short:0,exc:0};
 
   /* 브랜드 소속 품목 */
-  var items=hy.db.items, own=[];
+  var items=(hy.db&&hy.db.items)||{}, own=[];
   Object.keys(items).forEach(function(c){
     if(normBrand(items[c].brand)!==b)return;
     own.push({code:c,it:items[c]});
@@ -3308,43 +3334,156 @@ function vBrandDetail(){
 }
 
 /* ----- 브랜드 현황 ----- */
-function vBrands(rs,d){
-  var h=pageHead('브랜드 현황','브랜드 통합 기준 · 매출·재고·오더 요약 · 카드 클릭 시 상세');
+function brandMetrics(rs){
+  var all=hy.status==='ok'?Object.keys(hy.agg.mrev).sort():[];
+  var last=all.slice(-12), prev=all.length>=24?all.slice(-24,-12):[];
   var by={};
+  function get(b){
+    return by[b]=by[b]||{rev:0,prev:0,qty:0,stock:0,cnt:0,need:0,short:0,exc:0,
+      ord:0,ordAmt:0,dl:0,open:0,mrev:{}};
+  }
   rs.forEach(function(r){
-    var b=r._br||'기타';
-    var o=by[b]=by[b]||{n:0,amt:0,open:0,done:0,dl:0,rev:0,stock:0,need:0};
-    o.n++;o.amt+=r._amt;
-    if(r._st==='done')o.done++;else o.open++;
+    var o=get(r._br||'기타');
+    o.ord++;o.ordAmt+=r._amt;
+    if(r._st==='done')o.done=(o.done||0)+1;else o.open++;
     if(r._dl)o.dl++;
   });
   if(hy.status==='ok'){
-    var months=trendMonths(hy.agg.mrev,12);
-    Object.keys(hy.agg.brandMrev).forEach(function(b){
-      var o=by[b]=by[b]||{n:0,amt:0,open:0,done:0,dl:0,rev:0,stock:0,need:0};
-      months.forEach(function(m){o.rev+=Math.max(0,hy.agg.brandMrev[b][m]||0)});
+    var A=hy.agg;
+    Object.keys(A.brandMrev).forEach(function(b){
+      var o=get(b), m=A.brandMrev[b];
+      last.forEach(function(x){o.rev+=Math.max(0,m[x]||0)});
+      prev.forEach(function(x){o.prev+=Math.max(0,m[x]||0)});
+      o.mrev=m;
     });
-    Object.keys(hy.agg.brand).forEach(function(b){
-      var o=by[b]=by[b]||{n:0,amt:0,open:0,done:0,dl:0,rev:0,stock:0,need:0};
-      o.stock=hy.agg.brand[b].amt;o.need=hy.agg.brand[b].need;o.short=hy.agg.brand[b].short;
+    Object.keys(A.brandQty||{}).forEach(function(b){
+      var o=get(b), q=A.brandQty[b];
+      last.forEach(function(x){o.qty+=Math.max(0,q[x]||0)});
+    });
+    Object.keys(A.brand).forEach(function(b){
+      var o=get(b), s=A.brand[b];
+      o.stock=s.amt||0;o.cnt=s.cnt||0;o.need=s.need||0;o.short=s.short||0;o.exc=s.exc||0;
     });
   }
-  var names=Object.keys(by).sort(function(x,y){return (by[y].rev-by[x].rev)||(by[y].amt-by[x].amt)});
-  var maxRev=Math.max.apply(null,names.map(function(b){return by[b].rev}).concat([1]));
-  h+='<div class="brandGrid">'+names.map(function(b){
+  Object.keys(by).forEach(function(b){
     var o=by[b];
-    var p=Math.round(o.rev/maxRev*100);
+    o.growth=(prev.length&&o.prev>0)?((o.rev-o.prev)/o.prev*100):null;
+    o.turn=o.stock>0?(o.rev/o.stock):null;
+    o.doi=(o.turn&&o.turn>0)?(365/o.turn):null;
+    o.avgP=o.qty>0?(o.rev/o.qty):null;
+    o.risk=o.need+o.short;
+  });
+  return {by:by,last:last,prev:prev,hasPrev:prev.length>0};
+}
+function vBrands(rs,d){
+  var M=brandMetrics(rs), by=M.by;
+  var names=Object.keys(by).filter(function(b){return by[b].rev>0||by[b].ord>0})
+    .sort(function(x,y){return (by[y].rev-by[x].rev)||(by[y].ordAmt-by[x].ordAmt)});
+  var total=names.reduce(function(s,b){return s+by[b].rev},0)||1;
+  var totalStock=names.reduce(function(s,b){return s+by[b].stock},0);
+  var totalQty=names.reduce(function(s,b){return s+by[b].qty},0);
+  var grown=names.filter(function(b){return by[b].growth!=null&&by[b].growth>0}).length;
+  var withG=names.filter(function(b){return by[b].growth!=null}).length;
+  var avgTurn=totalStock>0?(total/totalStock):null;
+
+  var h=pageHead('브랜드 현황','최근 12개월 판매 실적·성장률·재고효율 분석'
+    +(M.hasPrev?' · 직전 12개월 대비':'')+' · 카드 클릭 시 브랜드 상세');
+
+  h+='<div class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">'
+    +metric('12개월 매출',kFmtKR(total),'',names.length+'개 브랜드','banknote','','',false,true)
+    +metric('판매 수량',totalQty.toLocaleString(),'pcs','전 브랜드 합계','layers','','')
+    +metric('평균 재고회전율',avgTurn?avgTurn.toFixed(1):'—','회',avgTurn?('소진 '+Math.round(365/avgTurn)+'일'):'재고 데이터 없음','repeat','','')
+    +metric('성장 브랜드',withG?(grown+'/'+withG):'—','개',M.hasPrev?'직전 12개월 대비':'비교 기간 부족','trending-up','','')
+    +'</div>';
+
+  /* 매출 점유율 + 성장률 랭킹 */
+  var top=names.slice(0,6);
+  var etc=names.slice(6).reduce(function(s,b){return s+by[b].rev},0);
+  var segs=top.map(function(b,i){
+    return {label:b,val:Math.max(0,Math.round(by[b].rev/1e4)),sub:Math.round(by[b].rev/total*100)+'%',
+      color:BRAND_LINE[i%BRAND_LINE.length],go:'brand',f:'b:'+b};
+  });
+  if(etc>0)segs.push({label:'기타 '+(names.length-6)+'개',val:Math.round(etc/1e4),
+    sub:Math.round(etc/total*100)+'%',color:'#C2CBC6'});
+
+  var gr=names.filter(function(b){return by[b].growth!=null&&by[b].rev>=total*0.01})
+    .sort(function(x,y){return by[y].growth-by[x].growth});
+  var gTop=gr.slice(0,5), gBot=gr.slice(-5).reverse();
+  var maxAbs=Math.max.apply(null,gr.map(function(b){return Math.abs(by[b].growth)}).concat([1]));
+  function gRow(b){
+    var g=by[b].growth, up=g>=0, w=Math.min(100,Math.abs(g)/maxAbs*100);
+    return '<div class="gRow" data-go="brand" data-f="b:'+esc(b)+'">'
+      +'<span class="gName">'+esc(b)+'</span>'
+      +'<div class="gTrack"><i class="'+(up?'up':'dn')+'" style="width:'+w+'%"></i></div>'
+      +'<b class="'+(up?'up':'dn')+'">'+(up?'+':'')+Math.round(g)+'%</b></div>';
+  }
+  h+='<div class="g-2-1">'
+    +'<section class="card"><div class="section-head"><h3>브랜드별 매출 점유율</h3>'
+    +'<span class="sub">최근 12개월 · 클릭 시 상세</span></div>'
+    +donutSVG(segs,kFmtKR(total),'12개월 매출')+'</section>'
+    +'<section class="card"><div class="section-head"><h3>성장률 순위</h3>'
+    +'<span class="sub">'+(M.hasPrev?'직전 12개월 대비':'비교 불가')+'</span></div>'
+    +'<div class="gWrap2">'
+    +(gr.length?('<div class="gSub">상승</div>'+gTop.map(gRow).join('')
+      +'<div class="gSub" style="margin-top:10px">하락</div>'+gBot.map(gRow).join(''))
+      :'<div class="empty" style="padding:24px">비교할 기간 데이터가 부족합니다</div>')
+    +'</div></section></div>';
+
+  /* 지표 테이블 */
+  h+='<section class="card" style="margin-bottom:14px"><div class="section-head"><h3>브랜드 평가 지표</h3>'
+    +'<span class="sub">매출 순 · 회전율 = 12개월 매출 ÷ 재고금액</span></div>'
+    +'<div class="tblWrap"><table class="tbl"><thead><tr>'
+    +'<th>브랜드</th><th class="num">12개월 매출</th><th class="num">점유율</th><th class="num">성장률</th>'
+    +'<th class="num">판매수량</th><th class="num">평균단가</th><th class="num">재고금액</th>'
+    +'<th class="num">회전율</th><th class="num">재고소진</th><th class="num">품목</th><th>리스크</th>'
+    +'</tr></thead><tbody>'
+    +names.map(function(b){
+      var o=by[b];
+      var g=o.growth;
+      var gTx=g==null?'—':'<b style="color:'+(g>=0?'var(--g600)':'var(--red)')+'">'+(g>=0?'+':'')+Math.round(g)+'%</b>';
+      var tCls=o.turn==null?'':(o.turn>=6?'var(--g600)':(o.turn>=2?'var(--ink)':'var(--amber-tx)'));
+      var risk='';
+      if(o.short)risk+='<span class="badge b-delay" style="margin-right:4px">품절 '+o.short+'</span>';
+      if(o.need)risk+='<span class="badge b-warn" style="margin-right:4px">발주 '+o.need+'</span>';
+      if(o.dl)risk+='<span class="badge b-delay">지연 '+o.dl+'</span>';
+      if(!risk&&o.exc)risk='<span class="badge b-ship">과잉 '+o.exc+'</span>';
+      return '<tr data-go="brand" data-f="b:'+esc(b)+'">'
+        +'<td style="font-weight:700">'+esc(b)+'</td>'
+        +'<td class="num" style="font-weight:700">'+(o.rev?kFmtKR(o.rev):'—')+'</td>'
+        +'<td class="num">'+(o.rev?Math.round(o.rev/total*100)+'%':'—')+'</td>'
+        +'<td class="num">'+gTx+'</td>'
+        +'<td class="num">'+(o.qty?o.qty.toLocaleString():'—')+'</td>'
+        +'<td class="num">'+(o.avgP?Math.round(o.avgP).toLocaleString()+'원':'—')+'</td>'
+        +'<td class="num">'+(o.stock?kFmtKR(o.stock):'—')+'</td>'
+        +'<td class="num"'+(tCls?' style="color:'+tCls+';font-weight:700"':'')+'>'+(o.turn?o.turn.toFixed(1)+'회':'—')+'</td>'
+        +'<td class="num">'+(o.doi?Math.round(o.doi).toLocaleString()+'일':'—')+'</td>'
+        +'<td class="num">'+(o.cnt||'—')+'</td>'
+        +'<td>'+(risk||'<span style="color:var(--ink-3);font-size:.76rem">양호</span>')+'</td></tr>';
+    }).join('')
+    +'</tbody></table></div></section>';
+
+  /* 브랜드 카드 */
+  var maxRev=Math.max.apply(null,names.map(function(b){return by[b].rev}).concat([1]));
+  h+='<div class="section-title" style="font-size:.95rem;font-weight:800;margin:18px 0 10px">브랜드 카드</div>';
+  h+='<div class="brandGrid">'+names.map(function(b,i){
+    var o=by[b], p=Math.round(o.rev/maxRev*100);
+    var g=o.growth;
     return '<div class="card brandCard" data-go="brand" data-f="b:'+esc(b)+'">'
       +'<div class="bn">'+esc(b)
-      +(o.dl?'<span class="dl">지연 '+o.dl+'</span>':(o.need?'<span class="dl" style="color:var(--amber-tx)">발주 '+o.need+'</span>':''))+'</div>'
+      +(g!=null?'<span class="dl" style="color:'+(g>=0?'var(--g600)':'var(--red)')+'">'+(g>=0?'▲':'▼')+Math.abs(Math.round(g))+'%</span>':'')
+      +'</div>'
       +'<div class="ba">'+(o.rev?kFmtKR(o.rev):'—')+'</div>'
-      +'<div class="bs">12개월 매출'+(o.n?' · 오더 '+o.n+'건 '+kFmt(o.amt):'')+'</div>'
-      +'<div class="mini-bar"><i style="width:'+p+'%"></i></div>'
-      +'<div class="mini-row" style="margin-top:9px"><span>재고금액</span><strong>'+(o.stock?fmtKR(o.stock):'—')+'</strong></div>'
+      +'<div class="bs">12개월 매출 · 점유 '+(o.rev?Math.round(o.rev/total*100):0)+'%'
+      +(o.qty?' · '+o.qty.toLocaleString()+'pcs':'')+'</div>'
+      +(o.mrev&&Object.keys(o.mrev).length?sparkline(o.mrev,M.last,BRAND_LINE[i%BRAND_LINE.length]):'')
+      +'<div class="mini-bar" style="margin-top:8px"><i style="width:'+p+'%"></i></div>'
+      +'<div class="mini-row" style="margin-top:9px"><span>재고 '+(o.stock?kFmtKR(o.stock):'—')+'</span>'
+      +'<strong>'+(o.turn?o.turn.toFixed(1)+'회':'—')+'</strong></div>'
       +'</div>';
   }).join('')+'</div>';
   return h;
 }
+
 
 /* ================= 이벤트 ================= */
 
