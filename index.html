@@ -369,7 +369,7 @@ body.meeting .fxVal{font-size:1.5rem}
 .pcCell b.hi{color:var(--g600)}
 .gWrap{display:grid;grid-template-columns:64px 1fr;gap:10px;margin-bottom:14px}
 .gWrap.dragOn{outline:2px dashed var(--g500);outline-offset:4px;border-radius:14px}
-.gThumbs{display:flex;flex-direction:column;gap:7px;max-height:210px;overflow-y:auto}
+.gThumbs{display:flex;flex-direction:column;gap:6px;max-height:232px;overflow-y:auto;scrollbar-width:thin}
 .gTh{position:relative;width:60px;height:60px;border-radius:10px;overflow:hidden;border:2px solid transparent;background:#fff;cursor:pointer;flex:none}
 .gTh.on{border-color:var(--red)}
 .gTh img{width:100%;height:100%;object-fit:cover;background:#fff}
@@ -378,8 +378,8 @@ body.meeting .fxVal{font-size:1.5rem}
 .gTh:hover .gDel{display:block}
 .gAdd{width:60px;height:60px;border-radius:10px;border:1.5px dashed var(--line-2);color:var(--ink-3);font-size:1.2rem;font-weight:300;background:#fff;flex:none}
 .gAdd:hover{border-color:var(--g500);color:var(--g600)}
-.gMain{position:relative;background:#fff;border-radius:12px;height:210px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--line)}
-.gMain img{max-width:100%;max-height:210px;object-fit:contain;background:#fff}
+.gMain{position:relative;background:#fff;border-radius:12px;height:232px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--line)}
+.gMain img{max-width:100%;max-height:232px;object-fit:contain;background:#fff}
 .gCnt{position:absolute;right:8px;top:8px;background:rgba(18,24,26,.55);color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px}
 .gEmpty{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ink-3);font-size:.78rem;font-weight:600}
 .gEmpty:hover{color:var(--g600)}
@@ -1391,7 +1391,7 @@ function gallery(o,e){
 }
 
 /* ================= 상품 카탈로그 대조 ================= */
-var IMG_MAX=3;
+var IMG_MAX=5;
 var catx={bc:null,brand:{},ready:false};
 var knx={map:null};
 function initKn(){
