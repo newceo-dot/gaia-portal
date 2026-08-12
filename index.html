@@ -41,7 +41,10 @@ svg.lucide{width:1.05em;height:1.05em;stroke-width:1.9;flex:none;vertical-align:
 #shell{display:flex;min-height:100vh;padding:10px;gap:10px}
 /* ---------- 사이드바 ---------- */
 #side{width:var(--side-w);min-width:var(--side-w);background:var(--card);border-radius:22px;padding:20px 12px;display:flex;flex-direction:column;position:sticky;top:10px;height:calc(100vh - 20px);transition:width .2s,min-width .2s;overflow:hidden}
-.brand{display:flex;align-items:center;gap:10px;padding:2px 10px 20px;white-space:nowrap}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 10px 20px;white-space:nowrap;cursor:pointer;
+  border-radius:12px;transition:opacity .15s var(--ease),transform .15s var(--spring)}
+.brand:hover{opacity:.75}
+.brand:active{transform:scale(.96)}
 .brand .mark{width:34px;height:34px;flex:none}
 .brand b{font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
 #nav{flex:1;overflow-y:auto;margin:0 -12px;padding:0 12px}
@@ -245,7 +248,15 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.855rem}
 .fxUnit{font-size:.66rem;color:var(--ink-3);margin-left:auto}
 .fxVal{font-size:1.02rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:3px}
 body.meeting .fxVal{font-size:1.5rem}
-.fxName{font-size:.67rem;color:var(--ink-3);margin-top:1px}
+.fxFoot{display:flex;align-items:center;gap:8px;margin-top:2px}
+.fxName{font-size:.67rem;color:var(--ink-3)}
+.fxChg{margin-left:auto;font-size:.68rem;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fxChg em{font-style:normal;font-weight:700;opacity:.85}
+.fxChg.up{color:var(--red)}
+.fxChg.dn{color:var(--blue,#2C6ECB)}
+.fxChg.flat{color:var(--ink-3)}
+.fxCell.isUp .fxVal{color:var(--red)}
+.fxCell.isDn .fxVal{color:#2C6ECB}
 .fxMeta{margin-left:auto;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:.69rem;color:var(--ink-3);white-space:nowrap}
 .fxBtn{width:28px;height:28px;border-radius:9px;background:var(--bg);color:var(--ink-2);display:flex;align-items:center;justify-content:center;flex:none}
 .fxBtn:hover{background:var(--g100);color:var(--g700)}
@@ -546,7 +557,7 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
 
 <div id="shell">
 <aside id="side">
-  <div class="brand">
+  <div class="brand" id="brandHome" title="홈으로">
     <svg class="mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
       <rect width="40" height="40" rx="13" fill="#0B3D2C"/>
       <circle cx="20" cy="20" r="11.5" stroke="#57B08A" stroke-width="2.4"/>
@@ -789,6 +800,8 @@ $('#gq').addEventListener('keydown',function(e){
     go('orders');
   }
 });
+var bh=document.getElementById('brandHome');
+if(bh)bh.addEventListener('click',function(){ go('dash'); window.scrollTo({top:0,behavior:'smooth'}); });
 document.querySelectorAll('.nav-item[data-view]').forEach(function(b){
   b.addEventListener('click',function(){go(b.dataset.view);});
 });
@@ -1195,8 +1208,15 @@ function normBrand(b){
 var fx={status:'loading',rate:{},updated:'',src:'',err:''};
 var FX_KEY='gaia_fx_v1';
 function fxApply(r,updated,src){
-  fx.rate=r; fx.updated=updated||''; fx.src=src||''; fx.status='ok';
-  try{ localStorage.setItem(FX_KEY,JSON.stringify({t:Date.now(),r:r,u:fx.updated,s:fx.src})); }catch(e){}
+  /* 직전 저장분과 날짜가 다르면 전일 기준으로 보관 */
+  var prev=null,base=null;
+  try{ prev=JSON.parse(localStorage.getItem(FX_KEY)||'null'); }catch(e){}
+  if(prev&&prev.r){
+    var sameDay=prev.u&&updated&&String(prev.u).slice(0,16)===String(updated).slice(0,16);
+    base=sameDay?(prev.b||null):{r:prev.r,u:prev.u};
+  }
+  fx.rate=r; fx.updated=updated||''; fx.src=src||''; fx.base=base; fx.status='ok';
+  try{ localStorage.setItem(FX_KEY,JSON.stringify({t:Date.now(),r:r,u:fx.updated,s:fx.src,b:base})); }catch(e){}
   var ft=document.getElementById('fxTop'); if(ft)ft.innerHTML=fxBanner();
 }
 function fetchFx(force){
@@ -1204,7 +1224,7 @@ function fetchFx(force){
     try{
       var c=JSON.parse(localStorage.getItem(FX_KEY)||'null');
       if(c&&c.t&&(Date.now()-c.t)<30*60*1000){
-        fx.rate=c.r;fx.updated=c.u;fx.src=c.s;fx.status='ok';
+        fx.rate=c.r;fx.updated=c.u;fx.src=c.s;fx.base=c.b||null;fx.status='ok';
         return Promise.resolve();
       }
     }catch(e){}
@@ -1229,7 +1249,7 @@ function fetchFx(force){
   }).catch(function(e){
     var c2=null;
     try{ c2=JSON.parse(localStorage.getItem(FX_KEY)||'null'); }catch(e2){}
-    if(c2&&c2.r){ fx.rate=c2.r;fx.updated=c2.u;fx.src=(c2.s||'')+' · 저장된 값';fx.status='ok'; }
+    if(c2&&c2.r){ fx.rate=c2.r;fx.updated=c2.u;fx.src=(c2.s||'')+' · 저장된 값';fx.base=c2.b||null;fx.status='ok'; }
     else { fx.status='error'; fx.err=String(e.message||e); }
     var ft2=document.getElementById('fxTop'); if(ft2)ft2.innerHTML=fxBanner();
   });
@@ -1247,12 +1267,20 @@ function fxBanner(){
   }
   var cells=FX_DEF.map(function(f){
     var v=fx.rate[f.k];
-    return '<div class="fxCell">'
+    var pv=(fx.base&&fx.base.r)?fx.base.r[f.k]:null;
+    var diff=(v&&pv)?(v-pv):null;
+    var pct=(diff!=null&&pv)?(diff/pv*100):null;
+    var cls=diff==null?'flat':(diff>0.005?'up':(diff<-0.005?'dn':'flat'));
+    var arrow=cls==='up'?'▲':(cls==='dn'?'▼':'—');
+    var chg=diff==null?'<span class="fxChg flat">—</span>'
+      :'<span class="fxChg '+cls+'">'+arrow+' '+Math.abs(diff).toFixed(2)
+        +' <em>'+(pct>=0?'+':'')+pct.toFixed(2)+'%</em></span>';
+    return '<div class="fxCell'+(cls==='up'?' isUp':(cls==='dn'?' isDn':''))+'">'
       +'<div class="fxTop"><span class="fxFlag">'+f.flag+'</span>'
       +'<span class="fxCur">'+f.cur+'</span><span class="fxUnit">'+f.unit+'</span></div>'
       +'<div class="fxVal">'+(v?('₩'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}))
         :'<span class="skel" style="display:inline-block;width:84px;height:17px"></span>')+'</div>'
-      +'<div class="fxName">'+f.name+'</div></div>';
+      +'<div class="fxFoot"><span class="fxName">'+f.name+'</span>'+chg+'</div></div>';
   }).join('');
   var when=fx.updated?String(fx.updated).replace(/\s*\(.*\)\s*/,'').trim():'';
   return '<section class="card fxBar">'
