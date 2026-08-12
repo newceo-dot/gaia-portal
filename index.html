@@ -44,6 +44,7 @@ svg.lucide{width:1.05em;height:1.05em;stroke-width:1.9;flex:none;vertical-align:
 .brand{display:flex;align-items:center;gap:10px;padding:2px 10px 20px;white-space:nowrap;cursor:pointer;
   border-radius:12px;transition:opacity .15s var(--ease),transform .15s var(--spring)}
 .brand:hover{opacity:.75}
+.brand.atHome{background:var(--g50)}
 .brand:active{transform:scale(.96)}
 .brand .mark{width:34px;height:34px;flex:none}
 .brand b{font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
@@ -582,7 +583,6 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
   </div>
   <nav id="nav">
     <div class="nav-label">운영</div>
-    <button class="nav-item on" data-view="dash"><i data-lucide="layout-dashboard"></i><span class="tx">홈</span></button>
     <a class="nav-item" href="https://gaia-hyhong.github.io/Hayoung-MD-Dashboard/" target="_blank" rel="noopener"><i data-lucide="warehouse"></i><span class="tx">재고/발주</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
     <a class="nav-item" href="https://newceo-dot.github.io/inbound-dashboard/" target="_blank" rel="noopener"><i data-lucide="container"></i><span class="tx">입고관리 시스템</span><i class="ext" data-lucide="external-link" style="margin-left:auto;width:.82em;height:.82em;color:var(--ink-3)"></i></a>
     <button class="nav-item" data-view="stock"><i data-lucide="boxes"></i><span class="tx">재고 현황</span><span class="cnt" id="cntStock"></span></button>
@@ -819,6 +819,8 @@ function go(view,f){
   if(f!==undefined)state.f=f;
   state.view=view;
   var navKey=(view==='brand')?'brands':view;
+  var bhE=document.getElementById('brandHome');
+  if(bhE)bhE.classList.toggle('atHome',view==='dash');
   document.querySelectorAll('.nav-item').forEach(function(x){x.classList.toggle('on',x.dataset.view===navKey)});
   render();
 }
@@ -847,50 +849,65 @@ function smoothPath(pts,close,baseY){
 }
 function svgBrandTrend(brandMrev,brands,months){
   if(!months.length||!brands.length)return '<div class="empty">브랜드 매출 데이터 없음</div>';
-  var W=760,H=280,padL=8,padR=18,top=22,bottom=34;
+  var W=760,H=290,padL=52,padR=22,top=26,bottom=34;
   var plotW=W-padL-padR,plotH=H-top-bottom;
   var maxV=1;
   brands.forEach(function(b){months.forEach(function(m){var v=(brandMrev[b]||{})[m]||0;if(v>maxV)maxV=v;})});
-  var niceMax=maxV*1.12;
+  var step=Math.pow(10,Math.floor(Math.log(maxV)/Math.LN10));
+  var niceMax=Math.ceil(maxV/step*1.05)*step;
   var xs=function(i){return +(padL+(months.length===1?plotW/2:plotW*(i/(months.length-1)))).toFixed(1)};
   var ys=function(v){return +(H-bottom-plotH*(Math.max(0,v)/niceMax)).toFixed(1)};
   var cur=nowYM(), curI=months.indexOf(cur);
-  var grid='',defs='';
-  for(var g=1;g<=3;g++){
-    var y=ys(niceMax/3.4*g);
-    grid+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#EDEFEE" stroke-dasharray="1 7" stroke-linecap="round"/>';
+  /* 눈금 · 축 */
+  var grid='';
+  for(var g=0;g<=4;g++){
+    var yv=niceMax/4*g, y=ys(yv);
+    grid+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#EDEFEE"/>'
+      +'<text x="'+(padL-9)+'" y="'+(y+4)+'" text-anchor="end" font-size="10" fill="#9AA3A6">'+(g?fmtAxis(yv):'0')+'</text>';
   }
-  if(curI>=0){
-    grid+='<line x1="'+xs(curI)+'" y1="'+top+'" x2="'+xs(curI)+'" y2="'+(H-bottom)+'" stroke="#D8DEDA" stroke-dasharray="3 5"/>';
-  }
+  if(curI>=0)grid+='<line x1="'+xs(curI)+'" y1="'+top+'" x2="'+xs(curI)+'" y2="'+(H-bottom)+'" stroke="#D8DEDA" stroke-dasharray="3 5"/>';
+  /* 꺾은선 */
   var series=brands.map(function(b,bi){
     var col=BRAND_LINE[bi%BRAND_LINE.length];
     var pts=months.map(function(m,i){return [xs(i),ys((brandMrev[b]||{})[m]||0)]});
-    var gid='bg'+bi;
-    defs+='<linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'
-      +'<stop offset="0%" stop-color="'+col+'" stop-opacity="'+(bi<2?0.22:0.10)+'"/>'
-      +'<stop offset="100%" stop-color="'+col+'" stop-opacity="0"/></linearGradient>';
-    var last=pts[pts.length-1];
+    var poly=pts.map(function(p){return p[0]+','+p[1]}).join(' ');
+    var dots=pts.map(function(p,i){
+      var v=(brandMrev[b]||{})[months[i]]||0;
+      var last=(i===pts.length-1);
+      return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="'+(last?4.6:3)+'" fill="#fff" stroke="'+col+'" stroke-width="'+(last?2.6:2)+'">'
+        +'<title>'+esc(b)+' · '+fmtYM(months[i])+' · '+fmtKR(v)+'</title></circle>';
+    }).join('');
+    /* 마지막 지점 금액 라벨 */
+    var lp=pts[pts.length-1], lv=(brandMrev[b]||{})[months[months.length-1]]||0;
+    var lab='<text x="'+(lp[0]+8)+'" y="'+(lp[1]+3.5)+'" font-size="10.5" font-weight="800" fill="'+col+'">'+kFmtKR(lv)+'</text>';
     return '<g class="btSeries" data-go="brand" data-f="b:'+esc(b)+'" style="cursor:pointer">'
-      +'<path d="'+smoothPath(pts,true,H-bottom)+'" fill="url(#'+gid+')"/>'
-      +'<path d="'+smoothPath(pts)+'" fill="none" stroke="'+col+'" stroke-width="'+(bi<2?3:2.2)+'" stroke-linecap="round" stroke-linejoin="round" opacity="'+(bi<2?1:0.85)+'"/>'
-      +'<circle cx="'+last[0]+'" cy="'+last[1]+'" r="5.5" fill="#fff"/>'
-      +'<circle cx="'+last[0]+'" cy="'+last[1]+'" r="3.6" fill="'+col+'"><title>'+esc(b)+'</title></circle>'
-      +'</g>';
+      +'<polyline points="'+poly+'" fill="none" stroke="'+col+'" stroke-width="'+(bi<2?2.6:2)+'" stroke-linejoin="round" stroke-linecap="round" opacity="'+(bi<2?1:.85)+'"/>'
+      +dots+lab+'</g>';
+  }).join('');
+  /* 상위 브랜드 각 지점 금액 (1위만 전체 표기) */
+  var topB=brands[0];
+  var valLabels=months.map(function(m,i){
+    var v=(brandMrev[topB]||{})[m]||0;
+    if(!v)return '';
+    var y=ys(v);
+    return '<text x="'+xs(i)+'" y="'+(y-10)+'" text-anchor="middle" font-size="9.5" font-weight="700" fill="'+BRAND_LINE[0]+'" opacity=".78">'+kFmtKR(v)+'</text>';
   }).join('');
   var xlab=months.map(function(m,i){
     var isC=m===cur;
     return '<text x="'+xs(i)+'" y="'+(H-11)+'" text-anchor="middle" font-size="10.5" font-weight="'+(isC?'800':'500')+'" fill="'+(isC?'#0B3D2C':'#A8B0AC')+'">'+moLabel(m)+'</text>';
   }).join('');
-  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet"><defs>'+defs+'</defs>'+grid+series+xlab+'</svg>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">'+grid+series+valLabels+xlab
+    +'<line x1="'+padL+'" y1="'+(H-bottom)+'" x2="'+(W-padR)+'" y2="'+(H-bottom)+'" stroke="#E2E6E4"/></svg>';
 }
 function sparkline(map,months,col){
   var w=54,hh=20,vals=months.map(function(m){return Math.max(0,map[m]||0)});
   var mx=Math.max.apply(null,vals.concat([1]));
   var pts=vals.map(function(v,i){return [+(i/(vals.length-1)*w).toFixed(1),+(hh-2-(hh-4)*(v/mx)).toFixed(1)]});
+  var poly=pts.map(function(p){return p[0]+','+p[1]}).join(' ');
+  var area=poly+' '+w+','+hh+' 0,'+hh;
   return '<svg class="spk" viewBox="0 0 '+w+' '+hh+'" preserveAspectRatio="none">'
-    +'<path d="'+smoothPath(pts,true,hh)+'" fill="'+col+'" opacity=".13"/>'
-    +'<path d="'+smoothPath(pts)+'" fill="none" stroke="'+col+'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    +'<polygon points="'+area+'" fill="'+col+'" opacity=".12"/>'
+    +'<polyline points="'+poly+'" fill="none" stroke="'+col+'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>';
 }
 function brandTrendSection(a){
   var months=trendMonths(a.mrev,12);
@@ -4136,6 +4153,7 @@ document.addEventListener('click',function(e){
 
 /* ================= 시작 ================= */
 initCat();initKn();buildYearSeg();renderSideInfo();refreshIcons();
+var _bh0=document.getElementById('brandHome'); if(_bh0)_bh0.classList.add('atHome');
 [fetchHayoung,fetchMaster,fetchStock,fetchCert,fetchExtra,fetchFx,fetchWx].forEach(function(fn){
   try{ fn(); }catch(e){ console.warn('init',fn.name,e); }
 });
