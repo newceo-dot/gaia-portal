@@ -272,7 +272,7 @@ body.meeting .fxVal{font-size:1.5rem}
 .pcBrand{font-size:.66rem;font-weight:800;color:#fff;background:var(--g600);padding:3px 8px;border-radius:7px;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pcImgN{margin-left:auto;font-size:.65rem;font-weight:700;color:var(--ink-3);background:var(--bg);padding:2px 7px;border-radius:99px}
 .pcImg{height:150px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:9px}
-.pcImg img{width:100%;height:100%;object-fit:contain}
+.pcImg img{width:100%;height:100%;object-fit:contain;background:#fff}
 .pcNo{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--ink-3);font-size:.7rem}
 .pcName{font-size:.83rem;font-weight:700;line-height:1.35;height:2.7em;overflow:hidden;margin-bottom:4px}
 .pcBc{font-size:.7rem;color:var(--ink-3);font-variant-numeric:tabular-nums;margin-bottom:7px}
@@ -372,14 +372,14 @@ body.meeting .fxVal{font-size:1.5rem}
 .gThumbs{display:flex;flex-direction:column;gap:7px;max-height:210px;overflow-y:auto}
 .gTh{position:relative;width:60px;height:60px;border-radius:10px;overflow:hidden;border:2px solid transparent;background:#fff;cursor:pointer;flex:none}
 .gTh.on{border-color:var(--red)}
-.gTh img{width:100%;height:100%;object-fit:cover}
+.gTh img{width:100%;height:100%;object-fit:cover;background:#fff}
 .gRep{position:absolute;left:0;top:0;background:var(--red);color:#fff;font-size:.58rem;font-weight:800;padding:1px 5px;border-radius:0 0 6px 0}
 .gDel{position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:.6rem;line-height:1;display:none}
 .gTh:hover .gDel{display:block}
 .gAdd{width:60px;height:60px;border-radius:10px;border:1.5px dashed var(--line-2);color:var(--ink-3);font-size:1.2rem;font-weight:300;background:#fff;flex:none}
 .gAdd:hover{border-color:var(--g500);color:var(--g600)}
 .gMain{position:relative;background:#fff;border-radius:12px;height:210px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--line)}
-.gMain img{max-width:100%;max-height:210px;object-fit:contain}
+.gMain img{max-width:100%;max-height:210px;object-fit:contain;background:#fff}
 .gCnt{position:absolute;right:8px;top:8px;background:rgba(18,24,26,.55);color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px}
 .gEmpty{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ink-3);font-size:.78rem;font-weight:600}
 .gEmpty:hover{color:var(--g600)}
@@ -1218,7 +1218,13 @@ function fetchExtra(force){
   }).catch(function(e){ ex.status='error'; ex.err=String(e.message||e); return false; });
 }
 function exOf(o){ var b=normBc(o.bc); return b?(ex.map[b]||null):null; }
-function driveThumb(id,w){ return 'https://drive.google.com/thumbnail?id='+encodeURIComponent(id)+'&sz=w'+(w||600); }
+/* lh3는 투명(alpha)을 보존, drive.google.com/thumbnail은 검은 배경으로 합성됨 */
+function driveThumb(id,w){ return 'https://lh3.googleusercontent.com/d/'+encodeURIComponent(id)+'=w'+(w||600); }
+function driveThumbAlt(id,w){ return 'https://drive.google.com/thumbnail?id='+encodeURIComponent(id)+'&sz=w'+(w||600); }
+function imgTag(id,w,cls,extra){
+  return '<img src="'+driveThumb(id,w)+'" alt=""'+(cls?' class="'+cls+'"':'')+(extra||'')
+    +' loading="lazy" onerror="if(!this.dataset.f){this.dataset.f=1;this.src=\''+driveThumbAlt(id,w)+'\'}">';
+}
 function driveDown(id){ return 'https://drive.google.com/uc?export=download&id='+encodeURIComponent(id); }
 
 var _gpSeq=0;
@@ -1364,12 +1370,12 @@ function gallery(o,e){
   var sel=state._imgSel||0;
   if(sel>=ids.length)sel=0;
   var main=ids.length
-    ? '<a href="'+driveThumb(ids[sel],1600)+'" target="_blank" rel="noopener"><img src="'+driveThumb(ids[sel],900)+'" alt="상품 이미지"></a>'
+    ? '<a href="'+driveThumb(ids[sel],1600)+'" target="_blank" rel="noopener">'+imgTag(ids[sel],900)+'</a>'
       +'<div class="gCnt">'+(sel+1)+'/'+ids.length+'</div>'
     : '<button class="gEmpty" data-up="add">'+icon('image-plus')+'<span>클릭 또는 이미지를 드래그</span></button>';
   var thumbs=ids.map(function(id,i){
     return '<div class="gTh'+(i===sel?' on':'')+'" data-sel="'+i+'">'
-      +'<img src="'+driveThumb(id,160)+'" alt="">'
+      +imgTag(id,160)
       +(i===0?'<span class="gRep">대표</span>':'')
       +'<button class="gDel" data-del="'+i+'" title="삭제">✕</button></div>';
   }).join('');
@@ -1888,7 +1894,7 @@ function vMaster(){
     h+='<div class="pGrid">'+(fl.length?fl.slice(0,GLIM).map(function(o){
       var ids=imgList(exOf(o)), lv=liveStockOf(o), s=stockOf(o), cd=catDetail(o);
       var thumb=ids.length
-        ? '<img src="'+driveThumb(ids[0],400)+'" alt="" loading="lazy">'
+        ? imgTag(ids[0],400)
         : '<div class="pcNo">'+icon('image-off')+'<span>이미지 없음</span></div>';
       return '<div class="pCard" data-mi="'+ms.list.indexOf(o)+'">'
         +'<div class="pcTop"><span class="pcBrand">'+esc(o.br||'')+'</span>'
@@ -2231,7 +2237,9 @@ function exportSpecPDF(o){
     var parts=String(v.ft).split(/\s*[·•]\s*|\n+/).filter(function(x){return x.trim().length>3});
     ftHtml='<h3>주요 특징</h3>'+(parts.length>1?'<ul>'+parts.map(function(x){return '<li>'+esc(x.trim())+'</li>'}).join('')+'</ul>':'<p>'+esc(v.ft)+'</p>');
   }
-  var imgs=ids.slice(0,3).map(function(id){return '<img src="'+driveThumb(id,800)+'">'}).join('');
+  var imgs=ids.slice(0,3).map(function(id){
+    return '<img src="'+driveThumb(id,800)+'" onerror="this.onerror=null;this.src=\''+driveThumbAlt(id,800)+'\'">';
+  }).join('');
   var w=window.open('','_blank');
   if(!w){alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.');return;}
   w.document.write('<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(v.name||'상품 정보')+'</title>'
@@ -2685,7 +2693,7 @@ function filtered(rs){
 function rowThumb(bc){
   var ids=imgList(exOf({bc:bc}));
   if(!ids.length)return '<td class="thCell"></td>';
-  return '<td class="thCell"><img class="rowTh" src="'+driveThumb(ids[0],120)+'" alt="" loading="lazy"></td>';
+  return '<td class="thCell">'+imgTag(ids[0],120,'rowTh')+'</td>';
 }
 function vOrders(rs,d){
   var brandsMap={};rs.forEach(function(r){brandsMap[r._br||'기타']=1});
