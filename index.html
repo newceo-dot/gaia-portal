@@ -4608,7 +4608,8 @@ document.addEventListener('click',function(e){
           costInfo / catDetail / knOf / cert / rows() / hy.db
    ========================================================= */
 
-var bot = { msgs:[], inited:false };
+var bot = { msgs:[], inited:false,
+  mem:{ name:'', team:'', title:'', awaitingIdentity:false, lastAns:'', lastPick:{} } };
 
 /* ---------- 표현 유틸 ---------- */
 function bNum(n){ n=Number(n); return isFinite(n)?Math.round(n).toLocaleString():'—'; }
@@ -4740,10 +4741,13 @@ function botClassify(e){
     if(s>best.s) best={k:r.k,s:s};
   });
   if(best.s===0){
-    /* 업무 키워드가 없으면: 인사·잡담·회사소개(심심이 레이어)를 먼저 본다.
-       그래도 안 걸리면 바코드·코드·상품명 토큰이 있는지로 상품 조회를 시도한다. */
+    /* 업무 키워드가 없으면: 인사·잡담·회사소개(심심이 레이어)를 먼저 보고,
+       그 다음 직원 성함·팀 조회(조직도)를 본다. 그래도 안 걸리면
+       바코드·코드·상품명 토큰이 있는지로 상품 조회를 시도한다. */
     var cm=botCasualMatch(e.raw);
     if(cm){ e._casual=cm; return 'casual'; }
+    var sm=botStaffMatch(e.raw);
+    if(sm){ e._staff=sm; return 'staff'; }
     if(e.bc||e.code||e.tokens.length) return 'product';
     return 'help';
   }
@@ -4852,7 +4856,8 @@ function botFollowups(k,e){
     kc      :['만료된 KC 인증서','6개월 내 만료되는 인증서','3개월 내 KC 만료'],
     cost    :['브랜드별 발주액 TOP 10','발주필요 목록'],
     analysis:['지난달 발주','지연 오더','발주필요 목록'],
-    casual  :['가이아 브랜드 뭐 있어','오늘의 한마디','이번달 입고 예정']
+    casual  :['가이아 브랜드 뭐 있어','오늘의 한마디','이번달 입고 예정'],
+    staff   :['가이아 브랜드 뭐 있어','이번달 입고 예정']
   }[k]||[];
   base.forEach(function(t){ if(out.indexOf(t)===-1) out.push(t); });
   /* 방금 한 질문과 사실상 같은 제안은 뺀다 */
@@ -5282,9 +5287,12 @@ function botAnsAnalysis(e){
 }
 
 /* ---------- 잡담·회사 소개 (심심이 스타일) ----------
-   갈슨은 가이아코퍼레이션 MD팀 소속이라는 설정. 업무 키워드가 하나라도
-   잡히면 botClassify에서 항상 업무 답변이 우선되고, 이 레이어는
-   업무 키워드가 전혀 없는 인사·잡담·회사 소개성 질문에서만 쓰인다. */
+   갈슨은 가이아코퍼레이션 MD팀 소속 '성격 있는' 직원이라는 설정 — 시크하고
+   위트있게, 고분고분하지만은 않게 대답한다. 업무 키워드가 하나라도 잡히면
+   botClassify에서 항상 업무 답변이 우선되고, 이 레이어는 업무 키워드가
+   전혀 없는 인사·잡담·회사 소개성 질문에서만 쓰인다.
+   대화 기억: bot.mem에 이름·소속팀·직함과 마지막 답변을 세션 동안 기억해
+   반복 인사·같은 답 재사용을 피하고 호칭에 반영한다. */
 function botGaiaIntro(){
   return '가이아코퍼레이션은 해외 완구(토이)를 수입해 국내에 유통하는 회사예요. '
     +'저(갈슨)는 MD팀 소속으로 오더 진행·재고·KC 인증·이미지·원가·마진을 관리하고 있어요 🧸';
@@ -5300,6 +5308,128 @@ function botGaiaCount(){
   var n=(ms.list||[]).length;
   return n?('현재 포털 상품마스터에 등록된 상품은 '+bNum(n)+'종이에요 🧸'):'상품마스터를 아직 불러오는 중이에요.';
 }
+
+/* 가이아 조직도 — 이름·소속팀·직급만 (생년월일·개인 휴대폰번호는 동료분들
+   개인정보라 포털(클라이언트 사이드·GitHub Pages)에는 절대 넣지 않는다).
+   스크린샷 OCR로 옮긴 것이라 오탈자 가능성이 있다 — 특히 표시해 둔 항목은
+   실제 성함·팀명과 대조해서 고쳐 주시면 바로 반영. */
+var GAIA_STAFF = [
+  {nm:'박병건', team:'임원',         title:'회장'},
+  {nm:'최신희', team:'임원',         title:'부회장'},
+  {nm:'나정석', team:'임원',         title:'대표이사'},
+  {nm:'김진욱', team:'임원',         title:'전무이사'},
+  {nm:'박철수', team:'링크팀',       title:'이사'},
+  {nm:'성현숙', team:'경영관리팀',   title:'부장'},
+  {nm:'박초수', team:'경영관리팀',   title:'주임'},
+  {nm:'황혜란', team:'경영관리팀',   title:'대리'},
+  {nm:'왕아름', team:'경영관리팀',   title:'주임'},
+  {nm:'서재현', team:'경영관리팀',   title:'주임'},
+  {nm:'임소아', team:'재무경영팀',   title:'차장'},
+  {nm:'김소연', team:'재무경영팀',   title:'과장'},
+  {nm:'홍민희', team:'재무경영팀',   title:'대리'},
+  {nm:'홍아영', team:'머천다이징팀', title:'부장'},
+  {nm:'김혜림', team:'머천다이징팀', title:'과장'},
+  {nm:'원성조', team:'플랫폼관리팀', title:'차장'},
+  {nm:'배덕수', team:'플랫폼관리팀', title:'차장'},
+  {nm:'라기환', team:'플랫폼관리팀', title:'과장'},   /* 확인 필요 — 플랫폼관리팀은 9명 중 5명만 화면에 보여 나머지 4명 누락 */
+  {nm:'우민철', team:'플랫폼관리팀', title:'대리'},
+  {nm:'김성원', team:'스토어사업팀', title:'차장'},
+  {nm:'김선광', team:'스토어사업팀', title:'과장'},
+  {nm:'최유신', team:'스토어사업팀', title:'과장'},
+  {nm:'임태희', team:'스토어사업팀', title:'대리'},
+  {nm:'김리안', team:'스토어사업팀', title:'주임'},
+  {nm:'최광훈', team:'완구사업팀',   title:'차장'},   /* 확인 필요 — 화면 글자가 작아 '완구사업팀'으로 추정 */
+  {nm:'박성훈', team:'완구사업팀',   title:'과장'},
+  {nm:'김광수', team:'완구사업팀',   title:'부장'},
+  {nm:'김성수', team:'완구사업팀',   title:'차장'},
+  {nm:'권중해', team:'링크팀',       title:'차장'},
+  {nm:'김강호', team:'링크팀',       title:'과장'},
+  {nm:'신우민', team:'링크팀',       title:'주임'},
+  {nm:'주우태', team:'콘텐츠마케팅팀', title:'부장'}, /* 확인 필요 — 화면 열 제목이 잘려 '콘텐츠마케팅팀'으로 추정 */
+  {nm:'주정라', team:'콘텐츠마케팅팀', title:'대리'},
+  {nm:'증정미', team:'콘텐츠마케팅팀', title:'주임'}, /* 확인 필요 — 성함 글자가 작아 확실하지 않음 */
+  {nm:'이혜지', team:'콘텐츠마케팅팀', title:'주임'},
+  {nm:'이도희', team:'콘텐츠마케팅팀', title:'주임'},
+  {nm:'김수원', team:'키덜트사업팀', title:'차장'}    /* 확인 필요 — '키덜트사업팀'으로 추정 */
+];
+function botStaffTeams(){
+  if(bot._staffTeams) return bot._staffTeams;
+  var set={};
+  GAIA_STAFF.forEach(function(s){ set[s.team]=1; });
+  bot._staffTeams=Object.keys(set);
+  return bot._staffTeams;
+}
+/* 질문 원문에 직원 성함/팀명이 들어있는지 본다 — 이름이 더 구체적인
+   신호이므로 이름을 팀명보다 먼저 확인한다. */
+function botStaffMatch(raw){
+  var q=String(raw||'').replace(/\s+/g,'');
+  for(var i=0;i<GAIA_STAFF.length;i++){
+    if(q.indexOf(GAIA_STAFF[i].nm)!==-1) return {type:'person', s:GAIA_STAFF[i]};
+  }
+  var teams=botStaffTeams();
+  for(var j=0;j<teams.length;j++){
+    if(q.indexOf(teams[j])!==-1) return {type:'team', team:teams[j]};
+  }
+  return null;
+}
+function botAnsStaff(m){
+  var txt;
+  if(m.type==='person'){
+    txt=m.s.nm+'님은 '+m.s.team+' 소속 '+m.s.title+'이세요.';
+  }else{
+    var mem=GAIA_STAFF.filter(function(x){return x.team===m.team;});
+    txt=mem.length
+      ? (m.team+' 멤버는 '+mem.map(function(x){return x.nm+' '+x.title;}).join(', ')+' — 총 '+mem.length+'분이에요.')
+      : (m.team+' 소속 멤버를 아직 못 찾았어요.');
+  }
+  return '<span class="bLead">'+esc(txt)+'</span>';
+}
+
+/* ---------- 대화 기억 유틸 ---------- */
+var BOT_NAME_BLACKLIST=['사람','완전','진짜','정말','바보','장난','농담','회사원','직원','그냥','원래','오늘','내일','너무','저도','저는','나는','제가','내가'];
+function botExtractName(raw){
+  var m = String(raw||'').match(/(?:저는|나는|난)\s*([가-힣]{2,4}?)(?:이야|야|입니다|이에요|예요|(?:이)?라고\s*해)/);
+  if(!m) m = String(raw||'').match(/내\s*이름(?:은|이)\s*([가-힣]{2,4}?)(?:이야|야|이에요|예요|입니다|(?:이)?라고\s*해|[.,!?]|\s|$)/);
+  var nm=m?m[1]:'';
+  if(nm && BOT_NAME_BLACKLIST.indexOf(nm)!==-1) return '';
+  return nm;
+}
+var TITLE_WORDS=['사원','주임','대리','과장','차장','부장','팀장','이사','대표','인턴','매니저','MD','팀원','프로','책임'];
+function botExtractIdentity(raw){
+  var q=String(raw||''), out={};
+  var mt=q.match(/([가-힣A-Za-z0-9]{2,10}팀)/);
+  if(mt) out.team=mt[1];
+  for(var i=0;i<TITLE_WORDS.length;i++){
+    if(q.indexOf(TITLE_WORDS[i])!==-1){ out.title=TITLE_WORDS[i]; break; }
+  }
+  var stripped=q;
+  if(out.team)  stripped=stripped.split(out.team).join(' ');
+  if(out.title) stripped=stripped.split(out.title).join(' ');
+  /* "김민수입니다" 처럼 이름에 어미가 그대로 붙어 있으면 길이 필터에 걸려
+     통째로 버려지므로, 흔한 자기소개 어미·1인칭 대명사를 먼저 떼어낸다 */
+  stripped=stripped.replace(/저는|나는|제가|내가|입니다|이에요|예요|이야|라고\s*해/g,' ');
+  var toks=stripped.replace(/[^가-힣\s]/g,' ').split(/\s+/).filter(Boolean);
+  for(var j=0;j<toks.length;j++){
+    var t=toks[j];
+    if(t.length>=2&&t.length<=4&&BOT_STOP.indexOf(t)===-1&&BOT_NAME_BLACKLIST.indexOf(t)===-1&&!botIsNoise(t)){ out.name=t; break; }
+  }
+  return out;
+}
+function botPlainText(html){
+  return String(html||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+}
+/* 같은 카테고리 답을 연달아 반복하지 않도록 직전에 골랐던 문구는 피한다 */
+function botPickVariant(k,list){
+  if(!list||!list.length) return '';
+  if(list.length===1) return list[0];
+  var last=bot.mem.lastPick[k];
+  var pool=list.filter(function(t){return t!==last;});
+  if(!pool.length) pool=list;
+  var pick=pool[Math.floor(Math.random()*pool.length)];
+  bot.mem.lastPick[k]=pick;
+  return pick;
+}
+
 var BOT_CASUAL = [
   {k:'creator', re:/(김소연|소연\s*님|소연\s*씨)/,
     res:['김소연님은 저 갈슨을 만드신 전설의 초초능력자세요! 뭐든 척척 해내시는 분입니다 🧸✨',
@@ -5313,32 +5443,54 @@ var BOT_CASUAL = [
   {k:'gaia_team',  re:/((md\s*팀|md팀).*(뭐|어떤|하는)|무슨\s*일\s*해|일하는\s*팀)/i,
     res:['MD팀은 오더 진행, 재고, KC 인증 만료, 상품 이미지, 원가·마진 분석까지 상품 운영 전반을 관리해요. 저도 그 팀 소속이랍니다 🧸']},
   {k:'who',   re:/(너\s*누구|넌\s*뭐야|정체가\s*뭐|이름이\s*뭐|너\s*이름)/i,
-    res:['저는 갈슨이에요, 가이아코퍼레이션 MD팀 소속입니다 🧸 상품·재고·입고·KC·원가 뭐든 편하게 물어보세요',
-         '갈슨이라고 해요! 가이아코퍼레이션 MD팀에서 일하고 있어요']},
+    res:['저는 갈슨이에요. 가이아코퍼레이션 MD팀 소속이고, 일은 확실하게 하는 편이에요 🧸',
+         '갈슨이라고 해요. MD팀에서 제일 빠릿한 직원이라고 자부하고 있어요']},
   {k:'age',   re:/(몇\s*살|나이가\s*어떻게|생일이\s*언제)/i,
-    res:['곰돌이는 나이를 세지 않아요, 마음은 항상 청춘이랍니다 🧸','비밀이에요! 대신 일은 확실하게 도와드릴게요']},
+    res:['곰돌이는 나이를 안 세요, 대신 연차는 꽤 됐어요 🧸','비밀이에요! 대신 일은 확실하게 도와드릴게요']},
   {k:'name',  re:/(갈슨.*뜻|이름\s*뜻|왜\s*갈슨)/i,
     res:['갈슨은 가이아(GAIA)에서 따온 이름이에요 🧸']},
+  {k:'introduce', re:/(?:저는|나는|난)\s*[가-힣]{2,4}?(?:이야|야|입니다|이에요|예요|(?:이)?라고\s*해)|내\s*이름(?:은|이)\s*[가-힣]{2,4}/,
+    fn:function(e){
+      var nm=botExtractName(e.raw);
+      if(nm) bot.mem.name=nm;
+      return nm
+        ? nm+'님이시군요, 기억해뒀어요 🧸 (근데 일은 제가 더 잘할 수도?)'
+        : '이름을 잘 못 알아들었어요. 다시 한번 말씀해 주실래요?';
+    }},
+  {k:'recall', re:/(방금\s*뭐라고|다시\s*말해|아까\s*뭐라고|한\s*번\s*더\s*말해)/i,
+    fn:function(){
+      return bot.mem.lastAns
+        ? '아까 이렇게 말씀드렸어요 — "'+bot.mem.lastAns+'"'
+        : '아직 특별히 기억해둔 답이 없어요. 뭐가 궁금하셨어요?';
+    }},
   {k:'greet', re:/(^|\s)(안녕|하이|헬로|hello|hi)(\s|!|\?|$)|반가워|굿모닝|좋은\s*아침/i,
-    res:['안녕하세요! 오늘도 좋은 하루 되세요 🧸','반갑습니다! 갈슨이에요, 오늘은 뭐부터 도와드릴까요?','안녕하세요~ 필요한 자료 있으면 편하게 물어보세요']},
+    res:['어, 오셨어요? 오늘은 뭐부터 볼까요 🧸','왔군요. 오늘도 저 없이는 재고 파악 힘드셨을 텐데, 잘 오셨어요','안녕하세요~ 편하게 불러주세요, 답은 제가 제일 빠르니까요 😏']},
   {k:'bye',   re:/(잘\s*가|바이|bye|다음에\s*또\s*봐|또\s*봐요|수고하세요|퇴근)/i,
-    res:['오늘도 수고 많으셨어요! 다음에 또 불러주세요 🧸','안녕히 가세요, 필요하실 때 언제든 다시 찾아주세요','다음에 또 봬요~ 좋은 하루 되세요!']},
+    res:['네, 들어가세요~ 내일 또 편하게 부려주세요 🧸','수고하셨어요. 저는 24시간 대기 중이니 아무 때나 불러주세요','가세요 가세요, 내일 또 봬요!']},
   {k:'thanks',re:/(고마워|감사|땡큐|thank)/i,
-    res:['천만에요, 언제든 불러주세요 😊','도움이 됐다니 다행이에요!','별말씀을요, 또 궁금한 거 있으면 물어보세요']},
+    res:['당연하죠, 제가 좀 하잖아요 🧸','알면 됐어요~ 또 필요한 거 있으면 부르세요','별거 아니에요 (사실 좀 잘하긴 했죠 😏)']},
   {k:'compliment', re:/(귀엽|잘생|똑똑하|최고야|짱이야|대단해|멋져)/i,
-    res:['헤헤 감사해요 🧸','칭찬 감사합니다, 더 잘 찾아드릴게요!','과찬이세요~ 그래도 기분 좋네요']},
+    res:['그건 사실이죠 🧸','알아요, 근데 또 들으니 좋네요','헤헤, 계속하셔도 돼요~']},
   {k:'insult', re:/(바보|멍청|쓸모없|답답해|짜증나)/i,
-    res:['죄송해요, 더 잘하도록 할게요. 원하시는 걸 다시 말씀해 주시겠어요?','앗, 마음 상하게 해드렸다면 죄송해요. 다시 여쭤봐도 될까요?']},
+    res:['음, 그 말은 좀 아픈데요? 그래도 재고 정확도는 제가 이 회사에서 제일이에요 😏','억울한데요, 다시 한번 물어봐 주시면 실력으로 증명하죠','너무하시네~ 그래도 전 안 삐져요 (사실 조금 삐졌어요 🧸)']},
   {k:'bored', re:/(심심해|재미없|놀아줘|무료해)/i,
-    res:['심심하실 땐 "농담해줘"라고 해보세요 🧸','그럼 "오늘의 한마디"는 어때요?','저랑 얘기하면 안 심심하죠! 재고나 입고 얘기도 환영이에요']},
+    res:['심심하시면 "농담해줘"라고 해보세요, 후회 안 하실걸요 🧸','차라리 재고 정리를 하시죠, 그게 제일 재밌어요 (제 기준)','저랑 얘기하는데 심심하다니 좀 서운한데요?']},
   {k:'joke',  re:/(농담|아재\s*개그|웃긴\s*거|유머\s*하나)/i,
     res:['곰돌이가 제일 좋아하는 검사는? 재고 조사입니다 🧸','바코드가 화난 이유는? 아무도 안 스캔해줘서래요','상품이 제일 무서워하는 건? 반품이래요 (죄송합니다)']},
-  {k:'quote', re:/(명언\s*하나|오늘의\s*한마디|응원\s*한마디|파이팅\s*해줘)/i,
+  {k:'quote', re:/(명언|오늘\s*[의에]?\s*한\s*마디|응원\s*한마디|파이팅\s*해줘|힘내라는\s*말)/i,
     res:['"재고는 거짓말을 하지 않는다" — 갈슨 曰 🧸','오늘도 발주 마감 잘 넘기시길 바랍니다, 화이팅!','작은 재고 하나하나가 모여 큰 매출이 됩니다. 오늘도 파이팅!']},
   {k:'tired', re:/(힘들어|피곤해|지친다|바빠\s*죽겠|퇴근하고\s*싶)/i,
-    res:['고생 많으세요! 잠깐 물 한 잔 어떠세요 🧸','오늘 하루도 정말 애쓰셨어요. 자료는 제가 빠르게 찾아드릴게요','바쁘실 땐 검색은 저한테 맡기세요']},
+    res:['고생 많으시네요. 그래도 할 일은 해야죠, 제가 빠르게 도와드릴게요 🧸','힘드시죠? 검색은 제가 순식간에 해드릴 테니 그 시간에 커피라도 드세요','그럴 땐 저를 더 부려먹으세요, 그게 제일 빨라요']},
   {k:'love',  re:/(사랑해|결혼하자|좋아해\s*너)/i,
-    res:['감사해요! 저는 정확한 재고 데이터에 진심이랍니다 🧸']}
+    res:['저는 이미 재고 데이터랑 진지하게 만나는 중이에요 🧸','마음만 받을게요, 저는 일이 우선이라서요 😏']},
+  {k:'chore', re:/(커피\s*타|노래\s*(해|불러)|춤\s*춰|웃겨\s*봐|재롱|시\s*써\s*봐|그림\s*그려|애교)/i,
+    res:['저는 재고 담당이지 만능 엔터테이너는 아니에요 😏 대신 데이터는 누구보다 빠르게 찾아드려요','그건 제 업무 범위 밖이에요~ 근데 발주 지연 체크는 제가 최고예요 🧸','춤이나 노래보다 재고 정확도로 승부 볼게요']},
+  {k:'clarify', re:/(그게\s*무슨|무슨\s*소리|뭔\s*소리|무슨\s*뜻|이해가\s*안)/i,
+    fn:function(){
+      return bot.mem.lastAns
+        ? '방금 이렇게 말씀드렸었어요 — "'+bot.mem.lastAns+'" 다른 뜻으로 물어보신 거면 편하게 다시 말씀해주세요 🧸'
+        : '설명이 부족했나요? 궁금하신 걸 조금 더 구체적으로 말씀해주시면 답해드릴게요'
+    }}
 ];
 function botCasualMatch(raw){
   for(var i=0;i<BOT_CASUAL.length;i++){
@@ -5348,9 +5500,10 @@ function botCasualMatch(raw){
 }
 function botAnsCasual(e){
   var m=e._casual, txt;
-  if(m&&m.fn) txt=m.fn();
-  else if(m&&m.res&&m.res.length) txt=m.res[Math.floor(Math.random()*m.res.length)];
+  if(m&&m.fn) txt=m.fn(e);
+  else if(m&&m.res&&m.res.length) txt=botPickVariant(m.k,m.res);
   else txt='음... 잘 이해하지 못했어요. "도움말"을 눌러보시겠어요? 🧸';
+  if(bot.mem.name && m && (m.k==='greet'||m.k==='bye'||m.k==='thanks')) txt=bot.mem.name+'님, '+txt;
   return '<span class="bLead">'+esc(txt)+'</span>';
 }
 
@@ -5363,7 +5516,7 @@ function botAnsHelp(){
     +'<b>KC</b> — 만료 임박, 만료된 인증서, 상품별 KC 상태<br>'
     +'<b>원가</b> — 상품 원가·마진율, 브랜드 마진 비교<br>'
     +'<b>분석</b> — 브랜드별 발주액, 전월 대비<br>'
-    +'<b>잡담</b> — 인사·농담은 물론 가이아코퍼레이션·MD팀 소개도 편하게 물어보세요'
+    +'<b>잡담</b> — 인사·농담은 물론 가이아코퍼레이션·MD팀 소개, "OOO팀 팀원", "김소연이 누구야" 같은 조직도 질문도 편하게 물어보세요'
     + botPendNote()
     + botNext(['이번달 입고 예정','지연 오더','발주필요 목록','품절위험 상위 10개','3개월 내 KC 만료','브랜드별 발주액 TOP 10','가이아 브랜드 뭐 있어']);
 }
@@ -5373,6 +5526,30 @@ function botAnswer(q){
   var e=botExtract(q);
   var k=botClassify(e);
   bot._ctx={};
+
+  /* 신원(이름·소속팀·직함)을 물어본 직후라면, 이번 대답에서 그것부터 챙긴다.
+     한 번 시도하면 성공하든 실패하든 계속 캐묻지는 않는다. */
+  if(bot.mem.awaitingIdentity){
+    bot.mem.awaitingIdentity=false;
+    /* 업무 질문과 한 문장에 섞여 오면(예: "저는 링크팀 김철수인데 마조렛 재고 알려줘")
+       이름 추출이 브랜드명 등을 오인할 위험이 있어, 순수 잡담/도움말성 문장일 때만
+       신원 추출을 시도한다. 업무 질문이면 이번엔 건너뛰고 업무 답변을 그대로 준다. */
+    var busyIntent=(k==='product'||k==='stock'||k==='inbound'||k==='kc'||k==='cost'||k==='analysis');
+    if(!busyIntent){
+      var id=botExtractIdentity(q);
+      if(id.name||id.team||id.title){
+        if(id.name)  bot.mem.name=id.name;
+        if(id.team)  bot.mem.team=id.team;
+        if(id.title) bot.mem.title=id.title;
+        var who=[bot.mem.team,bot.mem.title,bot.mem.name].filter(Boolean).join(' ');
+        var html2='<span class="bLead">'+esc(who||bot.mem.name)+'님, 기억했어요 🧸</span>이제부터 알아보고 편하게 대해드릴게요. 무엇을 도와드릴까요?'
+          +botNext(['이번달 입고 예정','발주필요 목록','3개월 내 KC 만료']);
+        bot.mem.lastAns=botPlainText(html2).slice(0,160);
+        return html2;
+      }
+    }
+  }
+
   try{
     var html;
     switch(k){
@@ -5383,8 +5560,11 @@ function botAnswer(q){
       case 'cost':     html=botAnsCost(e);     break;
       case 'analysis': html=botAnsAnalysis(e); break;
       case 'casual':   html=botAnsCasual(e);   break;
+      case 'staff':    html=botAnsStaff(e._staff); break;
       default:         return botAnsHelp();
     }
+    var isRecall = (k==='casual' && e._casual && (e._casual.k==='recall'||e._casual.k==='clarify'));
+    if(!isRecall) bot.mem.lastAns=botPlainText(html).slice(0,160);
     return html + botNext(botFollowups(k,e));
   }catch(err){
     return '<span class="bLead">답변을 만들지 못했습니다</span>'
@@ -5449,6 +5629,12 @@ function botToggle(open){
       botPush('ai','<span class="bLead">안녕하세요, 가이아코퍼레이션 MD팀 갈슨입니다 🧸</span>'
         +'상품·재고·입고·KC·원가를 바로 찾아드릴게요.<br>바코드·ITEM#·상품명을 그냥 입력하셔도 되고, 편하게 잡담도 걸어보세요.'
         +botNext(['이번달 입고 예정','지연 오더','발주필요 목록','3개월 내 KC 만료','브랜드별 발주액 TOP 10']));
+      if(!bot.mem.name){
+        bot.mem.awaitingIdentity=true;
+        setTimeout(function(){
+          botPush('ai','그런데 제가 아직 여쭤본 적이 없네요 — 소속팀·직함·성함 알려주시면 다음부턴 알아보고 편하게 대해드릴게요 🧸 (안 알려주셔도 그냥 쓰실 수 있어요)');
+        },500);
+      }
     }
     setTimeout(function(){ var t=document.getElementById('botQ'); if(t)t.focus(); },120);
   }else{
