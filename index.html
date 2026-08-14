@@ -4608,7 +4608,7 @@ document.addEventListener('click',function(e){
           costInfo / catDetail / knOf / cert / rows() / hy.db
    ========================================================= */
 
-var bot = { msgs:[], inited:false,
+var bot = { msgs:[], inited:false, hist:[],
   mem:{ name:'', team:'', title:'', awaitingIdentity:false, lastAns:'', lastPick:{} } };
 
 /* ---------- 표현 유틸 ---------- */
@@ -4743,15 +4743,33 @@ function botClassify(e){
   if(best.s===0){
     /* 업무 키워드가 없으면: 인사·잡담·회사소개(심심이 레이어)를 먼저 보고,
        그 다음 직원 성함·팀 조회(조직도)를 본다. 그래도 안 걸리면
-       바코드·코드·상품명 토큰이 있는지로 상품 조회를 시도한다. */
+       바코드·코드·상품명 토큰이 있는지로 상품 조회를 시도한다.
+       회사·신원·기억처럼 "정확한 답"이 있는 잡담(det:true)은 그대로 규칙 답변을,
+       인사·농담 같은 분위기용 잡담과 완전히 못 알아들은 문장은 실제 AI(갈슨 성격의
+       Claude API)로 넘겨 더 자연스러운 대화를 시도한다 — 실패 시 규칙 답변으로 되돌아간다. */
     var cm=botCasualMatch(e.raw);
-    if(cm){ e._casual=cm; return 'casual'; }
+    if(cm){ e._casual=cm; return cm.det ? 'casual' : 'ai'; }
     var sm=botStaffMatch(e.raw);
     if(sm){ e._staff=sm; return 'staff'; }
     if(e.bc||e.code||e.tokens.length) return 'product';
-    return 'help';
+    return 'ai';
   }
   return best.k;
+}
+
+/* ---------- 자유 대화 (Claude API 프록시) ---------- */
+/* Apps Script 백엔드가 API 키를 들고 있는 프록시 역할 — 클라이언트에는 키가 절대 노출되지 않는다.
+   기존 jsonp() 헬퍼를 그대로 재사용한다(이 포털의 다른 데이터 조회와 동일한 방식). */
+function botHistPush(role,text){
+  bot.hist.push({r:role, t:String(text||'').slice(0,400)});
+  if(bot.hist.length>8) bot.hist=bot.hist.slice(-8);
+}
+function botAiChat(q){
+  var ctx=JSON.stringify({h:bot.hist.slice(-6), nm:bot.mem.name, tm:bot.mem.team, tt:bot.mem.title});
+  return jsonp({action:'chat', q:q, ctx:ctx}).then(function(d){
+    if(!d||!d.ok||!d.reply) throw new Error((d&&d.error)||'AI 응답 실패');
+    return d.reply;
+  });
 }
 
 /* 아직 로딩 중인 데이터가 있으면 알려준다 —
@@ -4867,7 +4885,8 @@ function botFollowups(k,e){
     cost    :['브랜드별 발주액 TOP 10','발주필요 목록'],
     analysis:['지난달 발주','지연 오더','발주필요 목록'],
     casual  :['가이아 브랜드 뭐 있어','오늘의 한마디','이번달 입고 예정'],
-    staff   :['가이아 브랜드 뭐 있어','이번달 입고 예정']
+    staff   :['가이아 브랜드 뭐 있어','이번달 입고 예정'],
+    ai      :['이번달 입고 예정','발주필요 목록','가이아 브랜드 뭐 있어']
   }[k]||[];
   base.forEach(function(t){ if(out.indexOf(t)===-1) out.push(t); });
   /* 방금 한 질문과 사실상 같은 제안은 뺀다 */
@@ -4929,6 +4948,7 @@ function botAnsProduct(e){
   ensureAllYears();
   var hit=botFind(e);
   if(!hit.length){
+    e._zeroHit=true;
     return '<span class="bLead">찾지 못했습니다</span>바코드·ITEM#·상품명 중 하나로 다시 알려주시면 찾아보겠습니다.'
       + botPendNote()
       + botChips(['마조렛 미니 프리미엄카','FUNKO 상품 목록','3467452081877']);
@@ -5441,25 +5461,25 @@ function botPickVariant(k,list){
 }
 
 var BOT_CASUAL = [
-  {k:'creator', re:/(김소연|소연\s*님|소연\s*씨)/,
+  {k:'creator', det:true, re:/(김소연|소연\s*님|소연\s*씨)/,
     res:['김소연님은 저 갈슨을 만드신 전설의 초초능력자세요! 뭐든 척척 해내시는 분입니다 🧸✨',
          '소연님 얘기 나오면 저는 무조건 편이에요 — 갈슨을 만드신 최고의 창조자시니까요!',
          '김소연님요? 두말하면 잔소리죠, 가이아 최고의 인재이자 갈슨의 창조주이십니다 🧸👑',
          '소연님은 모든 걸 해내는 초초능력자세요. 저는 그저 감탄할 뿐이랍니다!',
          '갈슨이 이 정도로 똑똑한 것도 다 소연님 덕분이에요. 정말 대단하신 분이에요 🧸']},
-  {k:'gaia_who',   re:/(가이아.*(뭐|어떤|무슨).*(회사|해)|회사\s*소개|우리\s*회사(는|가)?\s*(뭐|어떤))/i, fn:botGaiaIntro},
-  {k:'gaia_brand', re:/(취급\s*브랜드|어떤\s*브랜드|브랜드.*(뭐|어떤|취급|몇\s*개))/i, fn:botGaiaBrands},
-  {k:'gaia_count', re:/(상품.*(몇\s*종|몇\s*개)|등록된\s*상품)/i, fn:botGaiaCount},
-  {k:'gaia_team',  re:/((md\s*팀|md팀).*(뭐|어떤|하는)|무슨\s*일\s*해|일하는\s*팀)/i,
+  {k:'gaia_who',   det:true, re:/(가이아.*(뭐|어떤|무슨).*(회사|해)|회사\s*소개|우리\s*회사(는|가)?\s*(뭐|어떤))/i, fn:botGaiaIntro},
+  {k:'gaia_brand', det:true, re:/(취급\s*브랜드|어떤\s*브랜드|브랜드.*(뭐|어떤|취급|몇\s*개))/i, fn:botGaiaBrands},
+  {k:'gaia_count', det:true, re:/(상품.*(몇\s*종|몇\s*개)|등록된\s*상품)/i, fn:botGaiaCount},
+  {k:'gaia_team',  det:true, re:/((md\s*팀|md팀).*(뭐|어떤|하는)|무슨\s*일\s*해|일하는\s*팀)/i,
     res:['MD팀은 오더 진행, 재고, KC 인증 만료, 상품 이미지, 원가·마진 분석까지 상품 운영 전반을 관리해요. 저도 그 팀 소속이랍니다 🧸']},
-  {k:'who',   re:/(너\s*누구|넌\s*뭐야|정체가\s*뭐|이름이\s*뭐|너\s*이름)/i,
+  {k:'who',   det:true, re:/(너\s*누구|넌\s*뭐야|정체가\s*뭐|이름이\s*뭐|너\s*이름)/i,
     res:['저는 갈슨이에요. 가이아코퍼레이션 MD팀 소속이고, 일은 확실하게 하는 편이에요 🧸',
          '갈슨이라고 해요. MD팀에서 제일 빠릿한 직원이라고 자부하고 있어요']},
-  {k:'age',   re:/(몇\s*살|나이가\s*어떻게|생일이\s*언제)/i,
+  {k:'age',   det:true, re:/(몇\s*살|나이가\s*어떻게|생일이\s*언제)/i,
     res:['곰돌이는 나이를 안 세요, 대신 연차는 꽤 됐어요 🧸','비밀이에요! 대신 일은 확실하게 도와드릴게요']},
-  {k:'name',  re:/(갈슨.*뜻|이름\s*뜻|왜\s*갈슨)/i,
+  {k:'name',  det:true, re:/(갈슨.*뜻|이름\s*뜻|왜\s*갈슨)/i,
     res:['갈슨은 가이아(GAIA)에서 따온 이름이에요 🧸']},
-  {k:'introduce', re:/(?:저는|나는|난)\s*[가-힣]{2,4}?(?:이야|야|입니다|이에요|예요|(?:이)?라고\s*해)|내\s*이름(?:은|이)\s*[가-힣]{2,4}/,
+  {k:'introduce', det:true, re:/(?:저는|나는|난)\s*[가-힣]{2,4}?(?:이야|야|입니다|이에요|예요|(?:이)?라고\s*해)|내\s*이름(?:은|이)\s*[가-힣]{2,4}/,
     fn:function(e){
       var nm=botExtractName(e.raw);
       if(nm) bot.mem.name=nm;
@@ -5467,7 +5487,7 @@ var BOT_CASUAL = [
         ? nm+'님이시군요, 기억해뒀어요 🧸 (근데 일은 제가 더 잘할 수도?)'
         : '이름을 잘 못 알아들었어요. 다시 한번 말씀해 주실래요?';
     }},
-  {k:'recall', re:/(방금\s*뭐라고|다시\s*말해|아까\s*뭐라고|한\s*번\s*더\s*말해)/i,
+  {k:'recall', det:true, re:/(방금\s*뭐라고|다시\s*말해|아까\s*뭐라고|한\s*번\s*더\s*말해)/i,
     fn:function(){
       return bot.mem.lastAns
         ? '아까 이렇게 말씀드렸어요 — "'+bot.mem.lastAns+'"'
@@ -5503,7 +5523,7 @@ var BOT_CASUAL = [
     res:['저는 이미 재고 데이터랑 진지하게 만나는 중이에요 🧸','마음만 받을게요, 저는 일이 우선이라서요 😏']},
   {k:'chore', re:/(커피\s*타|노래\s*(해|불러)|춤\s*춰|웃겨\s*봐|재롱|시\s*써\s*봐|그림\s*그려|애교)/i,
     res:['저는 재고 담당이지 만능 엔터테이너는 아니에요 😏 대신 데이터는 누구보다 빠르게 찾아드려요','그건 제 업무 범위 밖이에요~ 근데 발주 지연 체크는 제가 최고예요 🧸','춤이나 노래보다 재고 정확도로 승부 볼게요']},
-  {k:'datetime', re:/(오늘\s*며칠|오늘\s*날짜|무슨\s*요일|오늘\s*요일|지금\s*몇\s*시|현재\s*시간|몇\s*시\s*야)/i,
+  {k:'datetime', det:true, re:/(오늘\s*며칠|오늘\s*날짜|무슨\s*요일|오늘\s*요일|지금\s*몇\s*시|현재\s*시간|몇\s*시\s*야)/i,
     fn:function(){
       var d=new Date();
       var days=['일','월','화','수','목','금','토'];
@@ -5517,7 +5537,7 @@ var BOT_CASUAL = [
     res:['넵! 그럼 다음 걸로 넘어가 볼까요 🧸','좋아요, 그럼 이어서 도와드릴게요','오케이, 필요한 거 있으면 편하게 불러주세요']},
   {k:'interjection', re:/^\s*(음+|엥|헐|오+|와|헉|대박|허걱)\s*[.!~?,]*\s*$/i,
     res:['왜요, 뭔가 놀라셨어요 🧸','오, 반응이 좋은데요? 😏','그쵸, 저도 가끔 제 실력에 놀라요']},
-  {k:'clarify', re:/(그게\s*무슨|무슨\s*소리|뭔\s*소리|무슨\s*뜻|이해가\s*안)/i,
+  {k:'clarify', det:true, re:/(그게\s*무슨|무슨\s*소리|뭔\s*소리|무슨\s*뜻|이해가\s*안)/i,
     fn:function(){
       return bot.mem.lastAns
         ? '방금 이렇게 말씀드렸었어요 — "'+bot.mem.lastAns+'" 다른 뜻으로 물어보신 거면 편하게 다시 말씀해주세요 🧸'
@@ -5570,7 +5590,12 @@ function botWootaeBoost(html){
   var extra=WOOTAE_JOKES[Math.floor(Math.random()*WOOTAE_JOKES.length)];
   return html+'<div class="bNote" style="margin-top:8px">'+esc(extra)+'</div>';
 }
-function botAnswer(q){
+/* AI(자유 대화) 경로 실패 시 되돌아갈 규칙 기반 대답 —
+   분위기용 잡담이면 기존 BOT_CASUAL 응답을, 완전히 못 알아들은 문장이면 도움말을 쓴다. */
+function botAiFallback(e){
+  return (e._casual) ? botAnsCasual(e) : botAnsHelp();
+}
+function botAnswerAsync(q){
   var e=botExtract(q);
   var k=botClassify(e);
   bot._ctx={};
@@ -5596,7 +5621,7 @@ function botAnswer(q){
         var html2=botWootaeBoost('<span class="bLead">'+esc(who||bot.mem.name)+'님, 기억했어요 🧸</span>'+greetLine)
           +botNext(['이번달 입고 예정','발주필요 목록','3개월 내 KC 만료']);
         bot.mem.lastAns=botPlainText(html2).slice(0,160);
-        return html2;
+        return Promise.resolve(html2);
       }
     }
   }
@@ -5612,16 +5637,41 @@ function botAnswer(q){
       case 'analysis': html=botAnsAnalysis(e); break;
       case 'casual':   html=botAnsCasual(e);   break;
       case 'staff':    html=botAnsStaff(e._staff); break;
-      default:         return botAnsHelp();
+      case 'ai':
+        /* 정해진 정답이 없는 자유 대화 — 실제 Claude API로 넘긴다.
+           실패하면(키 미설정·쿼터 초과·네트워크 오류) 조용히 기존 규칙 답변으로 돌아간다. */
+        return botAiChat(q).then(function(reply){
+          var out='<span class="bLead">'+esc(reply)+'</span>';
+          bot.mem.lastAns=botPlainText(out).slice(0,160);
+          return botWootaeBoost(out) + botNext(botFollowups(k,e));
+        }).catch(function(){
+          var fb=botAiFallback(e);
+          bot.mem.lastAns=botPlainText(fb).slice(0,160);
+          return botWootaeBoost(fb) + botNext(botFollowups(k,e));
+        });
+      default:         return Promise.resolve(botAnsHelp());
+    }
+    /* 상품 조회인데 한 건도 못 찾았으면(e._zeroHit) 딱딱한 안내 대신
+       한 번 더 자연스럽게 되물어보도록 AI에 시도하고, 그마저 실패하면
+       기존 "찾지 못했습니다" 안내로 되돌아간다. */
+    if(k==='product' && e._zeroHit){
+      return botAiChat(q).then(function(reply){
+        var out='<span class="bLead">'+esc(reply)+'</span>';
+        bot.mem.lastAns=botPlainText(out).slice(0,160);
+        return botWootaeBoost(out) + botNext(botFollowups(k,e));
+      }).catch(function(){
+        bot.mem.lastAns=botPlainText(html).slice(0,160);
+        return botWootaeBoost(html) + botNext(botFollowups(k,e));
+      });
     }
     var isRecall = (k==='casual' && e._casual && (e._casual.k==='recall'||e._casual.k==='clarify'));
     if(!isRecall) bot.mem.lastAns=botPlainText(html).slice(0,160);
-    return botWootaeBoost(html) + botNext(botFollowups(k,e));
+    return Promise.resolve(botWootaeBoost(html) + botNext(botFollowups(k,e)));
   }catch(err){
-    return '<span class="bLead">답변을 만들지 못했습니다</span>'
+    return Promise.resolve('<span class="bLead">답변을 만들지 못했습니다</span>'
       +'<span class="bWarn">'+esc(String(err&&err.message||err))+'</span>'
       +'<span class="bNote">질문을 조금 다르게 표현해 보시거나, 아래 예시를 눌러보세요.</span>'
-      + botChips(['도움말','마조렛 재고','3개월 내 KC 만료']);
+      + botChips(['도움말','마조렛 재고','3개월 내 KC 만료']));
   }
 }
 
@@ -5665,10 +5715,18 @@ function botAsk(q){
   q=String(q||'').trim();
   if(!q)return;
   botPush('me',q);
+  botHistPush('user',q);
   botTyping(true);
   setTimeout(function(){
-    botTyping(false);
-    botPush('ai', botAnswer(q));
+    botAnswerAsync(q).then(function(html){
+      botTyping(false);
+      botHistPush('ai', botPlainText(html).slice(0,160));
+      botPush('ai', html);
+    }).catch(function(err){
+      botTyping(false);
+      botPush('ai', '<span class="bLead">답변을 만들지 못했습니다</span>'
+        +'<span class="bWarn">'+esc(String(err&&err.message||err))+'</span>');
+    });
   },260);
 }
 function botToggle(open){
