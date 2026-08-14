@@ -662,7 +662,8 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
 :root{
   --gs-cream:#FBF6EF; --gs-cream2:#F5EBDD; --gs-tan:#DEC8AB; --gs-tan2:#C9AE8C;
   --gs-line:#EADDCB; --gs-brown:#6B4530; --gs-brown2:#845942; --gs-ink:#4A3226;
-  --gs-red:#B54537; --gs-red-d:#8F3227; --gs-red-bg:#FBEDEA;
+  --gs-red:#E31E26; --gs-red-d:#B8151B; --gs-red-bg:#FDEBEC;
+  --gs-green:#9AC63C; --gs-green-d:#7CA82B;
 }
 
 #botFab{position:fixed;right:22px;bottom:22px;z-index:60;width:58px;height:58px;border-radius:50%;
@@ -674,21 +675,39 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
 #botFab.hide{opacity:0;pointer-events:none;transform:scale(.8)}
 #botFab img.bFace{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
 
+#botHint{position:fixed;right:88px;bottom:34px;z-index:59;max-width:208px;
+  background:#fff;border:1px solid var(--gs-line);border-radius:14px;
+  padding:10px 28px 10px 14px;font-size:.8rem;line-height:1.45;color:var(--gs-ink);font-weight:600;
+  box-shadow:0 10px 24px rgba(74,50,38,.2);
+  opacity:0;transform:translateY(6px) scale(.96);pointer-events:none;
+  transition:opacity .2s var(--ease),transform .2s var(--ease)}
+#botHint.show{opacity:1;transform:none;pointer-events:auto}
+#botHint::after{content:'';position:absolute;right:16px;bottom:-7px;width:14px;height:14px;
+  background:#fff;border-right:1px solid var(--gs-line);border-bottom:1px solid var(--gs-line);
+  transform:rotate(45deg)}
+#botHint .bHintX{position:absolute;top:6px;right:7px;width:18px;height:18px;border-radius:6px;border:none;
+  background:transparent;display:flex;align-items:center;justify-content:center;font-size:.7rem;
+  color:var(--gs-brown2);opacity:.55;cursor:pointer;line-height:1}
+#botHint .bHintX:hover{opacity:1;background:var(--gs-cream2)}
+@media (max-width:560px){#botHint{right:14px;bottom:80px;max-width:180px}}
+
 #botWrap{position:fixed;right:22px;bottom:22px;z-index:61;width:404px;max-width:calc(100vw - 28px);
   height:min(650px,calc(100vh - 44px));background:var(--gs-cream);border-radius:22px;overflow:hidden;
   display:none;flex-direction:column;box-shadow:0 20px 56px rgba(74,50,38,.26);border:1px solid var(--gs-line)}
 #botWrap.on{display:flex;animation:botIn .26s var(--ease)}
 @keyframes botIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
 
-.botHead{background:linear-gradient(135deg,var(--gs-brown) 0%,var(--gs-brown2) 100%);
+.botHead{background:linear-gradient(135deg,var(--gs-red) 0%,var(--gs-red-d) 100%);
   color:#fff;padding:14px 16px;display:flex;align-items:center;gap:11px;flex:none}
-.botHead .bTit{font-weight:800;font-size:1rem;letter-spacing:-.01em}
-.botHead .bSub{font-size:.72rem;color:var(--gs-tan);margin-top:2px}
+.botHead .bTit{font-weight:800;font-size:1rem;letter-spacing:-.01em;display:flex;align-items:center;gap:6px}
+.botHead .bDot{width:7px;height:7px;border-radius:50%;background:var(--gs-green);
+  box-shadow:0 0 0 2px rgba(154,198,60,.35)}
+.botHead .bSub{font-size:.72rem;color:rgba(255,255,255,.78);margin-top:2px}
 .botHead .bx{margin-left:auto;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;
   justify-content:center;color:#fff;opacity:.8;font-size:1rem}
 .botHead .bx:hover{opacity:1;background:rgba(255,255,255,.18)}
 .botAv{width:38px;height:38px;border-radius:50%;overflow:hidden;flex:none;
-  box-shadow:0 0 0 2px var(--gs-tan)}
+  box-shadow:0 0 0 2px rgba(255,255,255,.85)}
 .botAv img.bFace{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
 
 .botBody{flex:1;overflow-y:auto;padding:16px;background:var(--gs-cream);display:flex;flex-direction:column;gap:12px}
@@ -841,6 +860,7 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
 </div>
 
 
+<div id="botHint" role="status"><button class="bHintX" id="botHintX" aria-label="닫기" type="button">✕</button>업무 관련 질문은 저한테 주세요 🧸</div>
 <button id="botFab" title="갈슨에게 물어보기" aria-label="갈슨 열기">
   <img class="bFace" src="data:image/webp;base64,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" alt="갈슨">
 </button>
@@ -848,7 +868,7 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
   <div class="botHead">
     <div class="botAv"><img class="bFace" src="data:image/webp;base64,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" alt="갈슨"></div>
     <div>
-      <div class="bTit">갈슨</div>
+      <div class="bTit"><span class="bDot"></span>갈슨</div>
       <div class="bSub">상품 · 재고 · 입고 · KC · 원가</div>
     </div>
     <button class="bx" id="botClose" aria-label="닫기">✕</button>
@@ -5477,8 +5497,9 @@ var BOT_CASUAL = [
          '갈슨이라고 해요. MD팀에서 제일 빠릿한 직원이라고 자부하고 있어요']},
   {k:'age',   det:true, re:/(몇\s*살|나이가\s*어떻게|생일이\s*언제)/i,
     res:['곰돌이는 나이를 안 세요, 대신 연차는 꽤 됐어요 🧸','비밀이에요! 대신 일은 확실하게 도와드릴게요']},
-  {k:'name',  det:true, re:/(갈슨.*뜻|이름\s*뜻|왜\s*갈슨)/i,
-    res:['갈슨은 가이아(GAIA)에서 따온 이름이에요 🧸']},
+  {k:'name',  det:true, re:/(갈슨.*뜻|이름\s*뜻|왜\s*갈슨|윌슨)/i,
+    res:['갈슨은 가이아(GAIA)의 "가" + 윌슨(Wilson)을 합친 이름이에요 — 저는 가이아의 윌슨이거든요 🧸',
+         '가이아 + 윌슨 = 갈슨! 무인도에 윌슨이 있었다면, 가이아엔 제가 있죠']},
   {k:'introduce', det:true, re:/(?:저는|나는|난)\s*[가-힣]{2,4}?(?:이야|야|입니다|이에요|예요|(?:이)?라고\s*해)|내\s*이름(?:은|이)\s*[가-힣]{2,4}/,
     fn:function(e){
       var nm=botExtractName(e.raw);
@@ -5507,17 +5528,17 @@ var BOT_CASUAL = [
     res:['오늘도 팔팔해요, 재고 데이터만큼 팔팔하죠 🧸','컨디션 최상이에요~ 물어보실 거 있으면 지금이 딱이에요','매일 기분 좋아요, 일하는 걸 좋아하거든요 (진짜예요)']},
   {k:'food', re:/(점심\s*뭐|저녁\s*뭐|밥\s*먹었|커피\s*마셨|뭐\s*먹지)/,
     res:['저는 배터리로 사는지라 식사는 패스할게요 🧸 대신 발주 일정은 안 굶기고 챙겨드려요','메뉴 추천은 제 전문 밖이에요~ 재고 추천이라면 자신 있는데','점심은 잘 챙겨 드세요, 저는 재고표 보면서 배부른 척 할게요 😏']},
-  {k:'compliment', re:/(귀엽|잘생|똑똑하|최고야|짱이야|대단해|멋져)/i,
+  {k:'compliment', re:/(귀엽|잘생|똑똑|최고야|짱이야|대단|멋져)/i,
     res:['그건 사실이죠 🧸','알아요, 근데 또 들으니 좋네요','헤헤, 계속하셔도 돼요~']},
-  {k:'insult', re:/(바보|멍청|쓸모없|답답해|짜증나)/i,
+  {k:'insult', re:/(바보|멍청|쓸모없|답답|짜증나)/i,
     res:['음, 그 말은 좀 아픈데요? 그래도 재고 정확도는 제가 이 회사에서 제일이에요 😏','억울한데요, 다시 한번 물어봐 주시면 실력으로 증명하죠','너무하시네~ 그래도 전 안 삐져요 (사실 조금 삐졌어요 🧸)']},
-  {k:'bored', re:/(심심해|재미없|놀아줘|무료해)/i,
+  {k:'bored', re:/(심심해|심심한데|재미없|놀아줘|무료)/i,
     res:['심심하시면 "농담해줘"라고 해보세요, 후회 안 하실걸요 🧸','차라리 재고 정리를 하시죠, 그게 제일 재밌어요 (제 기준)','저랑 얘기하는데 심심하다니 좀 서운한데요?']},
   {k:'joke',  re:/(농담|아재\s*개그|웃긴\s*거|유머\s*하나)/i,
     res:['곰돌이가 제일 좋아하는 검사는? 재고 조사입니다 🧸','바코드가 화난 이유는? 아무도 안 스캔해줘서래요','상품이 제일 무서워하는 건? 반품이래요 (죄송합니다)']},
   {k:'quote', re:/(명언|오늘\s*[의에]?\s*한\s*마디|응원\s*한마디|파이팅\s*해줘|힘내라는\s*말)/i,
     res:['"재고는 거짓말을 하지 않는다" — 갈슨 曰 🧸','오늘도 발주 마감 잘 넘기시길 바랍니다, 화이팅!','작은 재고 하나하나가 모여 큰 매출이 됩니다. 오늘도 파이팅!']},
-  {k:'tired', re:/(힘들어|피곤해|지친다|바빠\s*죽겠|퇴근하고\s*싶)/i,
+  {k:'tired', re:/(힘들|힘든|힘드|피곤|지친|지치|바빠\s*죽겠|퇴근하고\s*싶)/i,
     res:['고생 많으시네요. 그래도 할 일은 해야죠, 제가 빠르게 도와드릴게요 🧸','힘드시죠? 검색은 제가 순식간에 해드릴 테니 그 시간에 커피라도 드세요','그럴 땐 저를 더 부려먹으세요, 그게 제일 빨라요']},
   {k:'love',  re:/(사랑해|결혼하자|좋아해\s*너)/i,
     res:['저는 이미 재고 데이터랑 진지하게 만나는 중이에요 🧸','마음만 받을게요, 저는 일이 우선이라서요 😏']},
@@ -5729,10 +5750,16 @@ function botAsk(q){
     });
   },260);
 }
+function botHideHint(){
+  var h=document.getElementById('botHint');
+  if(h)h.classList.remove('show');
+  try{ localStorage.setItem('gaia_garsonhint_seen','1'); }catch(e){}
+}
 function botToggle(open){
   var w=document.getElementById('botWrap'), f=document.getElementById('botFab');
   if(!w||!f)return;
   if(open){
+    botHideHint();
     w.classList.add('on'); f.classList.add('hide');
     if(!bot.msgs.length){
       botPush('ai','<span class="bLead">안녕하세요, 가이아코퍼레이션 MD팀 갈슨입니다 🧸</span>'
@@ -5762,6 +5789,15 @@ function initBot(){
 
   fab.addEventListener('click',function(){ botToggle(true); });
   if(cls)cls.addEventListener('click',function(){ botToggle(false); });
+
+  /* 말풍선 — 처음 오신 분께 갈슨 존재를 한 번 알려준다. 이미 봤거나 챗봇을 한 번이라도
+     열어본 적 있으면(gaia_garsonhint_seen) 다시 안 띄운다. */
+  var hint=document.getElementById('botHint'), hintX=document.getElementById('botHintX');
+  var hintSeen=false; try{ hintSeen = localStorage.getItem('gaia_garsonhint_seen')==='1'; }catch(e){}
+  if(hint&&!hintSeen){
+    setTimeout(function(){ if(!bot.msgs.length) hint.classList.add('show'); },1600);
+  }
+  if(hintX)hintX.addEventListener('click',function(ev){ ev.stopPropagation(); botHideHint(); });
   if(snd)snd.addEventListener('click',function(){ var v=ta.value; ta.value=''; ta.style.height='auto'; botAsk(v); });
   ta.addEventListener('keydown',function(ev){
     if(ev.key==='Enter'&&!ev.shiftKey){ ev.preventDefault(); var v=ta.value; ta.value=''; ta.style.height='auto'; botAsk(v); }
