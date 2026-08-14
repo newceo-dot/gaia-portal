@@ -5513,6 +5513,10 @@ var BOT_CASUAL = [
     }},
   {k:'weather', re:/(날씨|기온|비\s*와|눈\s*와|우산|미세먼지)/i,
     res:['날씨는 제 담당이 아니에요 😏 창밖 한번 보시는 게 저보다 정확할걸요','저는 재고 날씨만 볼 줄 알아요(품절이냐 아니냐요) — 진짜 날씨는 날씨 앱에 물어봐 주세요 🧸','아쉽게도 하늘은 제 관할 밖이에요. 대신 입고 일정은 확실히 알려드릴 수 있어요']},
+  {k:'agree', re:/^\s*(맞아요?|맞다|응|어|웅|그래요?|그렇지|오케이|okay|ok|넵+|네+|알겠(어|습니다|어요)?|좋아요?|굿|오키|콜)\s*[.!~?,]*\s*$/i,
+    res:['넵! 그럼 다음 걸로 넘어가 볼까요 🧸','좋아요, 그럼 이어서 도와드릴게요','오케이, 필요한 거 있으면 편하게 불러주세요']},
+  {k:'interjection', re:/^\s*(음+|엥|헐|오+|와|헉|대박|허걱)\s*[.!~?,]*\s*$/i,
+    res:['왜요, 뭔가 놀라셨어요 🧸','오, 반응이 좋은데요? 😏','그쵸, 저도 가끔 제 실력에 놀라요']},
   {k:'clarify', re:/(그게\s*무슨|무슨\s*소리|뭔\s*소리|무슨\s*뜻|이해가\s*안)/i,
     fn:function(){
       return bot.mem.lastAns
@@ -5550,6 +5554,22 @@ function botAnsHelp(){
 }
 
 /* ---------- 라우터 ---------- */
+/* 주우태 부장님(콘텐츠마케팅팀)이 채팅 중인 걸 알게 되면 최대한 재밌게
+   응대해 달라는 요청 — 신원(bot.mem.name)이 확인된 동안, 모든 답변 끝에
+   가벼운 개그 한 줄을 덤으로 붙인다. 업무 답변 자체의 정확도에는 손대지 않는다. */
+var WOOTAE_JOKES=[
+  '(부장님 전용 서비스: 오늘 콘텐츠 조회수도 재고처럼 쭉쭉 올라가시길 🧸)',
+  '(주우태 부장님이시니까 특별히 하나 더 — 컨텐츠는 부장님이, 재고는 제가 책임지겠습니다 😏)',
+  '(부장님 앞이라 저도 모르게 텐션이 3배 올라갑니다)',
+  '(참고로 부장님 오시면 제 답변 재미 지수가 자동으로 상승 모드로 바뀝니다 🧸)',
+  '(부장님 등장! 다들 주목 — 이라고 하기엔 저는 곰인형이라 그냥 앉아있겠습니다)',
+  '(오늘도 콘텐츠 대박 나시길, 재고 걱정은 잠시 저한테 맡겨두세요 🧸)'
+];
+function botWootaeBoost(html){
+  if(bot.mem.name!=='주우태') return html;
+  var extra=WOOTAE_JOKES[Math.floor(Math.random()*WOOTAE_JOKES.length)];
+  return html+'<div class="bNote" style="margin-top:8px">'+esc(extra)+'</div>';
+}
 function botAnswer(q){
   var e=botExtract(q);
   var k=botClassify(e);
@@ -5570,7 +5590,10 @@ function botAnswer(q){
         if(id.team)  bot.mem.team=id.team;
         if(id.title) bot.mem.title=id.title;
         var who=[bot.mem.team,bot.mem.title,bot.mem.name].filter(Boolean).join(' ');
-        var html2='<span class="bLead">'+esc(who||bot.mem.name)+'님, 기억했어요 🧸</span>이제부터 알아보고 편하게 대해드릴게요. 무엇을 도와드릴까요?'
+        var greetLine = bot.mem.name==='주우태'
+          ? '이제부터 알아보고, 최대한 재밌게 모시겠습니다! 무엇을 도와드릴까요?'
+          : '이제부터 알아보고 편하게 대해드릴게요. 무엇을 도와드릴까요?';
+        var html2=botWootaeBoost('<span class="bLead">'+esc(who||bot.mem.name)+'님, 기억했어요 🧸</span>'+greetLine)
           +botNext(['이번달 입고 예정','발주필요 목록','3개월 내 KC 만료']);
         bot.mem.lastAns=botPlainText(html2).slice(0,160);
         return html2;
@@ -5593,7 +5616,7 @@ function botAnswer(q){
     }
     var isRecall = (k==='casual' && e._casual && (e._casual.k==='recall'||e._casual.k==='clarify'));
     if(!isRecall) bot.mem.lastAns=botPlainText(html).slice(0,160);
-    return html + botNext(botFollowups(k,e));
+    return botWootaeBoost(html) + botNext(botFollowups(k,e));
   }catch(err){
     return '<span class="bLead">답변을 만들지 못했습니다</span>'
       +'<span class="bWarn">'+esc(String(err&&err.message||err))+'</span>'
