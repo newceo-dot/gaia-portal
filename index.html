@@ -4791,28 +4791,53 @@ var BOT_RULES = [
   {k:'product', w:[['상품',2],['사이즈',4],['규격',4],['카톤',4],['체적',4],['이미지',3],['사진',3],['스펙',4],['바코드',3],['무게',3],['입수',3],['제조국',3],['판매가',3],['소비자가',3]]}
 ];
 
+/* 되물어볼 때 보여줄 카테고리별 사람이 읽는 설명 — 클릭하면 이 문구 그대로
+   다음 질문으로 들어가므로(내부 마커 없이), 그 자체로 명확하게 카테고리를 하나로
+   고정할 수 있는 문장으로 적어둔다. */
+var CAT_CLARIFY = {
+  kc:      'KC 인증(만료일) 관련이에요',
+  cost:    '원가·마진 관련이에요',
+  inbound: '입고·오더(들어오는 시점) 관련이에요',
+  stock:   '재고(현재 수량) 관련이에요',
+  sales:   '매출 관련이에요',
+  analysis:'분석·순위(TOP/비중) 관련이에요',
+  product: '상품 정보(사이즈·바코드 등) 관련이에요'
+};
+
 function botClassify(e){
-  var best={k:'',s:0};
+  /* 규칙마다 점수를 다 매겨두고, 1등과 2등이 사실상 동점이면(=키워드가 서로
+     다른 업무를 동시에 가리키면) 아무거나 짚어서 틀리기보다 어떤 걸 물으신 건지
+     되물어 확인한다 — "정확한 자료를 추출"하려면 애매할 때 추측하지 않는 게 먼저다. */
+  var scores=[];
   BOT_RULES.forEach(function(r){
     var s=0;
     r.w.forEach(function(p){ if(e.lq.indexOf(p[0])!==-1) s+=p[1]; });
-    if(s>best.s) best={k:r.k,s:s};
+    if(s>0) scores.push({k:r.k,s:s});
   });
-  if(best.s===0){
-    /* 업무 키워드가 없으면: 인사·잡담·회사소개(심심이 레이어)를 먼저 보고,
-       그 다음 직원 성함·팀 조회(조직도)를 본다. 그래도 안 걸리면
-       바코드·코드·상품명 토큰이 있는지로 상품 조회를 시도한다.
-       회사·신원·기억처럼 "정확한 답"이 있는 잡담(det:true)은 그대로 규칙 답변을,
-       인사·농담 같은 분위기용 잡담과 완전히 못 알아들은 문장은 실제 AI(갈슨 성격의
-       Claude API)로 넘겨 더 자연스러운 대화를 시도한다 — 실패 시 규칙 답변으로 되돌아간다. */
-    var cm=botCasualMatch(e.raw);
-    if(cm){ e._casual=cm; return cm.det ? 'casual' : 'ai'; }
-    var sm=botStaffMatch(e.raw);
-    if(sm){ e._staff=sm; return 'staff'; }
-    if(e.bc||e.code||e.tokens.length) return 'product';
-    return 'ai';
+  scores.sort(function(a,b){ return b.s-a.s; });
+  if(scores.length){
+    /* 실제 업무 키워드 점수로 걸린 경우만 표시해둔다 — 신원(자기소개) 캡처 로직이
+       "업무 질문 중인지"를 판단할 때, 아래 폴백(단서 없이 토큰만 있으면 상품 조회로
+       넘기는 약한 추측)과 구분하기 위함. 순수 자기소개 문장엔 업무 키워드가 없다. */
+    e._ruleScored=true;
+    if(scores.length>1 && (scores[0].s-scores[1].s)<=1){
+      e._ambigCats=[scores[0].k, scores[1].k];
+      return 'clarify';
+    }
+    return scores[0].k;
   }
-  return best.k;
+  /* 업무 키워드가 없으면: 인사·잡담·회사소개(심심이 레이어)를 먼저 보고,
+     그 다음 직원 성함·팀 조회(조직도)를 본다. 그래도 안 걸리면
+     바코드·코드·상품명 토큰이 있는지로 상품 조회를 시도한다.
+     회사·신원·기억처럼 "정확한 답"이 있는 잡담(det:true)은 그대로 규칙 답변을,
+     인사·농담 같은 분위기용 잡담과 완전히 못 알아들은 문장은 실제 AI(갈슨 성격의
+     Claude API)로 넘겨 더 자연스러운 대화를 시도한다 — 실패 시 규칙 답변으로 되돌아간다. */
+  var cm=botCasualMatch(e.raw);
+  if(cm){ e._casual=cm; return cm.det ? 'casual' : 'ai'; }
+  var sm=botStaffMatch(e.raw);
+  if(sm){ e._staff=sm; return 'staff'; }
+  if(e.bc||e.code||e.tokens.length) return 'product';
+  return 'ai';
 }
 
 /* ---------- 자유 대화 (Claude API 프록시) ---------- */
@@ -5205,16 +5230,37 @@ function botAnsInbound(e){
     if(pi) return String(r.sc||'').indexOf(pi)!==-1;
     if(e.brand && normBrand(r.br)!==e.brand) return false;
     if(e.bc && normBc(r.bc)!==normBc(e.bc)) return false;
+    if(wantDelay) return isDelayed(r);
+    if(wantCarry) return isCarry(r);
+    /* wantDelay/wantCarry를 직접 물은 게 아니면(=지금 시점 이후 정상 입고 예정을 묻는 질문이면),
+       이미 지연·이월로 분류된 건은 이 답변에서 제외한다 — 그 건들은 "지연 오더"/"이월 오더"로
+       따로 물어봐야 나오는 별도 카테고리다. 섞어서 보여주면 틀린 답이 된다. */
     if(wantPaid){
       /* 입고예정 질문이므로 지난 연도 시트는 제외하고 올해 자료만 본다 */
       if(String(r._sy)!==curYear) return false;
+      if(isDelayed(r)||isCarry(r)) return false;
       return botRowHasText(r,'송금완료')||botRowHasText(r,'입금완료');
     }
-    if(wantDelay) return isDelayed(r);
-    if(wantCarry) return isCarry(r);
-    if(ym) return parseYM(r.im)===ym && !r.ind;
-    return !r.ind;
+    if(ym) return parseYM(r.im)===ym && !r.ind && !isDelayed(r) && !isCarry(r);
+    return !r.ind && !isDelayed(r) && !isCarry(r);
   });
+  /* 지연·이월로 분류되어 이번 답변에서 빠진 건수 — 0건으로 답할 때 "아예 없다"고
+     오해하지 않도록, 있으면 어디로 물어봐야 나오는지 알려준다. */
+  var excludedStatusCount = 0;
+  if(!pi && !wantDelay && !wantCarry){
+    excludedStatusCount = all.filter(function(r){
+      if(e.brand && normBrand(r.br)!==e.brand) return false;
+      if(e.bc && normBc(r.bc)!==normBc(e.bc)) return false;
+      if(!(isDelayed(r)||isCarry(r))) return false;
+      if(wantPaid){
+        if(String(r._sy)!==curYear) return false;
+        return botRowHasText(r,'송금완료')||botRowHasText(r,'입금완료');
+      }
+      if(ym) return parseYM(r.im)===ym && !r.ind;
+      return !r.ind;
+    }).length;
+  }
+
   /* 상품명 토큰은 '가장 많이 맞은 건'만 남기는 방식으로 좁힌다.
      전부 일치를 요구하면 질문의 잡음 단어 때문에 결과가 0건이 된다. */
   if(!pi && e.tokens.length && list.length){
@@ -5237,6 +5283,9 @@ function botAnsInbound(e){
   if(!list.length || ambiguous){
     var none='<span class="bLead">'+(ambiguous?'해당 건이 여러 개라 정확히 못 짚겠어요':esc(label)+' 없음')+'</span>'
       +(ambiguous?('일치하는 항목이 '+list.length+'건이라 잘못 짚어드릴 수 있어요.'):((e.brand?esc(e.brand)+' 기준 해당 건이 없습니다.':'해당 조건의 건이 없습니다.')));
+    if(!list.length && !ambiguous && excludedStatusCount>0){
+      none+='<span class="bNote">단, 지연·이월 상태인 건이 '+excludedStatusCount+'건 있습니다 — "지연 오더" 또는 "이월 오더"로 물어보시면 확인하실 수 있어요.</span>';
+    }
     none+='<span class="bNote">PI 번호(SC/PI#, 예: 320S0001788)를 알려주시면 정확히 찾아드릴게요.</span>';
     if(!list.length && wantPaid) none+='<span class="bNote">혹시 "송금완료" 표기가 다른 문구(예: "결제완료")로 되어 있다면 그것도 알려주세요.</span>';
     return none;
@@ -5259,6 +5308,7 @@ function botAnsInbound(e){
   });
   h+='</tbody></table>';
   if(list.length>n) h+='<span class="bNote">'+n+'건만 표시했습니다. 브랜드나 PI 번호를 알려주시면 더 좁혀집니다.</span>';
+  if(excludedStatusCount>0) h+='<span class="bNote">지연·이월 상태인 '+excludedStatusCount+'건은 제외했습니다 — "지연 오더"/"이월 오더"로 물어보시면 확인하실 수 있어요.</span>';
   return h;
 }
 
@@ -5567,6 +5617,23 @@ var GAIA_STAFF = [
    실제 성함 매칭·조직도 조회에는 영향 없고, 화면에 표시될 때만 애칭으로 바꾼다. */
 var BOT_NICK = { '배한나':'배니' };
 function botDisplayName(nm){ return BOT_NICK[nm] || nm; }
+
+/* 직원이 자기 이름을 알려주면(첫 신원 확인) 그날 하루 기분 좋아지게 위트있는 칭찬으로
+   시작한다 — 이름은 이미 esc() 처리된 값을 넣어서 호출한다(템플릿 문자열 자체엔
+   특수문자를 쓰지 않으므로 그대로 안전하게 삽입해도 된다). */
+var GARSON_INTRO_COMPLIMENTS = [
+  function(nm){ return nm+'님이라니, 오늘은 재고도 매출도 다 술술 풀릴 예감이 드는데요? 🧸✨'; },
+  function(nm){ return '오, '+nm+'님! 이름만 들어도 이번 오더는 지연 하나 없이 딱딱 맞을 것 같은 느낌적인 느낌'; },
+  function(nm){ return nm+'님 등장 — 오늘 KC 인증도 재고도 다 '+nm+'님 편인 날이네요 🧸'; },
+  function(nm){ return '오늘의 럭키 아이템은 다름아닌 '+nm+'님 본인입니다. 뭐든 물어보세요, 제가 확실하게 찾아드릴게요!'; },
+  function(nm){ return nm+'님, 오늘 하루도 완판 각이에요 — 자료는 제가 확실하게 챙겨드릴게요 🧸'; },
+  function(nm){ return '와, '+nm+'님 오셨네요 — 저 지금 사무실 텐션 올라가는 소리 들었어요'; },
+  function(nm){ return nm+'님 같은 분이 물어봐 주시면 저도 없던 의욕이 생깁니다, 오늘 하루도 화이팅이에요!'; }
+];
+function botIntroCompliment(safeNm){
+  var f=GARSON_INTRO_COMPLIMENTS[Math.floor(Math.random()*GARSON_INTRO_COMPLIMENTS.length)];
+  return f(safeNm);
+}
 function botStaffTeams(){
   if(bot._staffTeams) return bot._staffTeams;
   var set={};
@@ -5782,8 +5849,18 @@ function botAiFallback(e){
   return (e._casual) ? botAnsCasual(e) : botAnsHelp();
 }
 function botAnswerAsync(q){
-  var e=botExtract(q);
-  var k=botClassify(e);
+  /* 직전 답변이 애매해서 "어떤 걸 물으신 건가요?"라고 되물은 상태였다면, 이번 입력이
+     그 선택지 중 하나를 고른 건지 먼저 본다. 맞으면 원래 질문 + 확정된 카테고리로
+     바로 정확한 답을 주고, 아니면(다른 걸 새로 물어본 것) 되묻기는 취소하고 이번
+     입력을 그냥 새 질문으로 정상 처리한다 — 사용자가 막히지 않도록. */
+  var forcedKey='', forcedQ=q;
+  if(bot._pendingClarify){
+    var pend=bot._pendingClarify; bot._pendingClarify=null;
+    var picked=pend.options.filter(function(o){ return o.label===String(q||'').trim(); })[0];
+    if(picked){ forcedKey=picked.key; forcedQ=pend.q; }
+  }
+  var e=botExtract(forcedQ);
+  var k=forcedKey||botClassify(e);
   bot._ctx={};
 
   /* 신원(이름·소속팀·직함)을 물어본 직후라면, 이번 대답에서 그것부터 챙긴다.
@@ -5793,7 +5870,11 @@ function botAnswerAsync(q){
     /* 업무 질문과 한 문장에 섞여 오면(예: "저는 링크팀 김철수인데 마조렛 재고 알려줘")
        이름 추출이 브랜드명 등을 오인할 위험이 있어, 순수 잡담/도움말성 문장일 때만
        신원 추출을 시도한다. 업무 질문이면 이번엔 건너뛰고 업무 답변을 그대로 준다. */
-    var busyIntent=(k==='product'||k==='stock'||k==='inbound'||k==='kc'||k==='cost'||k==='analysis');
+    /* 진짜 업무 질문인지는 "키워드 점수로 걸렸는지"(_ruleScored)로 판단한다 — 그냥
+       바코드·코드 없이 단어 몇 개만 있다고 상품 조회로 넘어가는 약한 폴백까지
+       업무 질문 취급하면, "재무팀 박영희입니다" 같은 순수 자기소개 문장도 상품
+       조회로 오인해 신원 캡처(+칭찬)가 조용히 씹히는 문제가 생긴다. */
+    var busyIntent=!!(forcedKey||e._ruleScored);
     if(!busyIntent){
       var id=botExtractIdentity(q);
       if(id.name||id.team||id.title){
@@ -5802,10 +5883,12 @@ function botAnswerAsync(q){
         if(id.title) bot.mem.title=id.title;
         var dispNm=botDisplayName(bot.mem.name);
         var who=[bot.mem.team,bot.mem.title,dispNm].filter(Boolean).join(' ');
+        var compliment=botIntroCompliment(esc(dispNm));
         var greetLine = bot.mem.name==='주우태'
           ? '이제부터 알아보고, 최대한 재밌게 모시겠습니다! 무엇을 도와드릴까요?'
           : '이제부터 알아보고 편하게 대해드릴게요. 무엇을 도와드릴까요?';
-        var html2=botWootaeBoost('<span class="bLead">'+esc(who||dispNm)+'님, 기억했어요 🧸</span>'+greetLine)
+        var html2=botWootaeBoost('<span class="bLead">'+esc(who||dispNm)+'님, 기억했어요 🧸</span>'
+          +compliment+'<br>'+greetLine)
           +botNext(['이번달 입고 예정','발주필요 목록','3개월 내 KC 만료']);
         bot.mem.lastAns=botPlainText(html2).slice(0,160);
         return Promise.resolve(html2);
@@ -5825,6 +5908,15 @@ function botAnswerAsync(q){
       case 'analysis': html=botAnsAnalysis(e); break;
       case 'casual':   html=botAnsCasual(e);   break;
       case 'staff':    html=botAnsStaff(e._staff); break;
+      case 'clarify':
+        /* 애매하게 걸쳐있는 질문 — 짐작해서 틀린 자료를 보여주지 않고, 어떤 업무를
+           물으신 건지 먼저 확인한다. 칩을 누르면 그 문구 그대로 다음 질문으로
+           들어가고, 위의 되돌아오기 체크에서 원래 질문 + 확정된 카테고리로 이어진다. */
+        var opts=e._ambigCats.map(function(ck){ return {key:ck, label:CAT_CLARIFY[ck]||ck}; });
+        bot._pendingClarify={ q:forcedQ, options:opts };
+        html='<span class="bLead">어떤 걸 여쭤보신 건지 확인할게요</span>아래 중에 골라주시면 정확히 찾아드릴게요.'
+          + botChips(opts.map(function(o){ return o.label; }));
+        break;
       case 'ai':
         /* 정해진 정답이 없는 자유 대화 — 먼저 관리자가 등록해둔 지식 소스(구글시트)에
            원본 값이 있는지 찾아보고, 없으면 실제 Claude API로 넘긴다.
