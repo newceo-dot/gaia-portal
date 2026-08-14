@@ -655,6 +655,105 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
   #panel.on{bottom:0;right:10px}
   .pGrab{display:block;width:38px;height:4px;border-radius:99px;background:var(--line-2);margin:8px auto 0}
 }
+
+/* ================= 챗봇 ================= */
+#botFab{position:fixed;right:22px;bottom:22px;z-index:60;width:56px;height:56px;border-radius:50%;
+  background:var(--g900);color:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 24px rgba(11,61,44,.32);transition:transform .22s var(--ease),box-shadow .22s var(--ease)}
+#botFab:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 12px 30px rgba(11,61,44,.4)}
+#botFab{overflow:hidden;padding:0;border:2px solid #fff}
+#botFab.hide{opacity:0;pointer-events:none;transform:scale(.8)}
+#botFab img.bFace{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+.botAv{overflow:hidden}
+.botAv img.bFace{width:100%;height:100%;object-fit:cover;border-radius:11px;display:block}
+
+/* 갈슨 아바타가 붙는 답변 줄 */
+.bRow{display:flex;gap:8px;align-items:flex-start;align-self:flex-start;width:100%;max-width:100%}
+.bRow .bAvS{width:30px;height:30px;border-radius:50%;object-fit:cover;flex:none;
+  border:1px solid var(--line);background:#fff;margin-top:3px}
+.bRow .bMsg.ai{flex:1;min-width:0}
+
+#botWrap{position:fixed;right:22px;bottom:22px;z-index:61;width:400px;max-width:calc(100vw - 28px);
+  height:min(640px,calc(100vh - 44px));background:var(--card);border-radius:20px;overflow:hidden;
+  display:none;flex-direction:column;box-shadow:0 18px 50px rgba(16,24,20,.22);border:1px solid var(--line-2)}
+#botWrap.on{display:flex;animation:botIn .26s var(--ease)}
+@keyframes botIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+
+.botHead{background:var(--g900);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;flex:none}
+.botHead .bTit{font-weight:800;font-size:.95rem;letter-spacing:-.01em}
+.botHead .bSub{font-size:.72rem;color:var(--g200);margin-top:2px}
+.botHead .bx{margin-left:auto;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;
+  justify-content:center;color:#fff;opacity:.75;font-size:1rem}
+.botHead .bx:hover{opacity:1;background:rgba(255,255,255,.14)}
+.botAv{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.16);display:flex;
+  align-items:center;justify-content:center;flex:none}
+.botAv svg{width:18px;height:18px}
+
+.botBody{flex:1;overflow-y:auto;padding:16px;background:var(--bg);display:flex;flex-direction:column;gap:12px}
+.botBody::-webkit-scrollbar{width:7px}
+.botBody::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:99px}
+
+.bMsg{max-width:88%;font-size:.86rem;line-height:1.58;word-break:break-word}
+.bMsg.me{align-self:flex-end;background:var(--g900);color:#fff;padding:9px 13px;border-radius:15px 15px 4px 15px}
+.bMsg.ai{align-self:flex-start;background:var(--card);border:1px solid var(--line);
+  padding:11px 13px;border-radius:15px 15px 15px 4px;box-shadow:var(--sh);width:100%;max-width:100%}
+.bMsg.ai b{color:var(--g700)}
+.bMsg.ai .bLead{font-weight:700;margin-bottom:7px;display:block;color:var(--ink)}
+.bMsg.ai .bNote{font-size:.76rem;color:var(--ink-3);margin-top:7px;display:block;line-height:1.5}
+.bMsg.ai .bWarn{font-size:.78rem;color:var(--red-tx);background:var(--red-bg);
+  padding:7px 9px;border-radius:9px;margin-top:8px;display:block}
+
+.bTbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:.79rem}
+.bTbl th,.bTbl td{padding:6px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.bTbl th{background:var(--g50);color:var(--g700);font-weight:700;white-space:nowrap;font-size:.75rem}
+.bTbl td.num,.bTbl th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bTbl tr:last-child td{border-bottom:none}
+.bTbl .bLink{color:var(--g600);font-weight:700;cursor:pointer;text-decoration:underline;
+  text-decoration-color:var(--g200);text-underline-offset:2px}
+
+.bDl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:8px;font-size:.81rem}
+.bDl dt{color:var(--ink-3);white-space:nowrap}
+.bDl dd{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+
+.bCard{display:flex;gap:11px;margin-top:9px;padding:10px;border:1px solid var(--line);
+  border-radius:13px;background:var(--card);cursor:pointer;transition:border-color .18s,box-shadow .18s}
+.bCard:hover{border-color:var(--g200);box-shadow:var(--sh-md)}
+.bCard img{width:56px;height:56px;object-fit:contain;background:#fff;border:1px solid var(--line);
+  border-radius:9px;flex:none}
+.bCard .bcNo{width:56px;height:56px;border-radius:9px;background:var(--hover);flex:none;
+  display:flex;align-items:center;justify-content:center;color:var(--ink-3)}
+.bCard .bcT{flex:1;min-width:0}
+.bCard .bcNm{font-weight:700;font-size:.83rem;line-height:1.35;margin-bottom:3px}
+.bCard .bcMe{font-size:.74rem;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:4px 9px}
+.bCard .bcMe b{color:var(--g700);font-weight:700}
+
+.bChips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.bChip{font-size:.76rem;padding:6px 11px;border-radius:99px;border:1px solid var(--line-2);
+  background:var(--card);color:var(--ink-2);font-weight:600;transition:all .16s}
+.bChip:hover{border-color:var(--g400);color:var(--g700);background:var(--g50)}
+
+.botFoot{flex:none;border-top:1px solid var(--line);background:var(--card);padding:10px 12px}
+.botIn{display:flex;gap:8px;align-items:flex-end}
+.botIn textarea{flex:1;border:1px solid var(--line-2);border-radius:13px;padding:9px 12px;
+  font-size:.86rem;resize:none;max-height:96px;min-height:40px;line-height:1.45;background:var(--bg);
+  outline:none;transition:border-color .18s}
+.botIn textarea:focus{border-color:var(--g400);background:var(--card)}
+.botIn .bSend{width:40px;height:40px;border-radius:12px;background:var(--g900);color:#fff;flex:none;
+  display:flex;align-items:center;justify-content:center;transition:opacity .18s}
+.botIn .bSend:disabled{opacity:.35}
+.botIn .bSend svg{width:17px;height:17px}
+
+.bTyping{display:flex;gap:4px;padding:4px 0}
+.bTyping i{width:6px;height:6px;border-radius:50%;background:var(--g400);animation:bBl 1.1s infinite}
+.bTyping i:nth-child(2){animation-delay:.16s}
+.bTyping i:nth-child(3){animation-delay:.32s}
+@keyframes bBl{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+@media (max-width:760px){
+  #botWrap{right:0;bottom:0;width:100vw;max-width:100vw;height:88vh;border-radius:20px 20px 0 0}
+  #botFab{right:16px;bottom:78px;width:50px;height:50px}
+  #botFab svg{width:21px;height:21px}
+}
 </style>
 </head>
 <body>
@@ -725,6 +824,28 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
   </div>
   <div class="pbody"><dl class="dl-grid" id="pGrid"></dl></div>
   <div class="pfoot"><a id="pLink" href="#" target="_blank" rel="noopener">시트에서 이 행 열기 ↗</a></div>
+</div>
+
+
+<button id="botFab" title="갈슨에게 물어보기" aria-label="갈슨 열기">
+  <img class="bFace" src="data:image/webp;base64,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" alt="갈슨">
+</button>
+<div id="botWrap" role="dialog" aria-label="갈슨">
+  <div class="botHead">
+    <div class="botAv"><img class="bFace" src="data:image/webp;base64,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" alt="갈슨"></div>
+    <div>
+      <div class="bTit">갈슨</div>
+      <div class="bSub">상품 · 재고 · 입고 · KC · 원가</div>
+    </div>
+    <button class="bx" id="botClose" aria-label="닫기">✕</button>
+  </div>
+  <div class="botBody" id="botBody"></div>
+  <div class="botFoot">
+    <div class="botIn">
+      <textarea id="botQ" rows="1" placeholder="갈슨에게 물어보세요 — 예: 마조렛 재고, 3개월 내 KC 만료"></textarea>
+      <button class="bSend" id="botSend" aria-label="보내기"><i data-lucide="send"></i></button>
+    </div>
+  </div>
 </div>
 
 <script type="application/json" id="knData">{"889698976008":{"sz":"9*4*13.5","wt":"45.5g","oc":"중국","kc":"CB067R2340-4001B","nm":"펀코 비티팝&액세서리 -헬로키티","cg":"피규어/모형완구"},"889698976015":{"sz":"9*4*13.5","wt":"45.5g","oc":"중국","kc":"CB067R2340-4001B","nm":"펀코 비티팝&액세서리 -시나모롤","cg":"피규어/모형완구"},"889698859875":{"sz":"5.8*4*10","wt":"35.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 팝 키체인 산리오 쿠로미","cg":"피규어/모형완구"},"889698859868":{"sz":"5.8*4*10","wt":"35.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 팝 키체인 산리오 헬로키티","cg":"피규어/모형완구"},"3467452082584":{"sz":"30*10*10","wt":"179g","oc":"대한민국","kc":"CB067R1072-2001B","nm":"마조렛 알파인 5종 기프트팩","cg":"피규어/모형완구"},"3467452082607":{"sz":"37.5*9.5*24.5","wt":"180g","oc":"대한민국","kc":"CB067R1072-2001B","nm":"마조렛 모터스포츠 알파인 피트스탑","cg":"피규어/모형완구"},"8809571203801":{"sz":"5.5*5.5*8","wt":"50g","oc":"중국","nm":"짱구 프라모델 키링","cg":"기타모형/프라모델"},"50743170317":{"sz":"47.5*26*55","wt":"3410g","oc":"폴란드","kc":"CB067T043-2002B","nm":"리틀타익스 프린세스 코지쿠페 쇼핑 카트 NEW","cg":"기타역할놀이완구"},"50743170294":{"sz":"47.5*26*55","wt":"3450g","oc":"폴란드","kc":"CB067T043-2002B","nm":"리틀타익스 코지쿠페 쇼핑카트 NEW","cg":"기타역할놀이완구"},"50743639661":{"sz":"30.5*13.3*30.5","wt":"1230g","oc":"중국","kc":"CB067R3147-6002","nm":"리틀타익스 크리에이티브 셰프 아이스크림 키트","cg":"기타역할놀이완구"},"50743643873":{"sz":"15*13*30","wt":"885g","oc":"중국","kc":"CB067R3147-6002","nm":"리틀타익스 크리에이티브 셰프 피넛 버터 & 젤리 키트","cg":"기타역할놀이완구"},"50743643866":{"sz":"15*13*30","wt":"721g","oc":"중국","kc":"CB067R3147-6002","nm":"리틀타익스 크리에이티브 셰프 쿠키 키트","cg":"기타역할놀이완구"},"50743643316":{"sz":"60.7*11*30.3","wt":"1980g","oc":"중국","kc":"CB067R3147-6002","nm":"리틀타익스 크리에이티브 셰프 이탈리안 디너 키트","cg":"기타역할놀이완구"},"50743639685":{"sz":"35.6*13.3*30.5","wt":"1360g","oc":"중국","kc":"CB067R3147-6002","nm":"리틀타익스 크리에이티브 셰프 와플 키트","cg":"기타역할놀이완구"},"815887029552":{"sz":"31.5*28*40.5","wt":"3350g","oc":"중국","kc":"CB067R3240-6001","nm":"자이언트베어","cg":"봉제인형"},"3467452082614":{"sz":"37.5*9.5*24.5","wt":"180g","oc":"대한민국","kc":"CB067R1072-2001B","nm":"마조렛 모터스포츠 DTM 피트스탑","cg":"피규어/모형완구"},"3467452080993":{"sz":"30*10*10","wt":"342g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 케어베어 기프트팩","cg":"자동차"},"3467452080986":{"sz":"10.5*3.5*15.5","wt":"49.5g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 케어베어 프리미엄카 asst","cg":"자동차"},"889698936750":{"sz":"7.5*5.5*10.2","wt":"65.5g","oc":"인도네시아","kc":"CB067R3046-6001","nm":"펀코 MM: 아스트로 봇 (랜덤)","cg":"피규어"},"889698932585":{"sz":"6*7*6","wt":"54g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 포켓팝스노우볼: 산리오 (랜덤)","cg":"피규어"},"3467452081846":{"sz":"30*10*10","wt":"180g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 골프 GTI 5종 기프트팩","cg":"피규어/모형완구"},"3467452081907":{"sz":"37.5*9.5*24.5","wt":"470g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 MINI 쇼룸 세트","cg":"피규어/모형완구"},"889698530439":{"sz":"9.7*4*7.5","wt":"45.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 팝 키체인 만다로리안 더 차일드","cg":"피규어"},"889698882620":{"sz":"4.8*4*7.5","wt":"33g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 팝 키체인 원피스12 루피(에그헤드)","cg":"피규어"},"889698803267":{"sz":"4.8*4*7.5","wt":"33g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 팝 키체인_CSM 포치타","cg":"피규어"},"889698964999":{"sz":"12*9.5*16.5","wt":"189g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 팝 미스테리 원피스 시즌15 (랜덤)","cg":"피규어"},"889698932691":{"sz":"11*4*12.5","wt":"25g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 팝키체인 : 해리포터 (랜덤)","cg":"피규어"},"889698928960":{"sz":"7*6*6","wt":"40g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 포켓 팝 스노우볼: 겨울왕국 (랜덤)","cg":"피규어"},"889698934060":{"sz":"7.5*5.3*10","wt":"45.5g","oc":"인도네시아","kc":"CB067R3046-6001","nm":"펀코 MM : 단다단 (랜덤)","cg":"피규어"},"3467452077733":{"sz":"30*10*10","wt":"181g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 클라스 농장 5종 기프트팩","cg":"자동차"},"3467452081853":{"sz":"30*10*10","wt":"201g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 튠 잇 세이프 5종 기프트팩","cg":"자동차"},"3467452081822":{"sz":"30*10*10","wt":"202g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 닛산 니스모 5종 기프트팩","cg":"자동차"},"3467452081815":{"sz":"24*6*15","wt":"131g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 JDM 레전드 카 트랜스포터","cg":"자동차"},"3467452077276":{"sz":"10.5*3.5*15.5","wt":"54g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 시티 프리미엄","cg":"자동차"},"3467452077252":{"sz":"10.5*3.5*15.5","wt":"39g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 JDM 레전드 프리미엄카","cg":"자동차"},"3467452077351":{"sz":"14*4.5*18","wt":"50g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 JDM 레전드 디럭스","cg":"자동차"},"3467452076927":{"sz":"24*6*15","wt":"143g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 JDM 레전드 튜닝 트랜스포터","cg":"자동차"},"3467452081877":{"sz":"10.5*3.7*15.5","wt":"38g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 미니 프리미엄카","cg":"자동차"},"3467452081884":{"sz":"14*4*18","wt":"42g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 미니 디럭스카","cg":"자동차"},"3467452081891":{"sz":"30*10*10","wt":"170g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 미니 5종 기프트팩","cg":"자동차"},"4006333094071":{"sz":"49*13*37.5","wt":"1753g","oc":"중국","kc":"CB067R978-6001","nm":"디키 화이트샤크 트랙세트","cg":"기타작동완구"},"3467452078051":{"sz":"10.5*3.5*15.5","wt":"44g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 구조 프리미엄카","cg":"자동차"},"3467452076965":{"sz":"11*4.7*27","wt":"176g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 스트리트카 5종 세트","cg":"자동차"},"3467452079966":{"sz":"10.5*3.5*15.5","wt":"36g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 네온 레이서 프리미엄카","cg":"자동차"},"3467452077580":{"sz":"30*10*10","wt":"170g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 블랙 에디션 5종 기프트팩","cg":"자동차"},"3467452079942":{"sz":"30*10*10","wt":"170g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 BMW 5종 기프트팩","cg":"자동차"},"3467452077306":{"sz":"10.5*4*15.5","wt":"53g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 볼보 건설 프리미엄","cg":"자동차"},"3467452077368":{"sz":"10.5*3.5*15.5","wt":"35g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 레이싱 프리미엄카","cg":"자동차"},"3467452077504":{"sz":"19*3.5*10.5","wt":"89g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 시티 MAN 버스","cg":"자동차"},"3467452077481":{"sz":"12.5*3.5*15.5","wt":"72.8g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 비행기","cg":"비행기"},"3467452079935":{"sz":"14*4*18","wt":"42g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 BMW 디럭스카","cg":"자동차"},"3467452077443":{"sz":"14*4*18","wt":"38g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 쇼룸 디럭스카","cg":"자동차"},"3467452077412":{"sz":"10.5*3.5*15.5","wt":"37g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 빈티지 프리미엄카","cg":"자동차"},"3467452077405":{"sz":"12.5*3.5*15.5","wt":"34g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 쇼룸 프리미엄카","cg":"자동차"},"3467452077283":{"sz":"30*10*10","wt":"170g","oc":"대한민국","kc":"CB067R1072-2001B","nm":"마조렛 메르세데스-AMG 5종 기프트팩","cg":"자동차"},"3467452077542":{"sz":"24*4.5*15","wt":"116.6g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 시티 트랜스포터","cg":"자동차"},"3467452077221":{"sz":"30*10*10","wt":"170g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 람보르기니 5종 기프트팩","cg":"자동차"},"3467452077146":{"sz":"14*4*18","wt":"50g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 메르세데스-AMG 디럭스카","cg":"자동차"},"3467452076910":{"sz":"10.5*4*10.5","wt":"33g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 스트리트카","cg":"자동차"},"3467452077610":{"sz":"30*10*10","wt":"181g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 볼보 건설 4종 기프트팩","cg":"자동차"},"889698764025":{"sz":"8.2*2.5*10.5","wt":"95g","oc":"인도네시아","kc":"CB067R3046-6001","nm":"펀코 비티팝 픽사 (랜덤)","cg":"피규어"},"3467452077139":{"sz":"10.5*3.5*15.5","wt":"38g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 메르세데스-AMG 프리미엄카","cg":"자동차"},"3467452079928":{"sz":"10.5*3.7*15.5","wt":"38g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 BMW 프리미엄카","cg":"자동차"},"8809940840347":{"sz":"4*3.5*6","wt":"35g","oc":"중국","nm":"짱구는 못말려 떡잎유치원 울라울라 댄스 키링 (랜덤)","cg":"피규어"},"3467452082591":{"sz":"10*30*10","wt":"180g","oc":"대한민국","kc":"CB067R1072-2001C","nm":"마조렛 모터스포츠 DTM 4종 기프트팩","cg":"피규어/모형완구"},"3467452082577":{"sz":"4*14*18","wt":"38g","oc":"대한민국","kc":"CB067R1072-2001C","nm":"마조렛 모터스포츠 포뮬러 디럭스카","cg":"피규어/모형완구"},"3467452082560":{"sz":"4*14*18","wt":"42g","oc":"대한민국","kc":"CB067R1072-2001C","nm":"마조렛 모터스포츠 DTM 디럭스카","cg":"피규어/모형완구"},"3467452077627":{"sz":"10*30*10","wt":"201g","oc":"대한민국","kc":"CB067R1072-2001C","nm":"마조렛 JDM 레전드 애니메이션 5종 기프트팩","cg":"피규어/모형완구"},"8809940840392":{"sz":"5*5*7","wt":"40g","oc":"중국","nm":"짱구&맹구 과일 피규어 키링 (랜덤)","cg":"캐릭터완구"},"889698547406":{"sz":"7.7*6.8*9","wt":"68.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 MYSTERY MINIS 디즈니 얼티밋 프린세스 (랜덤)","cg":"피규어"},"8809571203740":{"sz":"6*6*8","wt":"50g","oc":"중국","nm":"짱구는못말려 캐릭터참 (랜덤)","cg":"피규어"},"889698865579":{"sz":"7.5*5.4*10.2","wt":"52g","oc":"인도네시아","kc":"CB067R3046-6001","nm":"펀코 MYSTERY MINIS 디즈니 프린세스 (랜덤)","cg":"피규어"},"8809571203672":{"sz":"6*6*8","wt":"50g","oc":"중국","kc":"CB064R5763-6002","nm":"짱구는못말려 원시시대 피규어 (랜덤)","cg":"피규어"},"8809571203689":{"sz":"6*6*8","wt":"50g","oc":"중국","kc":"CB064R2013-6001","nm":"짱구는못말려 라면스토퍼 피규어 (랜덤)","cg":"피규어"},"8809571203658":{"sz":"11.4*1.8*6.8","wt":"50g","oc":"중국","nm":"짱구는못말려 흰둥이 빗&거울 키링","cg":"손거울"},"8809701665080":{"sz":"23*13*31","wt":"1419g","oc":"중국","kc":"CB067R2192-6002","nm":"디즈니 토이스토리 공구놀이 여행용 캐리어","cg":"공구놀이"},"8809701665073":{"sz":"23*13*31","wt":"1474g","oc":"중국","kc":"CB067R2192-6002","nm":"디즈니 겨울왕국 메이크업 여행용 캐리어","cg":"화장놀이"},"8809701665066":{"sz":"23*9*18.3","wt":"697g","oc":"중국","kc":"CB067R2192-6002","nm":"디즈니 겨울왕국 주방놀이 미니 여행가방","cg":"주방놀이"},"889698869553":{"sz":"8.2*3*10.5","wt":"10g","oc":"인도네시아","kc":"CB067R3046-6001","nm":"펀코 비티팝 귀멸의 칼날","cg":"피규어"},"889698940641":{"sz":"8.2*3*10.5","wt":"10g","oc":"중국","kc":"CB067R2340-4001B","nm":"펀코 비티팝 쥬라기월드","cg":"피규어"},"8809701665011":{"sz":"60*10*23","wt":"990g","oc":"중국","kc":"CB067R867-1001","nm":"리틀 타익스 마이 리얼 잼 일렉트릭 기타 (롯데)","cg":"기타음악/악기놀이"},"8809701665028":{"sz":"60*10*23","wt":"1100g","oc":"중국","kc":"CB067R867-1001","nm":"리틀 타익스 마이 리얼 잼 어쿠스틱 기타 (롯데)","cg":"기타음악/악기놀이"},"8809701665059":{"sz":"91*21*40","wt":"7200g","oc":"중국","kc":"CB067R867-2006A","nm":"리틀 타익스 액티비티 가든 (롯데)","cg":"다기능놀이터"},"8809701665035":{"sz":"60*10*23","wt":"1050g","oc":"중국","kc":"CB067R867-1001","nm":"리틀 타익스 마이 리얼 잼 키보드 (롯데)","cg":"피아노"},"50743643095":{"sz":"60*13*41","wt":"4090g","oc":"중국","kc":"CB067R867-2006A","nm":"리틀 타익스 라이팅 액티비티 워커 핑크","cg":"기타작동완구"},"50743173943":{"sz":"85*30*42","wt":"4000g","oc":"폴란드","kc":"CB067T043-2001B","nm":"리틀 타익스 흔들말 핑크","cg":"흔들말"},"50743170584":{"sz":"76.9*42*91.4","wt":"8000g","oc":"폴란드","kc":"CB067T043-2001B","nm":"리틀 타익스 코지쿠페 레이디버그","cg":"승차용완구"},"50743172984":{"sz":"76.9*42*91.4","wt":"8000g","oc":"폴란드","kc":"CB067T043-2001B","nm":"리틀 타익스 경찰 지붕카","cg":"승차용완구"},"50743170591":{"sz":"76.9*42*91.4","wt":"8000g","oc":"폴란드","kc":"CB067T043-2001B","nm":"리틀 타익스 다이노 코지쿠페","cg":"승차용완구"},"50743642722":{"sz":"76.9*42*91.4","wt":"8000g","oc":"폴란드","kc":"CB067S005-2001A","nm":"리틀 타익스 프린세스 코지쿠페","cg":"승차용완구"},"50743650598":{"sz":"55.5*30*28.5","wt":"2000g","oc":"중국","kc":"CB067R867-2005B","nm":"리틀 타익스 리틀 몬스터 더티 디거","cg":"자동차"},"50743173950":{"sz":"85*30*42","wt":"4000g","oc":"폴란드","kc":"CB067T043-2001B","nm":"흔들말 블루","cg":"기타 유아/어린이완구"},"8809571203511":{"sz":"5*9.2*5","wt":"150g","oc":"중국","nm":"짱구 맹구 줄자 키링","cg":"피규어/모형완구"},"889698834186":{"sz":"8.3*2.5*10.5","wt":"9g","oc":"중국","kc":"CB067R2340-4001B","nm":"펀코 비티팝 만다로리안","cg":"피규어"},"889698763998":{"sz":"8.3*2.5*10.5","wt":"9g","oc":"중국","kc":"CB067R2340-4001B","nm":"펀코 비티팝 반지의제왕","cg":"피규어"},"8809701665141":{"sz":"40.5*15.5*20.8","wt":"1317.5g","oc":"중국","kc":"CB067R667-5001","nm":"스카니아 리프트 (옐로우) M","cg":"자동차"},"8809701665158":{"sz":"40.5*15.5*20.8","wt":"1398g","oc":"중국","kc":"CB067R667-5001","nm":"스카니아 경찰 견인 M","cg":"자동차"},"8809701665165":{"sz":"45*16*24.3","wt":"1578g","oc":"중국","kc":"CB067R667-5001","nm":"스카니아 포크레인 M","cg":"자동차"},"8809701665172":{"sz":"40.5*15.5*20.8","wt":"1345g","oc":"중국","kc":"CB067R667-5001","nm":"스카니아 덤프 M BLUE","cg":"자동차"},"8809701665134":{"sz":"59*10.8*31","wt":"2350.5g","oc":"중국","kc":"CB067R2192-6001","nm":"파워툴 공구 작업대 놀이세트 (133PCS)","cg":"기타 유아/어린이완구"},"5050840500944":{"sz":"46.5*20*29.5","wt":"1536g","oc":"중국","kc":"CB0678R1557-3001","nm":"팀스터즈 해적선","cg":"자동차"},"4006333106446":{"sz":"28*12*16.5","wt":"505.5g","oc":"중국","kc":"CB067R978-5001, B052R1224-21001","nm":"디키 BMW M5 폴리스","cg":"자동차"},"4006333106354":{"sz":"44*9.5*22.7","wt":"375g","oc":"중국","kc":"CB067R978-6001","nm":"디키 RC 레이스 팩","cg":"자동차"},"4006333104909":{"sz":"19*8.5*12.5","wt":"223.5g","oc":"중국","kc":"CB067R978-6001","nm":"디키 BMW M3 경찰차 S","cg":"자동차"},"4006333106088":{"sz":"19*8.5*12.5","wt":"223g","oc":"중국","kc":"CB067R978-6001","nm":"디키 BMW XM 경찰차 S","cg":"자동차"},"4006333106415":{"sz":"37.5*15*18","wt":"713g","oc":"중국","kc":"CB067R978-6001","nm":"디키 포뮬러 트랜스포터","cg":"자동차"},"4006333106163":{"sz":"33.5*24.5*21","wt":"755g","oc":"중국","kc":"CB067R978-6002","nm":"디키 ABC 마이 퍼스트 포르쉐","cg":"자동차"},"4006333106170":{"sz":"33.5*16*22","wt":"755g","oc":"중국","kc":"CB067R978-6002","nm":"디키 ABC 리틀 오피서 휠","cg":"자동차"},"4006333106095":{"sz":"19*8.5*12.5","wt":"223g","oc":"중국","kc":"CB067R978-6001, B052R1224-21001","nm":"디키 BMW M5 경찰차 S","cg":"자동차"},"4006333106453":{"sz":"37.5*15*18","wt":"813.5g","oc":"중국","kc":"CB067R978-6001, B052R1010-25001","nm":"디키 BMW XM 크라임 헌터","cg":"자동차"},"3467452079959":{"sz":"37.5*9.3*24","wt":"695.5g","oc":"태국","kc":"CB067R1072-2001B","nm":"BMW 쇼룸세트","cg":"자동차"},"8809571203566":{"sz":"5.5*5.5*7.9","wt":"50g","oc":"중국","kc":"CB064R5763-5007","nm":"짱구 천하 떡잎학교 랜덤피규어 (8종)","cg":"피규어"},"8809571203597":{"sz":"2.7*0.2*5","wt":"18g","oc":"중국","nm":"짱구는 못말려 메탈 키링 (랜덤 )","cg":"기타일상용품"},"8809571203351":{"sz":"3*2.3*5.8","wt":"50g","oc":"중국","nm":"짱구 마법소녀 모에피 랜덤피규어 2탄 (6종)","cg":"피규어"},"8809571202934":{"sz":"16.3*6.2*17.5","wt":"50g","oc":"중국","kc":"CB064R2013-4005","nm":"먼작귀 모니터 랜덤 피규어 (7Type)","cg":"피규어/모형완구"},"889698958097":{"sz":"11.4*9*15.8","wt":"143.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP KPOP - 골든 조이","cg":"피규어"},"889698958059":{"sz":"11.4*9*15.8","wt":"143.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP KPOP - 골든 미라","cg":"피규어"},"889698958080":{"sz":"11.4*9*15.8","wt":"143.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP KPOP DH- 골든 루미","cg":"피규어"},"889698924283":{"sz":"4.5*4.5*6","wt":"21.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 비티팝 릴로&스티치 에그","cg":"피규어"},"28399513079":{"sz":"9.5*2.5*12","wt":"21.5g","oc":"중국","nm":"해리포터 클라이밍 피규어 블라인드백","cg":"피규어"},"889698958042":{"sz":"11.4*9*15.8","wt":"143.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP KPOP DH-바비","cg":"피규어"},"889698907729":{"sz":"7.5*5.3*10.3","wt":"47g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 MM 토이스토리 5","cg":"피규어"},"889698920414":{"sz":"7.5*5.3*10.3","wt":"35g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 MVF 귀멸의 칼날","cg":"피규어"},"889698761024":{"sz":"7.5*5.3*10.3","wt":"48g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 MM 스펀지 밥 25th","cg":"피규어"},"889698763820":{"sz":"8.2*3*10.3","wt":"9.5g","oc":"중국","kc":"CB067R2340-4001B","nm":"펀코 비티팝 미니언즈","cg":"피규어"},"889698857192":{"sz":"8.2*2.3*11","wt":"9g","oc":"인도네시아","kc":"CB067R3046-6001","nm":"펀코 비티팝 스파이더맨","cg":"피규어"},"889698857253":{"sz":"8.3*3*10.3","wt":"9.5g","oc":"인도네시아","kc":"CB067R3046-6001","nm":"펀코 비티팝 산리오","cg":"피규어"},"889698763875":{"sz":"8.3*3*10.2","wt":"9.5g","oc":"인도네시아","kc":"CB067R3046-6001","nm":"펀코 비티팝 아바타","cg":"피규어"},"889698811170":{"sz":"8.2*2.3*11","wt":"9g","oc":"중국","kc":"CB067R2340-4001B","nm":"펀코 비티팝 디즈니프린세스","cg":"피규어"},"8809701665189":{"sz":"16.4*2.3*6.3","wt":"369g","oc":"중국","kc":"CB067R2902-6001","nm":"큐브 마그네틱 블록 당근 마을 49p","cg":"블록완구"},"8809701665196":{"sz":"16.4*2.3*16.3","wt":"369g","oc":"중국","kc":"CB067R2902-6001","nm":"큐브 마그네틱 블록  숲속마을 49p","cg":"블록완구"},"8809701665219":{"sz":"19.5*2.3*9","wt":"247g","oc":"중국","kc":"CB067R2902-6001","nm":"큐브 마그네틱 블록  당근마을 35p","cg":"블록완구"},"8809701665202":{"sz":"19.5*2.3*9.3","wt":"274g","oc":"중국","kc":"CB067R2902-6001","nm":"큐브 마그네틱 블록  지하철역 35p","cg":"블록완구"},"8809571203313":{"sz":"5.5*5.5*7.9","wt":"50g","oc":"중국","kc":"CB064R2013-5002","nm":"주식회사 한일디아이 짱구 침낭 피규어","cg":"피규어"},"8809571203207":{"sz":"5.5*5.5*7.9","wt":"50g","oc":"중국","kc":"CB064R5763-5003","nm":"주식회사 한일디아이 짱구 폭풍수면 피규어","cg":"피규어"},"889698836746":{"sz":"8.2*2.3*11","wt":"9g","oc":"중국","kc":"CB067R2340-4001B","nm":"펀코 비티팝 스타워즈","cg":"피규어"},"889698794374":{"sz":"8.2*2.3*11","wt":"9.2g","oc":"중국","kc":"CB067R2340-4001B","nm":"펀코 비티팝 해리포터","cg":"피규어"},"889698763882":{"sz":"8.2*2.3*11","wt":"9g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 비티팝 드래곤볼","cg":"피규어"},"889698857222":{"sz":"8.2*2.3*11","wt":"9.2g","oc":"중국","nm":"펀코 비티팝 심슨","cg":"피규어"},"889698811217":{"sz":"8.2*2.3*11","wt":"9g","oc":"중국","nm":"펀코 비티팝 토이스토리","cg":"피규어"},"4006333106323":{"sz":"68.5*12.5*24.5","wt":"2005g","oc":"중국","kc":"CB067R978-5001","nm":"디키 빌더 트럭 캐리케이스","cg":"자동차"},"889698868983":{"sz":"8.3*2.5*10.5","wt":"9g","oc":"인도네시아","kc":"CB067R3046-6001","nm":"펀코 비티팝 원피스","cg":"피규어"},"889698811194":{"sz":"8.3*2.5*10.5","wt":"9g","oc":"중국","kc":"CB067R2340-4001B","nm":"펀코 비티팝 마블 더 인피니티 사가","cg":"피규어"},"889698913973":{"sz":"8.3*2.5*10.5","wt":"9g","oc":"인도네시아","kc":"CB067R3046-6001","nm":"펀코 비티팝 X-Men","cg":"피규어"},"889698957083":{"sz":"11*2.5*12.5","wt":"27g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 팝 키체인 KDH","cg":"피규어"},"889698906487":{"sz":"7.7*10.2*5.4","wt":"58g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP 시리즈 MM 원피스 FMI","cg":"피규어"},"889698147224":{"sz":"7.5*6.9*8.8","wt":"45g","oc":"베트남","nm":"펀코 MM 해리포터와 마법사의 돌","cg":"피규어"},"889698760812":{"sz":"7.5*5.5*10","wt":"42g","oc":"베트남","nm":"펀코 MM 스티치 인 코스튬","cg":"피규어"},"889698477949":{"sz":"7.5*6.9*8.8","wt":"47g","oc":"베트남","nm":"펀코 MM 시리즈 미니언즈 2","cg":"피규어"},"889698556194":{"sz":"4.8*4.1*10","wt":"36g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP 키체인 릴로 & 스티치 - 스티치","cg":"피규어"},"4006333104220":{"sz":"7.5*7.5*10.5","wt":"86.5g","oc":"중국","kc":"CB067R978-5001","nm":"디키 모터 뮤탄스","cg":"자동차"},"889698620949":{"sz":"7*6.6*8.6","wt":"58.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP 시리즈 MM 귀멸의칼날 (랜덤)","cg":"피규어"},"889698802864":{"sz":"7.6*5.3*10.2","wt":"48.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP 시리즈 MM 주술회전 (랜덤)","cg":"피규어"},"8809701665318":{"sz":"37*25*28","wt":"620g","oc":"중국","kc":"CB067R2192-5001","nm":"Frozen 겨울왕국 슬링백 화장놀이","cg":"기타역할놀이완구"},"8809701665288":{"sz":"53*24.5*63","wt":"1445g","oc":"중국","kc":"CB067R2192-5001","nm":"Frozen 겨울왕국2 휴대용캐리어 주방놀이","cg":"기타역할놀이완구"},"889698952668":{"sz":"11.4*8.8*15.3","wt":"159g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP Animation: KPOP DH 케이팝 데몬헌터스 - 미라","cg":"피규어"},"889698885393":{"sz":"7.5*5.5*10","wt":"54.5g","oc":"베트남","nm":"펀코 OBV 주토피아","cg":"피규어"},"889698946926":{"sz":"11.4*8.8*15.3","wt":"157.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP Animation: KPOP DH 케이팝 데몬헌터스 - 루미","cg":"피규어"},"889698946933":{"sz":"11.4*8.8*15.3","wt":"157.5g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP Animation: KPOP DH 케이팝 데몬헌터스 - 더피","cg":"피규어"},"889698946919":{"sz":"11.4*8.8*15.3","wt":"158g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP Animation: KPOP DH 케이팝 데몬헌터스 - 진우","cg":"피규어"},"889698952675":{"sz":"11.4*8.8*15.3","wt":"158g","oc":"베트남","kc":"CB067R2961-5001","nm":"펀코 POP Animation: KPOP DH 케이팝 데몬헌터스 - 조이","cg":"피규어"},"4006333085048":{"sz":"76*9.5*41.5","wt":"2500g","oc":"중국","kc":"CB067R978-5001","nm":"SIMBA DICKIE 디키 파킹가라지","cg":"차종류"},"8809701665349":{"sz":"50*18*22","wt":"1600g","oc":"중국","kc":"CB067R978-5001","nm":"SIMBA DICKIE 디키 샤크어택 N","cg":"기타 유아/어린이완구"},"8809701665264":{"sz":"59*11*42","wt":"2002g","oc":"중국","kc":"CB067R2192-5001","nm":"Frozen 겨울왕국 마법거울 화장놀이","cg":"기타 유아/어린이완구"},"8809701665271":{"sz":"53*24.5*60","wt":"1366g","oc":"중국","kc":"CB067R2192-5001","nm":"Frozen 겨울왕국2 휴대용캐리어 화장놀이","cg":"기타역할놀이완구"},"8809701665295":{"sz":"39.5*21.5*40","wt":"668g","oc":"중국","kc":"CB067R2192-5001","nm":"Frozen 겨울왕국2 백팩 화장놀이","cg":"기타역할놀이완구"},"8809701665301":{"sz":"39.5*21.5*40","wt":"675g","oc":"중국","kc":"CB067R2192-5001","nm":"Frozen 겨울왕국2 백팩 주방놀이","cg":"기타역할놀이완구"},"8809701665325":{"sz":"39.5*20.5*25","wt":"775g","oc":"중국","kc":"CB067R2192-5001","nm":"Frozen 겨울왕국 슬링백 주방놀이","cg":"기타역할놀이완구"},"8809701665332":{"sz":"35.3*25*25","wt":"986g","oc":"태국","kc":"CB067R1072-2001B,CB067R1072-2002A","nm":"Majorette Lucky Box 마조렛 럭키박스","cg":"차종류"},"3467452079652":{"sz":"10.5*4.3*4.3","wt":"54g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 53. 벤츠-AMG SL 63","cg":"차종류"},"3467452079379":{"sz":"11*4.3*4.3","wt":"52.5g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 43.이베코 유로카고","cg":"자동차"},"3467452079348":{"sz":"11*4.3*4.3","wt":"36g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 42.에어버스 H130 헬리콥터","cg":"자동차"},"3467452079324":{"sz":"11*4.3*4.3","wt":"53.5g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 41.BMW M3 투어링","cg":"자동차"},"3467452079478":{"sz":"10.5*4.3*4.3","wt":"52.5g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 46.닛산 실비아 S15 스펙 R 에어로","cg":"자동차"},"3467452079607":{"sz":"10.5*4.3*4.3","wt":"55g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 48.벤츠-AMG A 35","cg":"자동차"},"3467452079508":{"sz":"10.5*4.3*4.3","wt":"54g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 47.혼다 시빅 타입 R EK9","cg":"자동차"},"3467452079423":{"sz":"10.5*4.3*4.3","wt":"52.5g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 45.스즈키 캐리","cg":"자동차"},"3467452079393":{"sz":"11*4.3*4.3","wt":"53g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 44.포드 브롱코 와일드트랙","cg":"자동차"},"3467452079614":{"sz":"10.5*4.3*4.3","wt":"56g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 49.벤츠-AMG CLE 53 S","cg":"자동차"},"3467452079621":{"sz":"10.5*4.3*4.3","wt":"52.5g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 50.벤츠 - AMG G 63","cg":"자동차"},"3467452079638":{"sz":"10.5*4.3*4.3","wt":"53g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 51.벤츠-AMG GLC 63 S","cg":"자동차"},"3467452079645":{"sz":"10.5*4.3*4.3","wt":"53g","oc":"태국","kc":"CB067R1072-2001B","nm":"MAJORETTE 52.벤츠-AMG GT 63","cg":"자동차"},"3467452076934":{"sz":"14*5.5*18","wt":"107g","oc":"태국","nm":"마조렛 리미티드 컬렉션 어쏘트","cg":"피규어"},"8800260770260":{"sz":"34*2*31.5","wt":"339.5g","oc":"대한민국","nm":"슈팅스타 캐치! 티니핑 오로라핑& 왕자핑 컬렉션 카드 스페셜 AR세트 A","cg":"캐릭터카드/딱지"},"8800260770277":{"sz":"34*2*31.5","wt":"200g","oc":"대한민국","nm":"(주)에스에이엠지엔터테인먼트 슈팅스타 캐치! 티니핑 컬렉션 카드 스페셜 AR세트 B","cg":"캐릭터카드/딱지"},"8809701665387":{"sz":"47*14.5*19","wt":"894.5g","oc":"중국","kc":"CB067R667-5001","nm":"스카니아 덤프 포크레인 세트 _M","cg":"기타 유아/어린이완구"},"8809701665363":{"sz":"61*19*43","wt":"2440g","oc":"중국","kc":"CB067R2269-4001A","nm":"(주)가이아코퍼레이션 트레이더스 마트놀이","cg":"기타 유아/어린이완구"},"8809701665370":{"sz":"55.5*20*30.5","wt":"230.7g","oc":"중국","kc":"CB067R667-5001","nm":"SCANIA 스카니아 공룡트럭 그린","cg":"기타 유아/어린이완구"},"3467452077160":{"sz":"36*9.5*24.5","wt":"636g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 주유소 스테이션","cg":"차종류"},"8800260770239":{"sz":"7*2*16.8","wt":"73.5g","oc":"대한민국","nm":"슈팅스타 캐치! 티니핑 컬렉션 카드 미니박스 5장 x 5팩 (랜덤)","cg":"캐릭터카드/딱지"},"8800260770208":{"sz":"7.5*4.2*14.2","wt":"195g","oc":"대한민국","nm":"슈팅스타 캐치! 티니핑 컬렉션 카드 박스 5장 x 15팩 (랜덤)","cg":"캐릭터카드/딱지"},"8800260770192":{"sz":"22.2*5.2*28","wt":"10g","oc":"대한민국","nm":"슈팅스타 캐치! 티니핑 컬렉션 카드 5장 x 1팩 (랜덤)","cg":"캐릭터카드/딱지"},"889698306089":{"sz":"7.5*6.5*9","wt":"60.5g","oc":"중국","nm":"펀코 MM 원피스","cg":"피규어"},"8809701665431":{"sz":"61.5*13.5*21.5","wt":"1374g","oc":"중국","kc":"CB067R2170-4001A","nm":"가이아 대형트럭시리즈 운송트럭","cg":"차종류"},"3467452078570":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"40. 마조렛 쉐보레 코르벳 C4 ZR-1 옐로우 카브리올래","cg":"차종류"},"3467452078563":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"39. 마조렛 닷지 챌린저 SRT 데몬","cg":"차종류"},"3467452078495":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"38. 마조렛 혼다 시빅","cg":"차종류"},"3467452078556":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"37. 마조렛 피아트 500 아이콘 레이싱","cg":"차종류"},"3467452078488":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"36. 마조렛 애스턴 마틴 빈티지","cg":"차종류"},"3467452078549":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"35. 마조렛 맥라렌 세나 레이싱","cg":"차종류"},"3467452078532":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"34. 마조렛 닷지 챌린저 헬켓 레이싱","cg":"차종류"},"3467452078525":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"33. 마조렛 르노 메간 RS","cg":"차종류"},"3467452078518":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"32. 마조렛 도요타 GR 수프라 리미티드 에디션 11","cg":"차종류"},"3467452078471":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"31. 마조렛 쉐보레 카마로 SS","cg":"차종류"},"3467452078501":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"30. 마조렛 닷지 리미티드 에디션 11","cg":"차종류"},"3467452078464":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"29. 마조렛 포르쉐 918 스파이더 뉴디자인","cg":"차종류"},"3467452078457":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"28. 마조렛 람보르기니 아벤타도르 쿠페","cg":"차종류"},"3467452078440":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"27. 마조렛 포르쉐 934 RSR","cg":"차종류"},"3467452078433":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"26. 마조렛 닷지 차저 R/T","cg":"차종류"},"3467452078426":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"25. 마조렛 닷선 260Z","cg":"차종류"},"3467452078419":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"24. 마조렛 쉐보레 ZR-1 쿠페","cg":"차종류"},"3467452078402":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"23. 마조렛 도요타 GR 수프라 빌스테인 레이싱","cg":"차종류"},"3467452078396":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"22. 마조렛 도요타 2000 GT레이싱","cg":"차종류"},"3467452078389":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"21. 마조렛 람보르기니 시안 FKP 37 블랙에디션","cg":"차종류"},"3467452078372":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"20. 마조렛 토요타 GR 수프라 블랙에디션","cg":"차종류"},"3467452078365":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"19. 마조렛 부가티 시론 퓨어스포츠 블랙에디션","cg":"차종류"},"3467452078358":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"18. 마조렛 알파인 A110 R RACING NO.55","cg":"차종류"},"3467452078341":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"17. 마조렛 부가티 시론 퓨어 스포츠 레이싱","cg":"차종류"},"3467452078334":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"16. 마조렛 쉐보레 콜벳 C4 ZR-1 쿠페 레이싱","cg":"차종류"},"3467452078327":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"15. 마조렛 닛산 Z 레이싱","cg":"차종류"},"3467452078303":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"13. 마조렛 포르쉐 935 KC 화이트 레이싱","cg":"차종류"},"3467452078297":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"12. 마조렛 포르쉐 911 카레라 S 카브리올레","cg":"차종류"},"3467452078280":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"11. 마조렛 포르쉐 911 카레라 RS 2.7 옐로우 레이싱","cg":"차종류"},"3467452078273":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"10. 마조렛 포르쉐 935 K3 그린 레이싱","cg":"차종류"},"3467452078266":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"09 . 마조렛 포르쉐 911 카레라 RS 2.7 블랙","cg":"차종류"},"3467452078259":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"08. 마조렛 포르쉐 911 카레라 RS 2.7 옐로우","cg":"차종류"},"3467452078242":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"07. 마조렛 포르쉐 911 GT3 CUP 992","cg":"차종류"},"3467452078235":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"06. 마조렛 알파인 A110R 화이트","cg":"차종류"},"3467452078228":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"05. 마조렛 리막 네베라","cg":"차종류"},"3467452078211":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"04. 마조렛 알파인 A110R 블루","cg":"차종류"},"3467452078204":{"sz":"10.5*4.4*4.4","wt":"51g","oc":"태국","kc":"CB067R1072-2001B","nm":"03. 마조렛 맥라렌 세나","cg":"차종류"},"3467452078198":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"02. 마조렛 람보르기니 우라칸 옐로우 스트라이프","cg":"차종류"},"3467452078181":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"01. 마조렛 포드 머스탱 다크호스","cg":"차종류"},"3467452078310":{"sz":"10.5*4.4*4.4","wt":"52g","oc":"태국","kc":"CB067R1072-2001B","nm":"14.마조렛 포르쉐 917 KH 빈티지","cg":"차종류"},"4895228621344":{"sz":"6*6*10","wt":"95g","oc":"중국","nm":"CBX298 스티치 인 코스튬 코스비","cg":"피규어"},"4895228621337":{"sz":"6*6*10","wt":"95g","oc":"중국","nm":"CBX297 스티치 파스텔 퍼플 버전 코스비","cg":"피규어"},"4895228618115":{"sz":"6*6*10","wt":"96g","oc":"중국","nm":"CBX219 크리스마스의 악몽 코스비 시리즈2","cg":"피규어"},"4895228618108":{"sz":"6*6*10","wt":"95g","oc":"중국","nm":"CBX218 디즈니 캣 코스비","cg":"피규어"},"4895228618092":{"sz":"6*6*10","wt":"96g","oc":"중국","nm":"CBX217 스티치 온 홀리데이","cg":"피규어"},"4895228616777":{"sz":"6*6*10","wt":"96g","oc":"중국","nm":"CBX190 디즈니 해적 코스비","cg":"피규어"},"4895228616746":{"sz":"6*6*10","wt":"92g","oc":"중국","nm":"CBX188 마블 스파이더맨2 코스비","cg":"피규어"},"4895228616548":{"sz":"6*6*10","wt":"95g","oc":"중국","nm":"CBX183 디즈니 데드풀&올버린","cg":"피규어"},"4895228613226":{"sz":"6*6*10","wt":"96g","oc":"중국","nm":"CBX111 디즈니 스티치 코스비","cg":"피규어"},"8809701665554":{"sz":"24*8.3*19","wt":"202.8g","oc":"중국","kc":"CB067R2697-5001","nm":"다이노 벨로키랍토르 mini","cg":"기타 유아/어린이완구"},"8809701665561":{"sz":"24*8.3*19","wt":"249g","oc":"중국","kc":"CB067R2697-5001","nm":"다이노 스피노사우루스 mini","cg":"기타 유아/어린이완구"},"8809701665578":{"sz":"24*8.3*19","wt":"233.2g","oc":"중국","kc":"CB067R2697-5001","nm":"다이노 티라노사우르스 렉스 mini","cg":"기타 유아/어린이완구"},"8809701665455":{"sz":"53*12*24","wt":"950g","oc":"중국","kc":"CB067R2697-5001, R-R-GA0-RS069SET","nm":"다이노 티라노 트리케라 세트","cg":"기타 유아/어린이완구"},"8809701665523":{"sz":"27*10.8*20","wt":"271.5g","oc":"중국","kc":"CB067R2697-5001","nm":"다이노 티라노사우르스 렉스 S","cg":"기타 유아/어린이완구"},"8809701665530":{"sz":"24*8.3*19","wt":"231.5g","oc":"중국","kc":"CB067R2697-5001","nm":"다이노 딜로포사우르스 mini","cg":"기타 유아/어린이완구"},"8809701665547":{"sz":"24*8.3*19","wt":"251.6g","oc":"중국","kc":"CB067R2697-5001","nm":"다이노 트리케라톱스 mini","cg":"기타 유아/어린이완구"},"8809701665493":{"sz":"31*8.5*25","wt":"374g","oc":"중국","kc":"CB067R2697-5001","nm":"다이노 벨로키랍토르 M","cg":"기타 유아/어린이완구"},"8809701665509":{"sz":"31*8.5*25","wt":"367.3g","oc":"중국","kc":"CB067R2697-5001","nm":"다이노 티라노사우르스 렉스 M","cg":"기타 유아/어린이완구"},"8809701665516":{"sz":"27*10.8*20","wt":"260.5g","oc":"중국","kc":"CB067R2697-5001","nm":"다이노 벨로키랍토르 블루 S","cg":"기타 유아/어린이완구"},"194735295913":{"sz":"20.3*6.8*32.5","wt":"339g","oc":"인도네시아","kc":"CB067R1590-3001A","nm":"마텔 겨울왕국 안나와 아기 여우","cg":"마론인형"},"194735295920":{"sz":"20.3*6.8*32.5","wt":"368g","oc":"인도네시아","kc":"CB067R1590-3001A","nm":"마텔 겨울왕국 엘사와 아기 곰","cg":"마론인형"},"8809701665462":{"sz":"50*12*24","wt":"750g","oc":"중국","kc":"CB067R2697-5001","nm":"다이노 기가노토사우르스 L","cg":"기타 유아/어린이완구"},"8809701665479":{"sz":"53*11.5*23.5","wt":"800g","oc":"중국","kc":"CB067R2697-5001","nm":"다이노 티라노사우르스 렉스 L","cg":"기타 유아/어린이완구"},"8809701665486":{"sz":"31*8.5*25","wt":"507.2g","oc":"중국","kc":"CB067R2697-5001","nm":"다이노 딜로포사우르스 M","cg":"기타 유아/어린이완구"},"817338028299":{"sz":"24.7*5.6*18.8","wt":"609.5g","oc":"중국","kc":"CB067R2122-4001A","nm":"피카소타일 마블런 미니-60","cg":"기타유아동퍼즐"},"817338028305":{"sz":"22.3*5.3*15.8","wt":"476.5g","oc":"중국","kc":"CB067R2122-4001A","nm":"피카소타일 마블런 미니 45조각","cg":"기타유아동퍼즐"},"889698794381":{"sz":"8.3*2.5*10.5","wt":"9g","oc":"중국","nm":"펀코 비티팝 디즈니클래식","cg":"피규어"},"817338022907":{"sz":"37.3*11.5*30","wt":"2457.5g","oc":"중국","kc":"CB067R2122-4001A","nm":"피카소 마블런 120조각","cg":"기타유아동퍼즐"},"817338024673":{"sz":"31.3*6.5*20.4","wt":"878g","oc":"중국","kc":"CB067R2122-4001A","nm":"피카소타일 마블런 미니 100조각","cg":"기타유아동퍼즐"},"817338024253":{"sz":"24.7*5.6*18.8","wt":"726g","oc":"중국","kc":"CB067R2122-4001A","nm":"피카소타일 마블런 미니 80조각","cg":"기타유아동퍼즐"},"4006333071478":{"sz":"32.5*11.5*43","wt":"1180g","oc":"중국","kc":"CB067R978-5001","nm":"디키 볼보 건설장비 3종","cg":"차종류"},"8809701665448":{"sz":"10.5*3.5*15.4","wt":"58g","oc":"태국","kc":"CB067R1072-2001B","nm":"30. 마조렛 닷지 리미티드 에디션 11 (이마트용)","cg":"차종류"},"4895228619228":{"sz":"6*6*10","wt":"96g","oc":"중국","nm":"CBX238 주토피아 코스비","cg":"피규어"},"4895228619549":{"sz":"6*6*10","wt":"96g","oc":"중국","nm":"CBX241 오징어게임 코스비","cg":"피규어"},"889698811200":{"sz":"8.3*2.5*11","wt":"9g","oc":"중국","nm":"펀코 비티팝 크리스마스 악몽","cg":"피규어"},"4006333093449":{"sz":"57.5*18*24.7","wt":"200g","oc":"중국","kc":"CB067R757-1001C","nm":"디키 대형 견인 트럭","cg":"차종류"},"3467452076613":{"sz":"10.5*3.5*5.4","wt":"58g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 재팬폴리스 자동차","cg":"차종류"},"8809701665608":{"sz":"56*19.5*30","wt":"217.8g","oc":"중국","kc":"CB067R667-5001","nm":"스카니아 덤프트럭 오렌지","cg":"차종류"},"8809701665592":{"sz":"56*19.5*30","wt":"235.7g","oc":"중국","kc":"CB067R667-5001","nm":"스카니아 공룡트럭 블루","cg":"차종류"},"8809701665585":{"sz":"56*19.5*30","wt":"236.7g","oc":"중국","kc":"CB067R667-5001","nm":"스카니아 트레일러+포크레인","cg":"차종류"},"194735275427":{"sz":"21.5*5.5*32","wt":"302.5g","oc":"인도네시아","kc":"CB067R1590-3001A","nm":"마텔 패션스토리텔링 신데렐라","cg":"마론인형"},"194735259137":{"sz":"21.5*5.5*32","wt":"304.5g","oc":"인도네시아","kc":"CB067R1590-3001A","nm":"마텔 패션스토리텔링 라푼젤","cg":"마론인형"},"194735275380":{"sz":"8*8*15","wt":"126g","oc":"인도네시아","kc":"CB067R1590-3001A","nm":"마텔 겨울왕국 아이스캐슬 서프라이즈","cg":"마론인형"},"194735259298":{"sz":"20*8*32","wt":"470g","oc":"중국","kc":"CB067R585-3001A","nm":"마텔 인어공주 펄 서프라이즈","cg":"마론인형"},"194735263257":{"sz":"15*8*18","wt":"192g","oc":"인도네시아","kc":"CB067R1590-3001A","nm":"마텔 디즈니프린세스 인어공주 배쓰타임","cg":"마론인형"},"194735263349":{"sz":"8*5*19","wt":"126.5g","oc":"인도네시아","kc":"CB067R1590-3001A","nm":"마텔 디즈니프린세스 타워 서프라이즈","cg":"마론인형"},"194735239665":{"sz":"11.5*9.5*35","wt":"333g","oc":"중국","kc":"CB067R585-3001A","nm":"마텔 스팬앤리빌 인어공주","cg":"마론인형"},"3467452076651":{"sz":"10.5*3.5*15.4","wt":"58g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 가라시 드리프트-닛산 스카이라인 GTR","cg":"차종류"},"3467452071151":{"sz":"10.5*3.5*15.4","wt":"58g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 다치아 1300","cg":"차종류"},"3467452076569":{"sz":"10.5*3.5*15.4","wt":"58g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 리막 네베라 에디션","cg":"차종류"},"3467452076446":{"sz":"10.5*3.5*15.4","wt":"58g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 재팬 프라임 18","cg":"차종류"},"889698763837":{"sz":"8.3*2.5*10.5","wt":"50g","oc":"중국","kc":"CB067R2340-4001A","nm":"펀코 비티팝 토이스토리","cg":"캐릭터완구"},"8809556742936":{"sz":"8.3*2.5*10.5","wt":"10g","oc":"중국","kc":"CB067R2340-4001A","nm":"Bitty POP 토이스토리","cg":"캐릭터완구"},"8809701665684":{"sz":"10.2*5.6*23.8","wt":"242.5g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:43 2020 랜드로버 디펜더 110 -DIY","cg":"피규어/모형완구"},"8809701665776":{"sz":"14.2*6.5*7","wt":"123.9g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:42 BMW I4 M50","cg":"피규어/모형완구"},"8809701665820":{"sz":"14.2*6.5*7","wt":"116g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:40 아반테","cg":"피규어/모형완구"},"8809701665813":{"sz":"14.2*6.5*7","wt":"130g","oc":"중국","nm":"MSZ 1:43 랜드로버 디펜더 110","cg":"피규어/모형완구"},"8809701665738":{"sz":"20.5*9*8.8","wt":"262.5g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:34 BMW I4 M50 EV","cg":"피규어/모형완구"},"8809701665899":{"sz":"14.2*6.5*7","wt":"118g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:39 포르쉐 911 GT3 RSR","cg":"피규어/모형완구"},"8809701665677":{"sz":"10.2*5.6*23.8","wt":"252g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:32 스즈키 짐니 튜닝세트 -DIY","cg":"피규어/모형완구"},"8809701665806":{"sz":"14.2*6.5*7","wt":"130.9g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:32 스즈키 짐니","cg":"피규어/모형완구"},"8809701665790":{"sz":"14.2*6.5*7","wt":"130.9g","oc":"중국","nm":"MSZ 1：43 BMW X5M-RED","cg":"피규어/모형완구"},"8809701665783":{"sz":"14.2*6.5*7","wt":"130.9g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1：43 BMW X5M-BLACK","cg":"피규어/모형완구"},"8809701665714":{"sz":"20.5*9*8.8","wt":"256.5g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:38 벤틀리 플라잉 스퍼 하이브리드 EV","cg":"피규어/모형완구"},"8809701665721":{"sz":"20.5*9*8.8","wt":"248g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:36 아우디 이트론 GT EV","cg":"피규어/모형완구"},"8809701665837":{"sz":"14.2*6.5*7","wt":"103g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1: 41 기아 K7","cg":"피규어/모형완구"},"8809701665691":{"sz":"10.2*5.6*23.8","wt":"215g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:42 포드 머스탱 GT -DIY","cg":"피규어/모형완구"},"8809701665707":{"sz":"20.5*9*8.8","wt":"322g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:36 포드 F-150 EV","cg":"피규어/모형완구"},"8809701665875":{"sz":"14.2*6.5*7","wt":"138g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:42 지프 랭글러","cg":"피규어/모형완구"},"8809701665882":{"sz":"14.2*6.5*7","wt":"114.5g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:41 포르쉐 918 스파이더","cg":"피규어/모형완구"},"8809701665844":{"sz":"14.2*6.5*7","wt":"121g","oc":"중국","kc":"CB067R2405-4001A","nm":"MSZ 1:39 기아 스포티지 R","cg":"피규어/모형완구"},"8809701665851":{"sz":"14.2*6.5*7","wt":"110.5g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:43 람보르기니 아벤타도르 SVJ","cg":"피규어/모형완구"},"8809701665868":{"sz":"14.2*6.5*7","wt":"128g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:44 BMW X7","cg":"피규어/모형완구"},"3467452076514":{"sz":"10.5*3.5*15.5","wt":"46g","oc":"태국","kc":"CB067R1072-2001B","nm":"마조렛 포르쉐 911 타일랜드 레인보우","cg":"피규어/모형완구"},"8809701665745":{"sz":"20.5*9*8.8","wt":"277.5g","oc":"중국","kc":"CB067R2405-4001A","nm":"MSZ 1:32 볼보 XC40 리차지 EV","cg":"피규어/모형완구"},"8809701665752":{"sz":"14.2*6.5*7","wt":"127g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:39 볼보 XC40","cg":"피규어/모형완구"},"8809701665769":{"sz":"14.2*6.5*7","wt":"114g","oc":"중국","kc":"CB067R2405-4001","nm":"MSZ 1:44 아우디 이트론 GT","cg":"피규어/모형완구"},"3467452075531":{"sz":"69.5*13*49.5","wt":"2500g","oc":"중국","kc":"CB067R1072-2002","nm":"마조렛 60주년 모터리프트 센터","cg":"차종류"},"194735281602":{"sz":"15*5*20","wt":"158g","oc":"중국","kc":"CB067R585-3001A","nm":"마텔 모아나 미니돌 2팩","cg":"마론인형"},"194735259700":{"sz":"28*7.5*25","wt":"364g","oc":"중국","kc":"CB067R585-3001A","nm":"겨울왕국 올라프 썰매 플레이세트","cg":"마론인형"},"194735287406":{"sz":"15*5*21","wt":"274g","oc":"중국","kc":"CB067R585-3001A","nm":"겨울왕국 아이스 스케이팅 어쏘트","cg":"마론인형"},"194735156306":{"sz":"23*7*32","wt":"276g","oc":"중국","kc":"CB067R585-3001A","nm":"마텔 인어공주 스윔 앤 스플래쉬","cg":"마론인형"},"194735265398":{"sz":"11*5*32","wt":"196g","oc":"인도네시아","kc":"CB067R1590-3001","nm":"마텔 모아나 패션돌","cg":"마론인형"},"194735121496":{"sz":"23*6*32","wt":"263g","oc":"인도네시아","kc":"CB067R1590-3001","nm":"마텔 인어공주 패션 플레이세트","cg":"마론인형"},"194735222780":{"sz":"10.5*8*14","wt":"299.5g","oc":"중국","kc":"CB067R585-3002A","nm":"마텔 겨울왕국 스노우리빌 FALL 랜덤","cg":"마론인형"},"4006333089107":{"sz":"57.5*18*24.8","wt":"2155g","oc":"중국","kc":"CB067R757-1001B, B052R1224-21001","nm":"자이언트 파이어 트럭","cg":"차종류"},"4006333076787":{"sz":"69*12*24.7","wt":"2083g","oc":"중국","kc":"CB067R757-1001B","nm":"폴리스 트럭 캐리 케이스","cg":"차종류"},"8809701665929":{"sz":"61.5*13.5*21.5","wt":"1209g","oc":"중국","kc":"CB067R2170-4001, B052R1285-21001","nm":"가이아 대형트럭시리즈-덤프트럭","cg":"차종류"},"3467452075326":{"sz":"61.5*13.5*21.5","wt":"1209g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 재팬시리즈 튜닝 가라지","cg":"차종류"},"889698763813":{"sz":"8.3*2.5*10.5","wt":"10g","oc":"중국","kc":"CB067R2340-4001","nm":"펀코 비티팝 마블","cg":"캐릭터완구"},"3467452076163":{"sz":"10.5*3.5*15.5","wt":"51g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 재팬 프라임 15","cg":"차종류"},"889698763547":{"sz":"8.3*2.5*10.5","wt":"10g","oc":"중국","kc":"CB067R2340-4001","nm":"펀코 비티팝 디즈니클래식","cg":"캐릭터완구"},"8809701665912":{"sz":"10.5*4.5*15.5","wt":"59g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 리미티드에디션 6","cg":"차종류"},"8809701665905":{"sz":"10.5*3.5*15.5","wt":"51g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 인터내셔널 SOS 카","cg":"차종류"},"8809701665936":{"sz":"41*16*29","wt":"1851g","oc":"중국","kc":"CB067R2193-4001","nm":"미니 핀볼슈팅","cg":"기타 유아/어린이완구"},"8809701665943":{"sz":"22.5*16*18","wt":"615g","oc":"중국","kc":"CB067R2193-4001","nm":"핀볼 슈팅 머신","cg":"기타 유아/어린이완구"},"8809701665950":{"sz":"26*23*29","wt":"1415g","oc":"중국","kc":"CB067R2193-4001","nm":"핀볼 머신","cg":"기타 유아/어린이완구"},"840331941678":{"sz":"7*7*7","wt":"106g","oc":"중국","kc":"CB067R2316-4001","nm":"미라볼 이모지 Emogi","cg":"기타 유아/어린이완구"},"840331941654":{"sz":"7*7*7","wt":"93g","oc":"중국","kc":"CB067R2316-4001","nm":"미라볼 스폰지밥 Sponge Bob","cg":"기타 유아/어린이완구"},"194735181872":{"sz":"6*5.5*16.5","wt":"138g","oc":"중국","kc":"CB067R585-3002","nm":"마텔 디즈니 로얄 컬러리빌","cg":"마론인형"},"804589662297":{"sz":"30*8*28","wt":"299g","oc":"중국","kc":"CB067R2239-4001","nm":"3D 스티커 메이커","cg":"기타 유아/어린이완구"},"194735181889":{"sz":"9.5*8*14","wt":"289g","oc":"중국","kc":"CB067R585-3002","nm":"마텔 겨울왕국 스노우리빌","cg":"마론인형"},"3467452073360":{"sz":"30*10*10","wt":"362g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 머스크 기프트팩","cg":"차종류"},"3467452065341":{"sz":"30*10*10","wt":"307g","oc":"태국","kc":"CB067R1072-2001A","nm":"이탈리아 드림카 5기프트팩","cg":"차종류"},"8809701666216":{"sz":"50*35*50","wt":"7600g","oc":"중국","kc":"CB067R2269-4001","nm":"쇼핑카트 계산대 놀이","cg":"기타 유아/어린이완구"},"4006333089152":{"sz":"43*13*17","wt":"735g","oc":"중국","kc":"CB067R757-1001B, B052R1224-21001","nm":"디키 DHL 딜리버리세트","cg":"차종류"},"4006333084782":{"sz":"57*22*34","wt":"5350g","oc":"중국","kc":"CB067R757-1003B, B052R275-5001","nm":"디키 유니목 소방차","cg":"차종류"},"8809701666179":{"sz":"8*5*12","wt":"158g","oc":"중국","kc":"CB067R2204-4001","nm":"해피스태킹-트리하우스 콜렉션","cg":"기타 유아/어린이완구"},"8809701666186":{"sz":"8*5*12","wt":"150g","oc":"중국","kc":"CB067R2204-4001","nm":"해피스태킹-햄스터 콜렉션","cg":"기타 유아/어린이완구"},"8809701666193":{"sz":"8*5*12","wt":"140g","oc":"중국","kc":"CB067R2204-4001","nm":"해피스태킹-고양이 콜렉션","cg":"기타 유아/어린이완구"},"8809701666162":{"sz":"9.5*5*12","wt":"168g","oc":"중국","kc":"CB067R2204-4001","nm":"해피스태킹-강아지 콜렉션","cg":"기타 유아/어린이완구"},"3467452038017":{"sz":"10.5*3.5*15.5","wt":"47g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 팜 어소트","cg":"차종류"},"3467452063200":{"sz":"11*4.5*18","wt":"207g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 볼보 3카 세트","cg":"차종류"},"3467452062647":{"sz":"14*8*18","wt":"107g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 몬스터 로켓 컬러 체인지","cg":"차종류"},"3467452038192":{"sz":"10.5*3.5*15.5","wt":"81g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 시티 어소트","cg":"차종류"},"3467452073346":{"sz":"24*15*15","wt":"172g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 머스크 트랜스포터","cg":"차종류"},"3467452063224":{"sz":"30*10*10","wt":"332g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 볼보 4카 기프트팩","cg":"차종류"},"3467452032459":{"sz":"11*4.5*18","wt":"182g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 SOS 3카 세트","cg":"차종류"},"3467452051573":{"sz":"14*8*18","wt":"125g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 몬스터 로켓","cg":"차종류"},"3467452046128":{"sz":"23.5*3.5*15","wt":"137g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 만 시티버스+지멘스 아비노 트램","cg":"차종류"},"3467452073223":{"sz":"30*10*10","wt":"283g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 포르쉐 5카 기프트팩","cg":"차종류"},"3467452035290":{"sz":"9.5*4.5*27","wt":"273g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 와우 5카 기프트팩","cg":"차종류"},"3467452065327":{"sz":"24*6*15","wt":"219g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 카 트레일러","cg":"차종류"},"3467452073247":{"sz":"30*10*10","wt":"309g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 영스터 5카 기프트팩","cg":"차종류"},"3467452065488":{"sz":"30*10*10","wt":"332g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 폭스바겐 오리지날 5카 기프트팩","cg":"차종류"},"3467452075319":{"sz":"23*7*22.5","wt":"459g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 재팬시리즈 보너스팩","cg":"차종류"},"3467452075289":{"sz":"10.5*4.5*15.5","wt":"60g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 재팬시리즈 프리미엄 카","cg":"차종류"},"3467452074732":{"sz":"14*4*18","wt":"58g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 애니버서리 에디션 퍼스트 에버 카","cg":"차종류"},"3467452074718":{"sz":"30*10*10","wt":"301g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 애니버서리 에디션 5카 기프트팩","cg":"차종류"},"3467452075364":{"sz":"30*10*10","wt":"290g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 프렌치터치 5카 기프트팩","cg":"차종류"},"3467452075340":{"sz":"30*10*10","wt":"331g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 캐스트헤드 트랙 레이서 5카 기프트팩","cg":"차종류"},"3467452075296":{"sz":"14*4.5*18","wt":"70g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 재팬시리즈 디럭스 카","cg":"차종류"},"3467452075487":{"sz":"54*13*39","wt":"1650g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 어번 가라지 60주년 +1카","cg":"차종류"},"3467452074725":{"sz":"14*4*18","wt":"113g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 애니버서리 에디션 디럭스 카","cg":"차종류"},"3467452074695":{"sz":"14*8*18","wt":"115g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 리미티드 에디션 10, 로케즈","cg":"차종류"},"3467452074671":{"sz":"30*10*10","wt":"300g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 리미티드 에디션 10, 5카 기프트팩","cg":"차종류"},"3467452075333":{"sz":"10*3.5*15.5","wt":"57g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 캐스트헤드 로드 레이서","cg":"차종류"},"3467452075357":{"sz":"10.5*4*15.5","wt":"64g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 프렌치터치 프리미엄 카","cg":"차종류"},"3467452075371":{"sz":"13.5*4*18","wt":"121g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 프렌치터치 디럭스 카","cg":"차종류"},"3467452075388":{"sz":"19*4.5*10.5","wt":"132g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 프렌치터치 트레일러","cg":"차종류"},"3467452075302":{"sz":"30*10*10","wt":"316g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 재팬시리즈 5카 기프트팩","cg":"차종류"},"3467452074701":{"sz":"10.5*3.5*15.5","wt":"52g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 애니버서리 에디션 프리미엄 카","cg":"차종류"},"3467452074688":{"sz":"38*5.5*25","wt":"723g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 리미티드 에디션 10, 9+4 기프트팩","cg":"차종류"},"3467452074664":{"sz":"10.5*4.5*15.5","wt":"74g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 리미티드 에디션 10","cg":"차종류"},"3467452074640":{"sz":"30*10*10","wt":"308g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 도요타 레이싱 5카 기프트팩","cg":"차종류"},"3467452074824":{"sz":"30*10*10","wt":"325g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 SWAT 5팩 기프트세트","cg":"차종류"},"3467452070574":{"sz":"56*9.5*35","wt":"1556g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 팜 스테이션 플레이세트+1카","cg":"차종류"},"3467452066355":{"sz":"35*18*19.5","wt":"801g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 포르쉐 911 경찰차 캐리케이스","cg":"차종류"},"8809701666285":{"sz":"26*17*30","wt":"1151g","oc":"중국","kc":"CB067R2192-4001","nm":"겨울왕국 멀티 화장대 놀이세트","cg":"기타역할놀이완구"},"8809701666292":{"sz":"26*17*30","wt":"1266g","oc":"중국","kc":"CB067R2192-4001","nm":"겨울왕국 멀티 주방놀이세트","cg":"기타역할놀이완구"},"8809701666308":{"sz":"26*17*30","wt":"1219g","oc":"중국","kc":"CB067R2192-4001","nm":"에일리언 멀티 주방놀이세트","cg":"기타역할놀이완구"},"8809701666254":{"sz":"37*9.5*51","wt":"1500g","oc":"중국","kc":"CB067R2192-4001","nm":"겨울왕국 반짝반짝 화장대 놀이","cg":"기타역할놀이완구"},"8809701666261":{"sz":"51.5*10.5*62","wt":"2390g","oc":"중국","kc":"CB067R2192-4001","nm":"겨울왕국 지글지글 주방놀이","cg":"기타역할놀이완구"},"8809701666278":{"sz":"26*17*30","wt":"1215g","oc":"중국","kc":"CB067R2192-4001","nm":"미키 멀티 병원놀이 세트","cg":"기타역할놀이완구"},"817338027315":{"sz":"17*3.8*15","wt":"550g","oc":"중국","kc":"CB067R2122-4001","nm":"피카소 타일 큐브-20","cg":"기타유아동퍼즐"},"817338022396":{"sz":"36*8.7*30","wt":"2350g","oc":"중국","kc":"CB067R2122-4001","nm":"피카소 타일 마그네틱-61","cg":"기타유아동퍼즐"},"817338021962":{"sz":"27*4.5*16","wt":"1250g","oc":"중국","kc":"CB067R2122-4001","nm":"피카소 타일 마그네틱-32","cg":"기타유아동퍼즐"},"817338020002":{"sz":"28*6.3*20","wt":"1130g","oc":"중국","kc":"CB067R2122-4001","nm":"피카소 타일 마그네틱-26","cg":"기타유아동퍼즐"},"817338022778":{"sz":"36*11.9*29","wt":"3160g","oc":"중국","kc":"CB067R2122-4001","nm":"피카소 타일 마블런-100","cg":"기타유아동퍼즐"},"817338028176":{"sz":"38*6.3*29","wt":"2650g","oc":"중국","kc":"CB067R2122-4001","nm":"피카소 타일 마블런-60","cg":"기타유아동퍼즐"},"817338023379":{"sz":"30*8*23","wt":"1160g","oc":"중국","kc":"CB067R2122-4001","nm":"피카소 타일 마블런-40","cg":"기타유아동퍼즐"},"817338023003":{"sz":"31*2.5*25","wt":"1410g","oc":"중국","kc":"CB067R2122-4001","nm":"피카소 타일 미니-101","cg":"기타유아동퍼즐"},"817338022303":{"sz":"27*2.5*21","wt":"910g","oc":"중국","kc":"CB067R2122-4001","nm":"피카소 타일 미니-60","cg":"기타유아동퍼즐"},"817338022402":{"sz":"35*8.5*30","wt":"3260g","oc":"중국","kc":"CB067R2122-4001","nm":"피카소 타일 마그네틱-101","cg":"기타유아동퍼즐"},"8809701666209":{"sz":"25*18.5*30","wt":"1011g","oc":"중국","kc":"CB067R2193-4001","nm":"미니 댄스게임","cg":"기타작동완구"},"817338026943":{"sz":"41*8.5*32","wt":"4550g","oc":"중국","kc":"CB067R2122-4001","nm":"피카소 타일 마그네틱-152","cg":"기타유아동퍼즐"},"8809701666223":{"sz":"62*14*24","wt":"1309g","oc":"중국","kc":"CB067R2170-4001","nm":"대형트럭 시리즈-포크레인","cg":"차종류"},"8809701666230":{"sz":"62*14*21","wt":"1351g","oc":"중국","kc":"CB067R2170-4001","nm":"대형트럭 시리즈-유조차","cg":"차종류"},"8809701666247":{"sz":"62*14*22","wt":"1255g","oc":"중국","kc":"CB067R2170-4001","nm":"대형트럭 시리즈-컨테이너","cg":"차종류"},"3467452069493":{"sz":"10.5*4.5*4.5","wt":"52g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 스포츠카 디스플레이 박스","cg":"차종류"},"8809701667183":{"sz":"14*4*18","wt":"110g","oc":"태국","kc":"CB067R10-722001A","nm":"마조렛 디럭스카 틴케이스","cg":"차종류"},"4006333059247":{"sz":"68*12*24.5","wt":"2146g","oc":"중국","kc":"CB067R757-1001B","nm":"디키 트럭 캐리케이스","cg":"차종류"},"3467452074923":{"sz":"11*4.5*18","wt":"153g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 두바이 폴리스 3팩","cg":"차종류"},"3467452074930":{"sz":"11*3.5*15.5","wt":"55g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 두바이 폴리스 싱글팩","cg":"차종류"},"3467452075258":{"sz":"30*10*10","wt":"330g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 포르쉐 타일랜드 911 에디션 기프트팩","cg":"차종류"},"3467452074916":{"sz":"30*10*10","wt":"292g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 두바이 폴리스 5팩 기프트세트","cg":"차종류"},"3467452074893":{"sz":"14*4*18","wt":"105g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 두바이 폴리스 슈처 카 디럭스 팩","cg":"차종류"},"3467452071755":{"sz":"10.5*6*10.5","wt":"126g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 튠업시리즈 3","cg":"차종류"},"8809701666407":{"sz":"16*7*7","wt":"150g","oc":"중국","kc":"CB067R480-1003A","nm":"RMZ 1:36 마세라티 레반테","cg":"기타 유아/어린이완구"},"3467452073322":{"sz":"41*10*36.5","wt":"850g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 머스크 화물선 세트","cg":"기타 유아/어린이완구"},"8809701666414":{"sz":"16*7*7","wt":"138g","oc":"중국","kc":"CB067R480-1003A","nm":"RMZ 1:36 포르쉐 마칸S","cg":"기타 유아/어린이완구"},"8809701666445":{"sz":"16*7*7","wt":"142g","oc":"중국","kc":"CB067R480-1003A","nm":"RMZ 1:36 포르쉐 911 터보 3.3 1978","cg":"기타 유아/어린이완구"},"8809701666421":{"sz":"16*7*7","wt":"158g","oc":"중국","kc":"CB067R480-1003A","nm":"RMZ 1:36 아우디 콰트로 1980","cg":"기타 유아/어린이완구"},"8809701666438":{"sz":"16*7*7","wt":"153g","oc":"중국","kc":"CB067R480-1003A","nm":"RMZ 1:36 BMW M3 1987","cg":"기타 유아/어린이완구"},"194735120925":{"sz":"13*33*6","wt":"230g","oc":"인도네시아","kc":"CB067R1590-3001","nm":"겨울왕국 엘사와 울라프 세트","cg":"마론인형"},"194735124916":{"sz":"23*33*6","wt":"272g","oc":"인도네시아","kc":"CB067R1590-3001","nm":"겨울왕국 엘사 헤어플레이 세트","cg":"마론인형"},"3467452074589":{"sz":"63*10*49","wt":"1351g","oc":"태국","kc":"CB067R1072-2001A","nm":"Majorette 현대 드라이빙 센터+5카","cg":"차종류"},"3467452074572":{"sz":"10.5*10.5*3.5","wt":"46.5g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛  i30 스트리트카 레드","cg":"차종류"},"3467452075401":{"sz":"10.5*10.5*3.5","wt":"55.5g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛  i30 레이싱카 옐로우","cg":"차종류"},"3467452073186":{"sz":"11*4.5*15","wt":"58g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 포르쉐 모토스포츠 프리미엄","cg":"차종류"},"3467452074947":{"sz":"11*4.5*15","wt":"60g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 기아 스팅어 블루","cg":"차종류"},"8809556742929":{"sz":"11*15*4.5","wt":"60g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 기아 스팅어 블루","cg":"차종류"},"3467452071953":{"sz":"30*10*10","wt":"309g","oc":"태국","kc":"CB067R1072-2001A","nm":"마조렛 경찰 기프트 세트","cg":"차종류"}}</script>
@@ -2494,12 +2615,29 @@ function supplyPrice(o){
   }
   return null;
 }
+/* 환율 조회 — fx.list(네이버 고시)에서 통화별 1단위 기준 환율을 얻는다.
+   기존 코드는 fx.rate.usd 를 읽었으나 fx.rate 는 어디에서도 설정되지 않아
+   원가가 항상 null 이 되고 재고DB 평가액으로 폴백되고 있었다. */
+function fxRateOf(k){
+  if(fx.status!=='ok'||!fx.list||!fx.list.length)return null;
+  if(fx.rate&&fx.rate[k])return fx.rate[k];
+  for(var i=0;i<fx.list.length;i++){
+    var x=fx.list[i];
+    if(x.k!==k||!x.price)continue;
+    /* unit 은 숫자가 아니라 '' 또는 '(100엔)' 형태의 문자열이다.
+       그대로 나누면 NaN 이 되므로 숫자만 뽑아 쓴다. */
+    var u=parseFloat(String(x.unit==null?'':x.unit).replace(/[^0-9.]/g,''));
+    if(!isFinite(u)||u<=0)u=1;
+    return x.price/u;
+  }
+  return null;
+}
 /* 원가 = 오더 매입단가(USD) × 환율. 없으면 재고/발주 DB의 재고단가 */
 function costInfo(o){
   var od=ordAttr(o.bc)||{};
   var usd=od.price?parseFloat(String(od.price).replace(/[^0-9.]/g,'')):null;
   if(usd&&isFinite(usd)&&usd>0){
-    var rate=(fx.status==='ok'&&fx.rate&&fx.rate.usd)?fx.rate.usd:null;
+    var rate=fxRateOf('usd');
     return {usd:usd,krw:rate?Math.round(usd*rate):null,rate:rate,
       src:'오더 '+(od.priceY||'')+(od.priceOd?' '+od.priceOd:''),kind:'order'};
   }
@@ -4448,8 +4586,774 @@ document.addEventListener('click',function(e){
   });
 })();
 
+
+/* =========================================================
+   갈슨(Garson) — 규칙 기반 사내 데이터 조회 챗봇
+   외부 API·서버 없음. 포털이 이미 로드한 데이터만 사용한다.
+   재사용: ms.list / exOf / stockOf / liveStockOf / ordAttr /
+          costInfo / catDetail / knOf / cert / rows() / hy.db
+   ========================================================= */
+
+var bot = { msgs:[], inited:false };
+
+/* ---------- 표현 유틸 ---------- */
+function bNum(n){ n=Number(n); return isFinite(n)?Math.round(n).toLocaleString():'—'; }
+function bWon(n){ return (n==null||!isFinite(Number(n)))?'—':Math.round(Number(n)).toLocaleString()+'원'; }
+function bPct(n){ return (n==null||!isFinite(n))?'—':(n>0?'+':'')+n.toFixed(1)+'%'; }
+
+/* ---------- 개체 추출 ---------- */
+var BOT_STOP = ('알려 보여 찾아 검색 해줘 하고 좀 뭐야 뭐 뭔지 어떻게 어때 어떤 어느 있어 있나 있는 없는 인가 이거 그거 저거 정보 현황 상태 확인 줘 얼마 개나 대해 대한 관련 지금 현재 전체 모두 목록 리스트 그리고 그럼 것 거 더 진짜 다시 한번 부탁 됐어 됐나 되나 되었 인지 볼까 보자 줄래 줘야 알고 싶어 싶다 궁금 확인해 체크 조회 정리 뽑아 골라 추천 어디 언제 누가 왜 및 등 중 내 이내 까지 부터 요약 비교 계산 건수 몇 올해 작년 내년 이번 다음 지난 저번 그런 이런'
+).split(/\s+/);
+
+/* 의도 키워드는 검색어가 아니다 — BOT_RULES 에서 자동 수집해 토큰에서 제거한다.
+   이 처리가 없으면 "마조렛 카톤 규격"의 '카톤'·'규격'이 상품명 검색어로 섞여
+   AND 조건을 만족하는 상품이 없어져 "찾지 못했습니다"가 된다. */
+var _botKw=null;
+function botKeywords(){
+  if(_botKw) return _botKw;
+  var s={};
+  BOT_RULES.forEach(function(r){ r.w.forEach(function(p){ s[p[0]]=1; }); });
+  ['예정','목록','리스트','개월','종','건','개'].forEach(function(w){ s[w]=1; });
+  _botKw=s; return s;
+}
+/* 조사·어미가 붙은 형태까지 걸러낸다 ('재고는' '마진율' '얼마야') */
+function botIsNoise(t){
+  var kw=botKeywords();
+  if(kw[t]) return true;
+  if(BOT_STOP.indexOf(t)!==-1) return true;
+  var k;
+  for(k in kw){ if(k.length>=2 && t.indexOf(k)===0 && t.length-k.length<=3) return true; }
+  for(var i=0;i<BOT_STOP.length;i++){
+    var s2=BOT_STOP[i];
+    if(s2.length>=2 && t.indexOf(s2)===0 && t.length-s2.length<=2) return true;
+  }
+  return false;
+}
+
+function botBrandList(){
+  if(bot._brands) return bot._brands;
+  var set={};
+  (ms.list||[]).forEach(function(o){ var b=normBrand(o.br); if(b&&b!=='기타') set[b]=1; });
+  if(hy.status==='ok'&&hy.db) Object.keys(hy.db.items).forEach(function(c){
+    var b=normBrand(hy.db.items[c].brand); if(b&&b!=='기타') set[b]=1;
+  });
+  bot._brands = Object.keys(set);
+  return bot._brands;
+}
+
+/* 질문에서 브랜드를 찾는다 — 별칭(펀코→FUNKO)도 인식 */
+function botFindBrand(raw){
+  var q = raw.replace(/\s+/g,'');
+  for(var i=0;i<BRAND_ALIAS.length;i++){
+    var src = BRAND_ALIAS[i][0].source.replace(/^\^\(|\)$/g,'').split('|');
+    for(var j=0;j<src.length;j++){
+      var w = src[j];
+      if(w.length>=2 && q.toLowerCase().indexOf(w.toLowerCase())!==-1) return BRAND_ALIAS[i][1];
+    }
+  }
+  var bl = botBrandList();
+  for(var k=0;k<bl.length;k++){
+    if(bl[k].length>=2 && q.toLowerCase().indexOf(bl[k].toLowerCase().replace(/\s+/g,''))!==-1) return bl[k];
+  }
+  return '';
+}
+
+/* 기간 표현 → YYYY-MM */
+function botFindYM(q){
+  if(/(이번\s*달|이번달|금월|이달)/.test(q)) return nowYM();
+  if(/(지난\s*달|지난달|전월|저번\s*달)/.test(q)) return prevYM();
+  if(/(다음\s*달|다음달|내달|차월|담달)/.test(q)) return nextYM();
+  var m = q.match(/(20\d{2})\s*[년\-./]\s*(\d{1,2})\s*월?/);
+  if(m) return m[1]+'-'+String(m[2]).padStart(2,'0');
+  m = q.match(/(^|[^0-9])(\d{1,2})\s*월/);
+  if(m){
+    var mo=parseInt(m[2],10);
+    if(mo>=1&&mo<=12) return String(new Date().getFullYear())+'-'+String(mo).padStart(2,'0');
+  }
+  return '';
+}
+
+function botExtract(raw){
+  var q = String(raw||'');
+  var lq = q.toLowerCase();
+  var e = { raw:q, lq:lq, bc:'', code:'', brand:'', ym:'', months:0, topN:0, tokens:[] };
+
+  var mb = q.match(/\b(\d{8,14})\b/);
+  if(mb) e.bc = mb[1];
+  var mc = q.match(/\b([A-Za-z]{2,}[-]?\d{4,}[A-Za-z0-9]*|\d{6,}[A-Za-z]\w*)\b/);
+  if(mc && mc[1]!==e.bc) e.code = mc[1];
+
+  e.brand = botFindBrand(q);
+  e.ym = botFindYM(q);
+
+  var mm = q.match(/(\d{1,2})\s*개?\s*월/);
+  if(mm && !/^\d{1,2}월$/.test(mm[0].replace(/\s/g,''))) e.months = parseInt(mm[1],10);
+  if(/반\s*년/.test(q)) e.months = 6;
+
+  var mt = q.match(/(?:top|상위|상위권)\s*(\d{1,3})|(\d{1,3})\s*(?:개|건|종)\s*(?:만|정도)?/i);
+  if(mt) e.topN = parseInt(mt[1]||mt[2],10);
+
+  /* 검색 토큰 — 브랜드명·숫자·불용어 제거 후 남은 의미 단어 */
+  var strip = q;
+  if(e.bc) strip = strip.replace(e.bc,' ');
+  if(e.code) strip = strip.replace(e.code,' ');
+  strip = strip.replace(/[?!.,·\/]/g,' ');
+  strip.split(/\s+/).forEach(function(t){
+    t = t.trim().toLowerCase();
+    if(t.length<2) return;
+    if(/^\d+$/.test(t)) return;
+    if(botIsNoise(t)) return;
+    e.tokens.push(t);
+  });
+  return e;
+}
+
+/* ---------- 의도 분류 (가중 점수) ---------- */
+var BOT_RULES = [
+  {k:'kc',      w:[['kc',4],['케이씨',4],['인증',3],['만료',4],['유효기간',4],['임박',3],['신고번호',3],['성적서',2]]},
+  {k:'cost',    w:[['원가',4],['매입',3],['마진',4],['이익',3],['수익',2],['매입단가',4],['코스트',3],['남는',2]]},
+  {k:'inbound', w:[['입고',4],['지연',4],['도착',3],['eta',3],['etd',3],['선적',3],['통관',3],['발주',2],['오더',2],['예정',2],['생산중',3],['이월',3]]},
+  {k:'stock',   w:[['재고',4],['품절',4],['소진',3],['수량',2],['커버',3],['발주필요',4],['품절위험',4],['과잉',3],['무재고',4],['악성',2]]},
+  {k:'analysis',w:[['분석',3],['추이',3],['대비',3],['top',4],['상위',4],['순위',4],['랭킹',4],['합계',3],['총액',3],['많은',2],['제일',2],['가장',2],['비중',3]]},
+  {k:'product', w:[['상품',2],['사이즈',4],['규격',4],['카톤',4],['체적',4],['이미지',3],['사진',3],['스펙',4],['바코드',3],['무게',3],['입수',3],['제조국',3],['판매가',3],['소비자가',3]]}
+];
+
+function botClassify(e){
+  var best={k:'',s:0};
+  BOT_RULES.forEach(function(r){
+    var s=0;
+    r.w.forEach(function(p){ if(e.lq.indexOf(p[0])!==-1) s+=p[1]; });
+    if(s>best.s) best={k:r.k,s:s};
+  });
+  if(best.s===0){
+    /* 키워드가 없으면: 바코드·코드·상품명 토큰이 있으면 상품 조회 */
+    if(e.bc||e.code||e.tokens.length) return 'product';
+    return 'help';
+  }
+  return best.k;
+}
+
+/* 아직 로딩 중인 데이터가 있으면 알려준다 —
+   "못 찾았다"와 "아직 안 불러왔다"를 구분하지 못하면 사용자가 오판한다. */
+function botPending(){
+  var p=[];
+  if(ms.status!=='ok') p.push('상품마스터');
+  if(hy.status!=='ok') p.push('재고/발주 DB');
+  if(cert.status!=='ok') p.push('KC 인증서');
+  var loaded=YEARS.filter(function(y){return state.data[y]}).length;
+  if(loaded<YEARS.length) p.push('오더 '+loaded+'/'+YEARS.length+'개년');
+  return p;
+}
+function botPendNote(){
+  var p=botPending();
+  return p.length
+    ? '<span class="bNote">아직 불러오는 중: '+esc(p.join(', '))+'. 잠시 후 다시 물어보면 결과가 늘어날 수 있습니다.</span>'
+    : '';
+}
+
+/* ---------- 상품 검색 ---------- */
+/* 상품 검색 — 완전일치가 있으면 그것만, 없으면 '가장 많이 맞은' 후보를 돌려준다.
+   질문에 잡음이 섞여도(예: "재고 얼마야") 상품을 놓치지 않게 하기 위한 것. */
+function botFind(e, limit){
+  limit = limit||300;
+  if(ms.status!=='ok') return [];
+
+  if(e.bc){
+    var nb=normBc(e.bc);
+    for(var i=0;i<ms.list.length;i++){
+      if(normBc(ms.list[i].bc)===nb) return [ms.list[i]];
+    }
+  }
+  var codeU = e.code?e.code.toUpperCase().replace(/[^A-Z0-9]/g,''):'';
+  var toks  = e.tokens;
+  var cand  = [];
+
+  for(var j=0;j<ms.list.length;j++){
+    var o=ms.list[j];
+    if(e.brand && normBrand(o.br)!==e.brand) continue;
+    var od=ordAttr(o.bc)||{};
+    var sc=0, hits=0;
+
+    if(codeU){
+      var pool=[o.no,od.item,od.code].filter(Boolean)
+        .map(function(x){return String(x).toUpperCase().replace(/[^A-Z0-9]/g,'')});
+      for(var p=0;p<pool.length;p++){
+        if(!pool[p]) continue;
+        if(pool[p]===codeU){ sc=200; break; }
+        if(pool[p].indexOf(codeU)===0||codeU.indexOf(pool[p])===0){ if(sc<100) sc=100; }
+      }
+    }
+    if(toks.length){
+      var hay=[o.name,o.no,o.bc,o.br,od.item,od.code,od.name,od.desc]
+        .filter(Boolean).join(' ').toLowerCase();
+      for(var t=0;t<toks.length;t++){ if(hay.indexOf(toks[t])!==-1) hits++; }
+    }
+    if(sc===0 && hits===0){
+      /* 브랜드만 지정된 질문은 그 브랜드 전체가 후보 */
+      if(e.brand && !toks.length && !codeU) cand.push({o:o,sc:0,hits:0});
+      continue;
+    }
+    cand.push({o:o,sc:sc,hits:hits});
+  }
+  if(!cand.length) return [];
+  if(!toks.length && !codeU) return cand.slice(0,limit).map(function(x){return x.o});
+
+  var maxSc=0;
+  cand.forEach(function(x){ if(x.sc>maxSc) maxSc=x.sc; });
+  var pool2=cand.filter(function(x){ return x.sc===maxSc; });
+  var maxHits=0;
+  pool2.forEach(function(x){ if(x.hits>maxHits) maxHits=x.hits; });
+  if(maxSc===0 && maxHits===0) return [];
+  return pool2.filter(function(x){ return x.hits===maxHits; }).slice(0,limit)
+              .map(function(x){ return x.o; });
+}
+
+function botQty(o){
+  var lv=liveStockOf(o), s=stockOf(o);
+  if(lv) return {q:lv.q, src:'실시간'};
+  if(s) return {q:s.it.cur||0, src:'재고DB'};
+  return null;
+}
+
+/* ---------- 렌더 조각 ---------- */
+function botCard(o){
+  var ids=imgList(exOf(o));
+  var img = ids.length
+    ? '<img src="'+driveThumb(ids[0],160)+'" alt="" loading="lazy" onerror="if(!this.dataset.f){this.dataset.f=1;this.src=\''+driveThumbAlt(ids[0],160)+'\'}">'
+    : '<div class="bcNo">'+icon('image-off')+'</div>';
+  var qt=botQty(o), od=ordAttr(o.bc)||{};
+  var me=[];
+  me.push('<span>'+esc(normBrand(o.br))+'</span>');
+  if(od.item) me.push('<span>'+esc(od.item)+'</span>');
+  if(qt) me.push('<span>재고 <b>'+bNum(qt.q)+'</b></span>');
+  return '<div class="bCard" data-bopen="'+esc(normBc(o.bc)||'')+'">'+img
+    +'<div class="bcT"><div class="bcNm">'+esc(o.name||'(상품명 없음)')+'</div>'
+    +'<div class="bcMe">'+me.join('')+'</div></div></div>';
+}
+
+function botList(arr, limit){
+  limit=limit||6;
+  return arr.slice(0,limit).map(botCard).join('')
+    + (arr.length>limit ? '<span class="bNote">그 외 '+(arr.length-limit)+'건이 더 있습니다. 브랜드나 상품명을 더 좁혀서 물어보세요.</span>' : '');
+}
+
+function botChips(list){
+  return '<div class="bChips">'+list.map(function(t){
+    return '<button class="bChip" data-bq="'+esc(t)+'">'+esc(t)+'</button>';
+  }).join('')+'</div>';
+}
+
+/* ---------- 답변: 상품 ---------- */
+function botAnsProduct(e){
+  if(ms.status!=='ok') return '상품마스터를 아직 불러오는 중입니다. 잠시 후 다시 물어봐 주세요.';
+  /* 오더에만 있는 상품(영업DB 미등록)도 찾히도록 3개년을 미리 로드한다 */
+  ensureAllYears();
+  var hit=botFind(e);
+  if(!hit.length){
+    return '<span class="bLead">찾지 못했습니다</span>바코드·ITEM#·상품명 중 하나로 다시 알려주시면 찾아보겠습니다.'
+      + botPendNote()
+      + botChips(['마조렛 미니 프리미엄카','FUNKO 상품 목록','3467452081877']);
+  }
+  if(hit.length>1){
+    return '<span class="bLead">'+hit.length+'건을 찾았습니다</span>'+botList(hit);
+  }
+  var o=hit[0], ex=exOf(o), od=ordAttr(o.bc)||{}, cd=catDetail(o)||{}, kn=knOf(o.bc)||{};
+  var qt=botQty(o), ci=costInfo(o), s=stockOf(o);
+  var ct=certOf(o.kcno||od.kcno||kn.kc||cd.kc, od.kcname);
+
+  var rows=[];
+  var add=function(k,v){ if(v!==''&&v!=null) rows.push('<dt>'+k+'</dt><dd>'+v+'</dd>'); };
+  add('브랜드', esc(normBrand(o.br)));
+  add('바코드', esc(displayBc(o.bc,o.br)||'—'));
+  if(od.item) add('ITEM#', esc(od.item));
+  if(o.no) add('품번', esc(o.no));
+  if(o.rrp) add('소비자가', bWon(String(o.rrp).replace(/[^0-9.]/g,'')));
+  if(cd.sp) add('판매가', bWon(String(cd.sp).replace(/[^0-9.]/g,'')));
+  if(ci) add('원가', bWon(ci.krw)+(ci.usd?' <span style="color:var(--ink-3);font-weight:400">($'+ci.usd+')</span>':''));
+  if(qt) add('재고', bNum(qt.q)+'개 <span style="color:var(--ink-3);font-weight:400">'+qt.src+'</span>');
+  if(s&&s.it.cls) add('재고상태', esc(s.it.cls));
+  var sz=kn.sz||cd.sz; if(sz) add('사이즈', esc(sz));
+  var wt=kn.wt||cd.wt; if(wt) add('무게', esc(wt));
+  var pk=o.pack||od.pack||cd.ct; if(pk) add('입수', esc(pk)+'개');
+  if(ex&&(ex.cw||ex.cl||ex.ch)){
+    add('카톤', esc([ex.cw,ex.cl,ex.ch].filter(Boolean).join(' × '))+' cm'+(ex.cbm?' · CBM '+esc(ex.cbm):''));
+  }
+  var oc=kn.oc||cd.oc; if(oc) add('제조국', esc(oc));
+  if(cd.ag) add('권장연령', esc(cd.ag));
+  var kcno=od.kcno||kn.kc||cd.kc||o.kcno; if(kcno) add('KC 번호', esc(kcno));
+  if(ct&&ct._exp) add('KC 유효기간', fmtD(ct._exp)+' <span style="color:'+(ct._st==='expired'?'var(--red)':(ct._st==='soon'?'var(--amber-tx)':'var(--ink-3)'))+';font-weight:700">'+CERT_ST[ct._st].label+'</span>');
+
+  var miss=[];
+  if(!sz) miss.push('사이즈');
+  if(!(ex&&(ex.cw||ex.cl||ex.ch))) miss.push('카톤 치수');
+  if(!kcno) miss.push('KC 번호');
+
+  return '<span class="bLead">'+esc(o.name||'(상품명 없음)')+'</span>'
+    + botCard(o)
+    + '<dl class="bDl">'+rows.join('')+'</dl>'
+    + (miss.length?'<span class="bNote">미등록 항목: '+esc(miss.join(', '))+'</span>':'')
+    + '<span class="bNote">카드를 누르면 상세 패널이 열립니다.</span>';
+}
+
+/* ---------- 답변: 재고 ---------- */
+function botAnsStock(e){
+  if(hy.status!=='ok'&&rt.status!=='ok') return '재고 데이터를 아직 불러오는 중입니다. 잠시 후 다시 물어봐 주세요.'+botPendNote();
+
+  /* 분류 지정형 — 품절위험 / 발주필요 등 */
+  var clsMap=[['품절위험','품절위험'],['발주필요','발주필요'],['무재고','무재고'],['과잉','과잉/악성'],['악성','과잉/악성'],['단종','단종소진중'],['신규','신규']];
+  var wantCls='';
+  for(var c=0;c<clsMap.length;c++){ if(e.lq.indexOf(clsMap[c][0])!==-1){ wantCls=clsMap[c][1]; break; } }
+
+  if(wantCls && hy.status==='ok'){
+    var items=[];
+    Object.keys(hy.db.items).forEach(function(code){
+      var it=hy.db.items[code];
+      if((it.cls||'')!==wantCls) return;
+      if(e.brand && normBrand(it.brand)!==e.brand) return;
+      items.push({code:code,it:it});
+    });
+    items.sort(function(a,b){ return (b.it.amt||0)-(a.it.amt||0); });
+    if(!items.length) return '<span class="bLead">'+esc(wantCls)+' 품목이 없습니다</span>'+(e.brand?esc(e.brand)+' 기준으로 해당 분류에 든 품목이 없습니다.':'해당 분류에 든 품목이 없습니다.');
+    var n=e.topN||10;
+    var tot=items.reduce(function(s,x){return s+(x.it.amt||0)},0);
+    var h='<span class="bLead">'+esc(wantCls)+' '+items.length+'종'+(e.brand?' · '+esc(e.brand):'')+'</span>'
+      +'재고금액 합계 <b>'+fmtKR(tot)+'</b>'
+      +'<table class="bTbl"><thead><tr><th>품목</th><th class="num">현재고</th><th class="num">커버일</th><th class="num">권장발주</th></tr></thead><tbody>';
+    items.slice(0,n).forEach(function(x){
+      h+='<tr><td>'+esc(String(x.it.name||x.code).slice(0,26))+'</td>'
+        +'<td class="num">'+bNum(x.it.cur||0)+'</td>'
+        +'<td class="num">'+(x.it.days!=null?bNum(x.it.days)+'일':'—')+'</td>'
+        +'<td class="num">'+(x.it.rec?bNum(x.it.rec):'—')+'</td></tr>';
+    });
+    h+='</tbody></table>';
+    if(items.length>n) h+='<span class="bNote">상위 '+n+'건만 표시했습니다 (재고금액 순). 재고 화면에서 전체를 볼 수 있습니다.</span>';
+    return h;
+  }
+
+  /* 특정 상품 */
+  var hit=botFind(e);
+  if(hit.length===1){
+    var o=hit[0], qt=botQty(o), s=stockOf(o), lv=liveStockOf(o);
+    var rows=[];
+    if(lv) rows.push('<dt>실시간 재고</dt><dd>'+bNum(lv.q)+'개</dd>');
+    if(s){
+      rows.push('<dt>재고DB 현재고</dt><dd>'+bNum(s.it.cur||0)+'개</dd>');
+      if(s.it.cls) rows.push('<dt>분류</dt><dd>'+esc(s.it.cls)+'</dd>');
+      if(s.it.inc) rows.push('<dt>입고예정</dt><dd>'+bNum(s.it.inc)+'개</dd>');
+      if(s.it.adps) rows.push('<dt>일평균 판매</dt><dd>'+s.it.adps+'개</dd>');
+      if(s.it.days!=null) rows.push('<dt>재고 커버일</dt><dd>'+bNum(s.it.days)+'일</dd>');
+      if(s.it.rec) rows.push('<dt>권장 발주</dt><dd>'+bNum(s.it.rec)+'개</dd>');
+      if(s.it.amt) rows.push('<dt>재고금액</dt><dd>'+fmtKR(s.it.amt)+'</dd>');
+    }
+    if(!rows.length) return '<span class="bLead">'+esc(o.name)+'</span>재고 데이터에서 이 상품을 찾지 못했습니다. 품번 매칭이 안 되는 상품일 수 있습니다.';
+    return '<span class="bLead">'+esc(o.name)+'</span>'+botCard(o)+'<dl class="bDl">'+rows.join('')+'</dl>';
+  }
+  if(hit.length>1 && !e.brand){
+    return '<span class="bLead">'+hit.length+'건이 검색됩니다</span>어느 상품인지 골라주세요.'+botList(hit);
+  }
+
+  /* 브랜드 요약 */
+  if(e.brand && hy.status==='ok'){
+    var agg={cnt:0,qty:0,amt:0,need:0,risk:0};
+    var top=[];
+    Object.keys(hy.db.items).forEach(function(code){
+      var it=hy.db.items[code];
+      if(normBrand(it.brand)!==e.brand) return;
+      agg.cnt++; agg.qty+=(it.cur||0); agg.amt+=(it.amt||0);
+      if(it.cls==='발주필요') agg.need++;
+      if(it.cls==='품절위험') agg.risk++;
+      top.push({code:code,it:it});
+    });
+    if(!agg.cnt) return esc(e.brand)+' 재고 데이터를 찾지 못했습니다.';
+    top.sort(function(a,b){return (b.it.cur||0)-(a.it.cur||0)});
+    var h2='<span class="bLead">'+esc(e.brand)+' 재고 요약</span>'
+      +'<dl class="bDl"><dt>품목 수</dt><dd>'+bNum(agg.cnt)+'종</dd>'
+      +'<dt>재고 수량</dt><dd>'+bNum(agg.qty)+'개</dd>'
+      +'<dt>재고금액</dt><dd>'+fmtKR(agg.amt)+'</dd>'
+      +'<dt>발주필요</dt><dd>'+agg.need+'종</dd>'
+      +'<dt>품절위험</dt><dd>'+agg.risk+'종</dd></dl>'
+      +'<table class="bTbl"><thead><tr><th>재고 많은 품목</th><th class="num">현재고</th></tr></thead><tbody>';
+    top.slice(0,5).forEach(function(x){
+      h2+='<tr><td>'+esc(String(x.it.name||x.code).slice(0,26))+'</td><td class="num">'+bNum(x.it.cur||0)+'</td></tr>';
+    });
+    return h2+'</tbody></table>';
+  }
+
+  /* 전체 요약 */
+  if(hy.status==='ok'&&hy.agg){
+    var a=hy.agg;
+    return '<span class="bLead">전체 재고 요약</span>'
+      +'<dl class="bDl"><dt>운영 품목</dt><dd>'+bNum(a.activeCnt)+'종</dd>'
+      +'<dt>단종소진중</dt><dd>'+bNum(a.eolCnt)+'종</dd>'
+      +'<dt>재고금액</dt><dd>'+fmtKR(a.stockAmt)+'</dd>'
+      +'<dt>발주필요</dt><dd>'+bNum(a.cls['발주필요']||0)+'종</dd>'
+      +'<dt>품절위험</dt><dd>'+bNum(a.cls['품절위험']||0)+'종</dd></dl>'
+      +botChips(['발주필요 목록','품절위험 상위 10개','마조렛 재고']);
+  }
+  return '재고 요약을 만들 수 없습니다.';
+}
+
+/* ---------- 답변: 입고·오더 ---------- */
+function botAnsInbound(e){
+  ensureAllYears();
+  var all=[];
+  YEARS.forEach(function(y){
+    (state.data[y]||[]).forEach(function(r){ r._sy=r._sy||y; all.push(r); });
+  });
+  if(!all.length) return '오더 데이터를 불러오는 중입니다. 잠시 후 다시 물어봐 주세요.';
+
+  var wantDelay = /지연/.test(e.lq);
+  var wantCarry = /이월/.test(e.lq);
+  var ym = e.ym;
+  if(!ym && /(이번|금월|이달)/.test(e.lq)) ym=nowYM();
+
+  var list=all.filter(function(r){
+    if(e.brand && normBrand(r.br)!==e.brand) return false;
+    if(e.bc && normBc(r.bc)!==normBc(e.bc)) return false;
+    if(wantDelay) return isDelayed(r);
+    if(wantCarry) return isCarry(r);
+    if(ym) return parseYM(r.im)===ym && !r.ind;
+    return !r.ind;
+  });
+  /* 상품명 토큰은 '가장 많이 맞은 건'만 남기는 방식으로 좁힌다.
+     전부 일치를 요구하면 질문의 잡음 단어 때문에 결과가 0건이 된다. */
+  if(e.tokens.length && list.length){
+    var sc=list.map(function(r){
+      var hay=[r.name,r.desc,r.item,r.code,r.bc].filter(Boolean).join(' ').toLowerCase();
+      var h=0;
+      for(var t=0;t<e.tokens.length;t++){ if(hay.indexOf(e.tokens[t])!==-1) h++; }
+      return {r:r,h:h};
+    });
+    var mx=0; sc.forEach(function(x){ if(x.h>mx) mx=x.h; });
+    if(mx>0) list=sc.filter(function(x){ return x.h===mx; }).map(function(x){ return x.r; });
+  }
+
+  var label = wantDelay?'지연 오더':(wantCarry?'이월 오더':(ym?fmtYM(ym)+' 입고 예정':'미입고 오더'));
+  if(!list.length) return '<span class="bLead">'+esc(label)+' 없음</span>'+(e.brand?esc(e.brand)+' 기준 해당 건이 없습니다.':'해당 조건의 건이 없습니다.');
+
+  list.sort(function(a,b){ return String(a.im||'zz').localeCompare(String(b.im||'zz')); });
+  var qty=list.reduce(function(s,r){return s+amtNum(r.qty)},0);
+  var amt=list.reduce(function(s,r){return s+amtNum(r.amt)},0);
+  var n=e.topN||10;
+
+  var h='<span class="bLead">'+esc(label)+' '+list.length+'건'+(e.brand?' · '+esc(e.brand):'')+'</span>'
+    +'수량 <b>'+bNum(qty)+'</b>개 · 금액 <b>'+fmtUSD(amt)+'</b>'
+    +'<table class="bTbl"><thead><tr><th>상품</th><th>입고월</th><th class="num">수량</th><th>상태</th></tr></thead><tbody>';
+  list.slice(0,n).forEach(function(r){
+    var st=isDelayed(r)?'지연':(isCarry(r)?'이월':(ST[statusOf(r)]?ST[statusOf(r)].label:''));
+    h+='<tr><td>'+esc(String(r.name||r.desc||r.item||'—').slice(0,24))+'</td>'
+      +'<td>'+esc(r.im||'—')+'</td>'
+      +'<td class="num">'+bNum(amtNum(r.qty))+'</td>'
+      +'<td>'+esc(st)+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  if(list.length>n) h+='<span class="bNote">'+n+'건만 표시했습니다. 브랜드를 지정하면 더 좁혀집니다.</span>';
+  return h;
+}
+
+/* ---------- 답변: KC ---------- */
+function botAnsKc(e){
+  if(cert.status!=='ok') return 'KC 인증서 데이터를 불러오는 중입니다. 잠시 후 다시 물어봐 주세요.';
+
+  /* 특정 상품의 KC — 먼저 상품을 찾아보고, 못 찾으면 만료 목록으로 넘어간다 */
+  var askList = /만료|임박|유효기간|expire/i.test(e.lq) && !e.bc && !e.code;
+  if(e.bc||e.code||e.tokens.length||e.brand){
+    var hit=(e.bc||e.code||e.tokens.length)?botFind(e):[];
+    if(hit.length===1 && !(askList&&!e.tokens.length)){
+      var o=hit[0], od=ordAttr(o.bc)||{}, kn=knOf(o.bc)||{}, cd=catDetail(o)||{};
+      var kcno=od.kcno||kn.kc||cd.kc||o.kcno||'';
+      var ct=certOf(kcno, od.kcname);
+      if(!kcno&&!ct) return '<span class="bLead">'+esc(o.name)+'</span>KC 번호가 등록되어 있지 않습니다.'+botCard(o);
+      var rows=[];
+      if(kcno) rows.push('<dt>KC 번호</dt><dd>'+esc(kcno)+'</dd>');
+      if(od.kcname) rows.push('<dt>인증명</dt><dd>'+esc(od.kcname)+'</dd>');
+      if(ct){
+        if(ct.series) rows.push('<dt>시리즈</dt><dd>'+esc(ct.series)+'</dd>');
+        if(ct.maker) rows.push('<dt>업체명</dt><dd>'+esc(ct.maker)+'</dd>');
+        if(ct._iss) rows.push('<dt>발급일</dt><dd>'+fmtD(ct._iss)+'</dd>');
+        if(ct._exp) rows.push('<dt>유효기간</dt><dd>'+fmtD(ct._exp)+'</dd>');
+        rows.push('<dt>상태</dt><dd>'+CERT_ST[ct._st].label+(ct._dday!=null?' ('+ddayTx(ct)+')':'')+'</dd>');
+      }
+      return '<span class="bLead">'+esc(o.name)+' KC 현황</span>'+botCard(o)+'<dl class="bDl">'+rows.join('')+'</dl>'
+        + (!ct?'<span class="bWarn">인증서 관리대장에서 이 KC 번호를 찾지 못했습니다. 대장 등록 여부를 확인해 주세요.</span>':'');
+    }
+    if(hit.length>1 && !askList) return '<span class="bLead">'+hit.length+'건이 검색됩니다</span>어느 상품인지 골라주세요.'+botList(hit);
+  }
+
+  /* 만료 임박 목록 */
+  var months = e.months || 3;
+  if(/만료된|만료됐|지난|경과/.test(e.lq)){
+    var exp=cert.list.filter(function(c){ return c._st==='expired'; })
+      .sort(function(a,b){ return b._exp-a._exp; });
+    if(!exp.length) return '만료된 인증서가 없습니다.';
+    var h0='<span class="bLead">이미 만료된 인증서 '+exp.length+'건</span>'
+      +'<table class="bTbl"><thead><tr><th>KC 번호</th><th>시리즈</th><th>만료일</th></tr></thead><tbody>';
+    exp.slice(0,e.topN||12).forEach(function(c){
+      h0+='<tr><td>'+esc(c.kcno)+'</td><td>'+esc(String(c.series||'—').slice(0,18))+'</td><td>'+fmtD(c._exp)+'</td></tr>';
+    });
+    return h0+'</tbody></table>'+(exp.length>(e.topN||12)?'<span class="bNote">'+(e.topN||12)+'건만 표시했습니다.</span>':'');
+  }
+
+  var days = months*30;
+  var soon = cert.list.filter(function(c){ return c._dday!=null && c._dday>=0 && c._dday<=days; })
+    .sort(function(a,b){ return a._dday-b._dday; });
+  if(!soon.length) return '<span class="bLead">'+months+'개월 내 만료 예정 없음</span>해당 기간에 만료되는 인증서가 없습니다.';
+
+  var h='<span class="bLead">'+months+'개월 내 만료 예정 '+soon.length+'건</span>'
+    +'<table class="bTbl"><thead><tr><th>KC 번호</th><th>시리즈</th><th>만료일</th><th class="num">D-day</th></tr></thead><tbody>';
+  soon.slice(0,e.topN||12).forEach(function(c){
+    var col=c._dday<=30?'var(--red)':(c._dday<=60?'var(--amber-tx)':'var(--ink-2)');
+    h+='<tr><td>'+esc(c.kcno)+'</td><td>'+esc(String(c.series||'—').slice(0,18))+'</td>'
+      +'<td>'+fmtD(c._exp)+'</td>'
+      +'<td class="num" style="color:'+col+';font-weight:700">D-'+c._dday+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  if(soon.length>(e.topN||12)) h+='<span class="bNote">임박한 '+(e.topN||12)+'건만 표시했습니다. KC 인증 관리 화면에서 전체를 볼 수 있습니다.</span>';
+  return h;
+}
+
+/* ---------- 답변: 원가·마진 ---------- */
+function botAnsCost(e){
+  var hit=botFind(e);
+  if(hit.length===1){
+    var o=hit[0], ci=costInfo(o), cd=catDetail(o)||{};
+    if(!ci) return '<span class="bLead">'+esc(o.name)+'</span>원가 정보가 없습니다. 오더에 매입단가가 등록되어 있지 않습니다.'+botCard(o);
+    var sp=cd.sp?Number(String(cd.sp).replace(/[^0-9.]/g,'')):null;
+    var rrp=o.rrp?Number(String(o.rrp).replace(/[^0-9.]/g,'')):null;
+    var rows=[];
+    if(ci.krw!=null) rows.push('<dt>원가</dt><dd>'+bWon(ci.krw)+'</dd>');
+    if(ci.usd) rows.push('<dt>매입단가</dt><dd>$'+ci.usd+'</dd>');
+    if(ci.rate) rows.push('<dt>적용환율</dt><dd>'+bNum(ci.rate)+'원</dd>');
+    rows.push('<dt>출처</dt><dd style="font-weight:400;color:var(--ink-2)">'+esc(ci.src)+'</dd>');
+    if(sp) rows.push('<dt>판매가</dt><dd>'+bWon(sp)+'</dd>');
+    /* 원가(원)가 없으면 마진을 계산하지 않는다.
+       null 을 그대로 빼면 마진율이 100%로 나와 완전히 잘못된 숫자가 된다. */
+    if(sp && ci.krw!=null){
+      var m=sp-ci.krw;
+      rows.push('<dt>마진액</dt><dd style="color:'+(m>0?'var(--g700)':'var(--red)')+'">'+bWon(m)+'</dd>');
+      rows.push('<dt>마진율</dt><dd style="color:'+(m>0?'var(--g700)':'var(--red)')+'">'+(m/sp*100).toFixed(1)+'%</dd>');
+    }
+    if(rrp) rows.push('<dt>소비자가</dt><dd>'+bWon(rrp)+'</dd>');
+    var warn='';
+    if(ci.krw==null) warn='<span class="bWarn">환율을 아직 받지 못해 원화 원가를 계산하지 못했습니다. 잠시 후 다시 물어봐 주세요.</span>';
+    else if(!sp) warn='<span class="bNote">판매가가 없어 마진은 계산하지 못했습니다.</span>';
+    else if(ci.kind==='stock') warn='<span class="bNote">오더 매입단가가 없어 재고DB 평가액을 원가로 썼습니다. 실제 매입원가와 차이가 클 수 있습니다.</span>';
+    return '<span class="bLead">'+esc(o.name)+' 원가·마진</span>'+botCard(o)+'<dl class="bDl">'+rows.join('')+'</dl>'+warn;
+  }
+  if(hit.length>1){
+    var arr=hit.slice(0,400).map(function(o){
+      var ci=costInfo(o), cd=catDetail(o)||{};
+      var sp=cd.sp?Number(String(cd.sp).replace(/[^0-9.]/g,'')):null;
+      var mr=(ci&&ci.krw!=null&&sp)?((sp-ci.krw)/sp*100):null;
+      return {o:o,cost:(ci&&ci.krw!=null)?ci.krw:null,sp:sp,mr:mr};
+    }).filter(function(x){return x.cost!=null});
+    if(!arr.length) return '<span class="bLead">원가 정보 없음</span>검색된 '+hit.length+'건 모두 오더에 매입단가가 등록되어 있지 않습니다.';
+    arr.sort(function(a,b){ return (a.mr==null?999:a.mr)-(b.mr==null?999:b.mr); });
+    var h='<span class="bLead">'+(e.brand?esc(e.brand)+' ':'')+'원가·마진 '+arr.length+'건</span>'
+      +'<span class="bNote">마진율 낮은 순'+(hit.length>arr.length?' · 검색 '+hit.length+'건 중 원가가 있는 '+arr.length+'건':'')+'</span>'
+      +'<table class="bTbl"><thead><tr><th>상품</th><th class="num">원가</th><th class="num">판매가</th><th class="num">마진율</th></tr></thead><tbody>';
+    arr.slice(0,e.topN||10).forEach(function(x){
+      h+='<tr><td>'+esc(String(x.o.name||'—').slice(0,22))+'</td>'
+        +'<td class="num">'+bNum(x.cost)+'</td>'
+        +'<td class="num">'+(x.sp?bNum(x.sp):'—')+'</td>'
+        +'<td class="num" style="'+(x.mr!=null&&x.mr<20?'color:var(--red);font-weight:700':'')+'">'+(x.mr!=null?x.mr.toFixed(1)+'%':'—')+'</td></tr>';
+    });
+    return h+'</tbody></table>';
+  }
+  return '<span class="bLead">어느 상품의 원가인가요?</span>바코드·ITEM#·상품명을 알려주시면 원가와 마진을 계산해 드립니다.'
+    + botChips(['3467452081877 원가','마조렛 마진','FUNKO 원가']);
+}
+
+/* ---------- 답변: 분석 ---------- */
+function botAnsAnalysis(e){
+  ensureAllYears();
+  var all=[];
+  YEARS.forEach(function(y){ (state.data[y]||[]).forEach(function(r){ r._sy=r._sy||y; all.push(r); }); });
+  if(!all.length) return '오더 데이터를 불러오는 중입니다. 잠시 후 다시 물어봐 주세요.';
+
+  /* 브랜드별 발주액 */
+  if(/브랜드/.test(e.lq)||(!e.brand&&/(top|상위|순위|랭킹|많은|가장|제일)/i.test(e.lq))){
+    var by={};
+    all.forEach(function(r){
+      if(e.ym && parseYM(r.od||r.im)!==e.ym) return;
+      var b=normBrand(r.br);
+      var o=by[b]=by[b]||{amt:0,qty:0,cnt:0};
+      o.amt+=amtNum(r.amt); o.qty+=amtNum(r.qty); o.cnt++;
+    });
+    var arr=Object.keys(by).map(function(b){return {b:b,v:by[b]}})
+      .filter(function(x){return x.v.amt>0})
+      .sort(function(a,b){return b.v.amt-a.v.amt});
+    if(!arr.length) return '해당 기간 발주 데이터가 없습니다.';
+    var tot=arr.reduce(function(s,x){return s+x.v.amt},0);
+    var h='<span class="bLead">브랜드별 발주액'+(e.ym?' · '+fmtYM(e.ym):' · 3개년 누적')+'</span>'
+      +'합계 <b>'+fmtUSD(tot)+'</b>'
+      +'<table class="bTbl"><thead><tr><th>브랜드</th><th class="num">발주액</th><th class="num">비중</th><th class="num">건수</th></tr></thead><tbody>';
+    arr.slice(0,e.topN||10).forEach(function(x){
+      h+='<tr><td>'+esc(x.b)+'</td><td class="num">'+fmtUSD(x.v.amt)+'</td>'
+        +'<td class="num">'+(x.v.amt/tot*100).toFixed(1)+'%</td>'
+        +'<td class="num">'+x.v.cnt+'</td></tr>';
+    });
+    return h+'</tbody></table>';
+  }
+
+  /* 기간·브랜드 발주 합계 + 전월 대비 */
+  var ym=e.ym||nowYM();
+  var cur=all.filter(function(r){ return parseYM(r.od||r.im)===ym && (!e.brand||normBrand(r.br)===e.brand); });
+  var pd=ym.split('-'); var pdt=new Date(parseInt(pd[0],10),parseInt(pd[1],10)-1,1);
+  pdt.setDate(1); pdt.setMonth(pdt.getMonth()-1);
+  var pym=pdt.getFullYear()+'-'+String(pdt.getMonth()+1).padStart(2,'0');
+  var prev=all.filter(function(r){ return parseYM(r.od||r.im)===pym && (!e.brand||normBrand(r.br)===e.brand); });
+
+  var ca=cur.reduce(function(s,r){return s+amtNum(r.amt)},0);
+  var pa=prev.reduce(function(s,r){return s+amtNum(r.amt)},0);
+  var diff=pa?((ca-pa)/pa*100):null;
+
+  return '<span class="bLead">'+fmtYM(ym)+(e.brand?' · '+esc(e.brand):'')+' 발주 요약</span>'
+    +'<dl class="bDl"><dt>발주 건수</dt><dd>'+cur.length+'건</dd>'
+    +'<dt>수량</dt><dd>'+bNum(cur.reduce(function(s,r){return s+amtNum(r.qty)},0))+'개</dd>'
+    +'<dt>발주액</dt><dd>'+fmtUSD(ca)+'</dd>'
+    +'<dt>'+fmtYM(pym)+'</dt><dd>'+fmtUSD(pa)+'</dd>'
+    +'<dt>전월 대비</dt><dd style="color:'+(diff==null?'var(--ink-3)':(diff>0?'var(--g700)':'var(--red)'))+'">'+(diff==null?'—':bPct(diff))+'</dd></dl>'
+    + botChips(['브랜드별 발주액 TOP 10','지난달 발주','지연 오더']);
+}
+
+/* ---------- 도움말 ---------- */
+function botAnsHelp(){
+  return '<span class="bLead">이런 걸 물어볼 수 있습니다</span>'
+    +'<b>상품</b> — 바코드·ITEM#·상품명으로 사진·사이즈·판매가·원가·재고를 한 번에<br>'
+    +'<b>재고</b> — 브랜드별 요약, 발주필요·품절위험 목록<br>'
+    +'<b>입고</b> — 이번달·다음달 입고 예정, 지연·이월 오더<br>'
+    +'<b>KC</b> — 만료 임박, 만료된 인증서, 상품별 KC 상태<br>'
+    +'<b>원가</b> — 상품 원가·마진율, 브랜드 마진 비교<br>'
+    +'<b>분석</b> — 브랜드별 발주액, 전월 대비'
+    + botPendNote()
+    + botChips(['마조렛 미니 프리미엄카','3개월 내 KC 만료','발주필요 목록','이번달 입고 예정','브랜드별 발주액 TOP 10','지연 오더']);
+}
+
+/* ---------- 라우터 ---------- */
+function botAnswer(q){
+  var e=botExtract(q);
+  var k=botClassify(e);
+  try{
+    switch(k){
+      case 'product':  return botAnsProduct(e);
+      case 'stock':    return botAnsStock(e);
+      case 'inbound':  return botAnsInbound(e);
+      case 'kc':       return botAnsKc(e);
+      case 'cost':     return botAnsCost(e);
+      case 'analysis': return botAnsAnalysis(e);
+      default:         return botAnsHelp();
+    }
+  }catch(err){
+    return '<span class="bLead">답변을 만들지 못했습니다</span>'
+      +'<span class="bWarn">'+esc(String(err&&err.message||err))+'</span>'
+      +'<span class="bNote">질문을 조금 다르게 표현해 보시거나, 아래 예시를 눌러보세요.</span>'
+      + botChips(['도움말','마조렛 재고','3개월 내 KC 만료']);
+  }
+}
+
+/* ---------- UI ---------- */
+var GARSON_IMG='data:image/webp;base64,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';
+function botPush(who,html){
+  bot.msgs.push({who:who,html:html});
+  var b=document.getElementById('botBody');
+  if(!b)return;
+  var d=document.createElement('div');
+  if(who==='me'){
+    d.className='bMsg me';
+    d.textContent=html;              /* 사용자 입력은 텍스트로만 — HTML 실행 안 됨 */
+  }else{
+    d.className='bRow';
+    var av=document.createElement('img');
+    av.className='bAvS'; av.src=GARSON_IMG; av.alt='갈슨';
+    var bubble=document.createElement('div');
+    bubble.className='bMsg ai';
+    bubble.innerHTML=html;
+    d.appendChild(av); d.appendChild(bubble);
+  }
+  b.appendChild(d);
+  b.scrollTop=b.scrollHeight;
+  if(who!=='me') refreshIcons();
+}
+function botTyping(on){
+  var b=document.getElementById('botBody');
+  if(!b)return;
+  var old=b.querySelector('.typing');
+  if(old)old.remove();
+  if(!on)return;
+  var d=document.createElement('div');
+  d.className='bRow typing';
+  d.innerHTML='<img class="bAvS" src="'+GARSON_IMG+'" alt="갈슨">'
+    +'<div class="bMsg ai"><div class="bTyping"><i></i><i></i><i></i></div></div>';
+  b.appendChild(d);
+  b.scrollTop=b.scrollHeight;
+}
+function botAsk(q){
+  q=String(q||'').trim();
+  if(!q)return;
+  botPush('me',q);
+  botTyping(true);
+  setTimeout(function(){
+    botTyping(false);
+    botPush('ai', botAnswer(q));
+  },260);
+}
+function botToggle(open){
+  var w=document.getElementById('botWrap'), f=document.getElementById('botFab');
+  if(!w||!f)return;
+  if(open){
+    w.classList.add('on'); f.classList.add('hide');
+    if(!bot.msgs.length){
+      botPush('ai','<span class="bLead">안녕하세요, 갈슨입니다 🧸</span>상품·재고·입고·KC·원가를 바로 찾아드릴게요. 무엇을 확인할까요?'+botChips(['마조렛 미니 프리미엄카','3개월 내 KC 만료','발주필요 목록','이번달 입고 예정']));
+    }
+    setTimeout(function(){ var t=document.getElementById('botQ'); if(t)t.focus(); },120);
+  }else{
+    w.classList.remove('on'); f.classList.remove('hide');
+  }
+}
+function initBot(){
+  if(bot.inited)return;
+  bot.inited=true;
+  var fab=document.getElementById('botFab');
+  var cls=document.getElementById('botClose');
+  var snd=document.getElementById('botSend');
+  var ta=document.getElementById('botQ');
+  var body=document.getElementById('botBody');
+  if(!fab||!ta)return;
+
+  fab.addEventListener('click',function(){ botToggle(true); });
+  if(cls)cls.addEventListener('click',function(){ botToggle(false); });
+  if(snd)snd.addEventListener('click',function(){ var v=ta.value; ta.value=''; ta.style.height='auto'; botAsk(v); });
+  ta.addEventListener('keydown',function(ev){
+    if(ev.key==='Enter'&&!ev.shiftKey){ ev.preventDefault(); var v=ta.value; ta.value=''; ta.style.height='auto'; botAsk(v); }
+  });
+  ta.addEventListener('input',function(){ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,96)+'px'; });
+
+  /* 추천 칩 · 상품 카드 클릭 (위임) */
+  if(body)body.addEventListener('click',function(ev){
+    var chip=ev.target.closest('[data-bq]');
+    if(chip){ botAsk(chip.dataset.bq); return; }
+    var card=ev.target.closest('[data-bopen]');
+    if(card){
+      var bc=card.dataset.bopen;
+      if(!bc)return;
+      for(var i=0;i<ms.list.length;i++){
+        if(normBc(ms.list[i].bc)===bc){ botToggle(false); openMasterPanel(i); return; }
+      }
+      alert('상품 상세를 찾지 못했습니다.');
+    }
+  });
+
+  document.addEventListener('keydown',function(ev){
+    if(ev.key==='Escape'){
+      var w=document.getElementById('botWrap');
+      if(w&&w.classList.contains('on')&&!document.getElementById('panel').classList.contains('on')) botToggle(false);
+    }
+  });
+}
+
 /* ================= 시작 ================= */
-initCat();initKn();buildYearSeg();renderSideInfo();refreshIcons();
+initCat();initKn();buildYearSeg();renderSideInfo();initBot();refreshIcons();
 var _bh0=document.getElementById('brandHome'); if(_bh0)_bh0.classList.add('atHome');
 [fetchHayoung,fetchMaster,fetchStock,fetchCert,fetchExtra,fetchFx,fetchWx].forEach(function(fn){
   try{ fn(); }catch(e){ console.warn('init',fn.name,e); }
