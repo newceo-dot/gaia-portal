@@ -764,6 +764,28 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
 .bChip:hover{border-color:var(--gs-red);background:var(--gs-red);color:#fff;
   box-shadow:0 3px 10px rgba(143,50,39,.26);transform:translateY(-1px)}
 
+.botKsPanel{position:absolute;inset:0;top:66px;background:var(--gs-cream);display:none;flex-direction:column;z-index:5}
+.botKsPanel.on{display:flex}
+.botKsHead{flex:none;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;
+  border-bottom:1px solid var(--gs-line);background:#fff;color:var(--gs-ink);font-size:.9rem}
+.botKsHead .bx{color:var(--gs-brown2);opacity:.7}
+.botKsHead .bx:hover{opacity:1;background:var(--gs-cream2)}
+.botKsBody{flex:1;overflow-y:auto;padding:14px}
+.botKsList{margin-bottom:14px}
+.botKsRow{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--gs-line);
+  border-radius:11px;padding:9px 12px;margin-bottom:7px;font-size:.8rem}
+.botKsRow .n{flex:1;min-width:0}
+.botKsRow .n b{display:block;font-size:.83rem;color:var(--gs-ink)}
+.botKsRow .n span{color:var(--gs-brown2);font-size:.72rem}
+.botKsRow button{border:none;background:var(--gs-red-bg);color:var(--gs-red-d);border-radius:8px;
+  padding:5px 10px;font-size:.72rem;font-weight:700;cursor:pointer;flex:none}
+.botKsForm{display:flex;flex-direction:column;gap:7px}
+.botKsForm input{border:1px solid var(--gs-tan);border-radius:10px;padding:8px 11px;font-size:.82rem;background:#fff}
+.botKsForm input:focus{border-color:var(--gs-red)}
+.botKsForm button{border:none;background:var(--gs-red);color:#fff;border-radius:10px;padding:9px 11px;
+  font-size:.82rem;font-weight:700;cursor:pointer}
+.botKsForm button:hover{background:var(--gs-red-d)}
+
 .botFoot{flex:none;border-top:1px solid var(--gs-line);background:#fff;padding:10px 12px}
 .botIn{display:flex;gap:8px;align-items:flex-end}
 .botIn textarea{flex:1;border:1px solid var(--gs-tan);border-radius:13px;padding:9px 12px;
@@ -871,9 +893,24 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
       <div class="bTit"><span class="bDot"></span>갈슨</div>
       <div class="bSub">상품 · 재고 · 입고 · KC · 원가</div>
     </div>
+    <button class="bx" id="botKsOpen" aria-label="지식 소스 관리" title="갈슨 지식 소스 관리">⚙</button>
     <button class="bx" id="botClose" aria-label="닫기">✕</button>
   </div>
   <div class="botBody" id="botBody"></div>
+  <div id="botKsPanel" class="botKsPanel">
+    <div class="botKsHead"><b>갈슨 지식 소스 관리</b><button class="bx" id="botKsClose" aria-label="닫기">✕</button></div>
+    <div class="botKsBody">
+      <div class="bNote" style="margin-bottom:10px">구글시트 URL과 탭 이름을 등록하면, 규칙·AI로도 못 찾는 질문이 왔을 때 갈슨이 그 시트에서 원본 값을 그대로 찾아 답해요. 새 RAW 데이터가 생기면 여기서 바로 등록하시면 됩니다.</div>
+      <div id="botKsList"><div class="empty" style="padding:14px">불러오는 중…</div></div>
+      <div class="botKsForm">
+        <input type="text" id="botKsLabel" placeholder="라벨 (예: 매출_RAW)">
+        <input type="text" id="botKsUrl" placeholder="구글시트 URL 또는 ID">
+        <input type="text" id="botKsTab" placeholder="탭 이름 (예: 매출_RAW)">
+        <button class="btnDl" id="botKsAdd">등록</button>
+      </div>
+      <div id="botKsMsg" class="bNote"></div>
+    </div>
+  </div>
   <div class="botFoot">
     <div class="botIn">
       <textarea id="botQ" rows="1" placeholder="갈슨에게 물어보세요 — 예: 마조렛 재고, 3개월 내 KC 만료"></textarea>
@@ -4747,8 +4784,9 @@ function botExtract(raw){
 var BOT_RULES = [
   {k:'kc',      w:[['kc',4],['케이씨',4],['인증',3],['만료',4],['유효기간',4],['임박',3],['신고번호',3],['성적서',2]]},
   {k:'cost',    w:[['원가',4],['매입',3],['마진',4],['이익',3],['수익',2],['매입단가',4],['코스트',3],['남는',2]]},
-  {k:'inbound', w:[['입고',4],['지연',4],['도착',3],['eta',3],['etd',3],['선적',3],['통관',3],['발주',2],['오더',2],['예정',2],['생산중',3],['이월',3]]},
+  {k:'inbound', w:[['입고',4],['지연',4],['도착',3],['eta',3],['etd',3],['선적',3],['통관',3],['발주',2],['오더',2],['예정',2],['생산중',3],['이월',3],['송금완료',4],['입금완료',4]]},
   {k:'stock',   w:[['재고',4],['품절',4],['소진',3],['수량',2],['커버',3],['발주필요',4],['품절위험',4],['과잉',3],['무재고',4],['악성',2]]},
+  {k:'sales',   w:[['매출',5],['매출액',5],['판매실적',4],['판매액',4],['실적',3],['판매수량',3],['잘팔리',2],['얼마팔렸',2]]},
   {k:'analysis',w:[['분석',3],['추이',3],['대비',3],['top',4],['상위',4],['순위',4],['랭킹',4],['합계',3],['총액',3],['많은',2],['제일',2],['가장',2],['비중',3]]},
   {k:'product', w:[['상품',2],['사이즈',4],['규격',4],['카톤',4],['체적',4],['이미지',3],['사진',3],['스펙',4],['바코드',3],['무게',3],['입수',3],['제조국',3],['판매가',3],['소비자가',3]]}
 ];
@@ -4785,11 +4823,33 @@ function botHistPush(role,text){
   if(bot.hist.length>8) bot.hist=bot.hist.slice(-8);
 }
 function botAiChat(q){
-  var ctx=JSON.stringify({h:bot.hist.slice(-6), nm:bot.mem.name, tm:bot.mem.team, tt:bot.mem.title});
+  var ctx=JSON.stringify({h:bot.hist.slice(-6), nm:botDisplayName(bot.mem.name), tm:bot.mem.team, tt:bot.mem.title});
   return jsonp({action:'chat', q:q, ctx:ctx}).then(function(d){
     if(!d||!d.ok||!d.reply) throw new Error((d&&d.error)||'AI 응답 실패');
     return d.reply;
   });
+}
+
+/* ---------- 갈슨 지식 소스 (관리자가 등록한 구글시트 실시간 검색) ---------- */
+/* 규칙에도 안 걸리고 상품 검색도 실패한 질문이면, AI로 넘기기 전에 먼저
+   등록된 지식 소스(공유 시트)에서 원본 값 그대로 찾아본다 — 이건 숫자를
+   가공하지 않고 셀 값을 그대로 보여주므로 AI보다 먼저 시도할 가치가 있다. */
+function botKsSearch(q){
+  return jsonp({action:'ksSearch', q:q}).then(function(d){
+    if(!d||!d.ok) throw new Error((d&&d.error)||'지식 소스 검색 실패');
+    return d;
+  });
+}
+function botKsRender(d,q){
+  var rows=d.matches.slice(0,6);
+  var body=rows.map(function(m){
+    var pairs=Object.keys(m.row).filter(function(k){return String(m.row[k]||'').trim()!=='';})
+      .slice(0,6)
+      .map(function(k){return '<dt>'+esc(k)+'</dt><dd>'+esc(String(m.row[k]))+'</dd>';}).join('');
+    return '<div class="bCard" style="margin-bottom:8px"><div class="bNote" style="margin-bottom:4px">'+esc(m.label)+'</div><dl class="bDl">'+pairs+'</dl></div>';
+  }).join('');
+  return '<span class="bLead">등록된 자료에서 '+d.matches.length+'건 찾았습니다</span>'+body
+    +(d.truncated?'<span class="bNote">일치 항목이 더 있어요 — 조금 더 구체적으로 물어보시면 좁혀드릴게요.</span>':'');
 }
 
 /* 아직 로딩 중인 데이터가 있으면 알려준다 —
@@ -4903,6 +4963,7 @@ function botFollowups(k,e){
     inbound :['지연 오더','다음달 입고 예정','브랜드별 발주액 TOP 10'],
     kc      :['만료된 KC 인증서','6개월 내 만료되는 인증서','3개월 내 KC 만료'],
     cost    :['브랜드별 발주액 TOP 10','발주필요 목록'],
+    sales   :['매출 TOP 5 브랜드','이번달 발주필요 목록'],
     analysis:['지난달 발주','지연 오더','발주필요 목록'],
     casual  :['가이아 브랜드 뭐 있어','오늘의 한마디','이번달 입고 예정'],
     staff   :['가이아 브랜드 뭐 있어','이번달 입고 예정'],
@@ -5112,6 +5173,12 @@ function botAnsStock(e){
   return '재고 요약을 만들 수 없습니다.';
 }
 
+/* 오더 행의 어느 필드에 있든 상관없이 특정 문구가 포함돼 있는지 확인 —
+   컬럼명이 시트마다 바뀌어도(또는 아직 COLMAP에 없어도) 안전하게 찾기 위함 */
+function botRowHasText(r,needle){
+  var hay=Object.keys(r).map(function(k){ return r[k]; }).join(' ');
+  return String(hay||'').indexOf(needle)!==-1;
+}
 /* ---------- 답변: 입고·오더 ---------- */
 function botAnsInbound(e){
   ensureAllYears();
@@ -5123,12 +5190,17 @@ function botAnsInbound(e){
 
   var wantDelay = /지연/.test(e.lq);
   var wantCarry = /이월/.test(e.lq);
+  /* "송금완료된 게 언제 입고되는지"처럼, 결제(송금/입금) 상태를 기준으로 입고 시점을 묻는 질문 —
+     어느 컬럼에 그 상태 문구가 들어있는지 시트마다 다를 수 있어, 특정 필드를 고정하지 않고
+     행 전체 텍스트에서 문구가 있는지로 찾는다(컬럼명이 바뀌어도 안 깨짐). */
+  var wantPaid = /송금\s*완료|입금\s*완료/.test(e.lq);
   var ym = e.ym;
   if(!ym && /(이번|금월|이달)/.test(e.lq)) ym=nowYM();
 
   var list=all.filter(function(r){
     if(e.brand && normBrand(r.br)!==e.brand) return false;
     if(e.bc && normBc(r.bc)!==normBc(e.bc)) return false;
+    if(wantPaid) return botRowHasText(r,'송금완료')||botRowHasText(r,'입금완료');
     if(wantDelay) return isDelayed(r);
     if(wantCarry) return isCarry(r);
     if(ym) return parseYM(r.im)===ym && !r.ind;
@@ -5147,8 +5219,12 @@ function botAnsInbound(e){
     if(mx>0) list=sc.filter(function(x){ return x.h===mx; }).map(function(x){ return x.r; });
   }
 
-  var label = wantDelay?'지연 오더':(wantCarry?'이월 오더':(ym?fmtYM(ym)+' 입고 예정':'미입고 오더'));
-  if(!list.length) return '<span class="bLead">'+esc(label)+' 없음</span>'+(e.brand?esc(e.brand)+' 기준 해당 건이 없습니다.':'해당 조건의 건이 없습니다.');
+  var label = wantPaid?'송금완료 건의 입고 예정':(wantDelay?'지연 오더':(wantCarry?'이월 오더':(ym?fmtYM(ym)+' 입고 예정':'미입고 오더')));
+  if(!list.length){
+    var none='<span class="bLead">'+esc(label)+' 없음</span>'+(e.brand?esc(e.brand)+' 기준 해당 건이 없습니다.':'해당 조건의 건이 없습니다.');
+    if(wantPaid) none+='<span class="bNote">"송금완료" 표기가 오더 시트의 다른 항목(예: 결제조건·비고)에 있다면 말씀해주세요 — 정확한 위치를 확인해서 반영할게요.</span>';
+    return none;
+  }
 
   list.sort(function(a,b){ return String(a.im||'zz').localeCompare(String(b.im||'zz')); });
   var qty=list.reduce(function(s,r){return s+amtNum(r.qty)},0);
@@ -5283,6 +5359,74 @@ function botAnsCost(e){
     + botChips(['3467452081877 원가','마조렛 마진','FUNKO 원가']);
 }
 
+/* ---------- 답변: 매출 ---------- */
+/* 포털이 이미 불러와 여러 페이지(판매 분석·브랜드 현황·대시보드)에서 쓰고 있는
+   hy.agg(재고/발주 DB 집계)를 그대로 재사용한다 — 새 시트 연결 없이도
+   "이번달 매출", "마조렛 매출", "매출 TOP 5 브랜드" 같은 질문에 정확한 숫자로 답할 수 있다. */
+function botAnsSales(e){
+  if(hy.status!=='ok'||!hy.agg){
+    return '매출 데이터를 아직 불러오는 중입니다. 잠시 후 다시 물어봐 주세요.'+botPendNote();
+  }
+  var a=hy.agg;
+  var allYM=Object.keys(a.mrev).sort();
+  if(!allYM.length) return '<span class="bLead">판매 데이터가 없습니다</span>';
+
+  function chTotal(map,y){ var o=(map||{})[y]||{},s=0; Object.keys(o).forEach(function(c){ s+=Math.max(0,o[c]||0); }); return s; }
+
+  var ym = (e.ym && a.mrev[e.ym]!==undefined) ? e.ym : allYM[allYM.length-1];
+  var wantTop = e.topN>0 || /top|상위|순위|랭킹/i.test(e.lq);
+
+  /* 브랜드 매출 TOP N */
+  if(wantTop && !e.brand){
+    var M=brandMetrics([]);
+    var names=Object.keys(M.by).filter(function(b){return M.by[b].rev>0})
+      .sort(function(x,y){return M.by[y].rev-M.by[x].rev});
+    if(!names.length) return '<span class="bLead">브랜드별 매출 데이터가 없습니다</span>';
+    var n=e.topN>0?Math.min(e.topN,names.length):5;
+    var top=names.slice(0,n);
+    var rows=top.map(function(b,i){
+      return '<tr><td class="num" style="color:var(--ink-3)">'+(i+1)+'</td><td>'+esc(b)+'</td>'
+        +'<td class="num" style="font-weight:700">'+fmtKR(M.by[b].rev)+'</td></tr>';
+    }).join('');
+    return '<span class="bLead">최근 12개월 매출 TOP '+n+'</span>'
+      +'<div class="tblWrap"><table class="tbl"><thead><tr><th>#</th><th>브랜드</th><th class="num">매출</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      +'<span class="bNote">채널별·품목별 상세는 [브랜드 현황] 메뉴에서 볼 수 있어요.</span>';
+  }
+
+  /* 특정 브랜드 매출 */
+  if(e.brand){
+    var brRev=(a.brandMrev[e.brand]||{})[ym]||0;
+    var brQty=(a.brandQty[e.brand]||{})[ym]||0;
+    var idx=allYM.indexOf(ym);
+    var prevYM=idx>0?allYM[idx-1]:null;
+    var prevRev=prevYM?((a.brandMrev[e.brand]||{})[prevYM]||0):0;
+    var mom=prevRev?Math.round((brRev-prevRev)/prevRev*100):null;
+    return '<span class="bLead">'+esc(e.brand)+' · '+fmtYM(ym)+' 매출</span>'
+      +'<dl class="bDl"><dt>매출</dt><dd>'+fmtKR(brRev)+'</dd>'
+      +'<dt>판매수량</dt><dd>'+bNum(brQty)+'개</dd>'
+      +(mom!=null?'<dt>전월 대비</dt><dd style="color:'+(mom>=0?'var(--g700)':'var(--red)')+';font-weight:700">'+(mom>=0?'▲':'▼')+Math.abs(mom)+'%</dd>':'')
+      +'</dl>';
+  }
+
+  /* 전체 매출 (해당 월) */
+  var rev=chTotal(a.mrev,ym), qty=chTotal(a.mqtyCh,ym);
+  var idx2=allYM.indexOf(ym);
+  var prevYM2=idx2>0?allYM[idx2-1]:null;
+  var prevRev2=prevYM2?chTotal(a.mrev,prevYM2):0;
+  var mom2=prevRev2?Math.round((rev-prevRev2)/prevRev2*100):null;
+  var yoyYM=(parseInt(ym.slice(0,4),10)-1)+ym.slice(4);
+  var yoyRev=a.mrev[yoyYM]?chTotal(a.mrev,yoyYM):0;
+  var yoy=yoyRev?Math.round((rev-yoyRev)/yoyRev*100):null;
+
+  return '<span class="bLead">'+fmtYM(ym)+' 매출</span>'
+    +'<dl class="bDl"><dt>매출</dt><dd>'+fmtKR(rev)+'</dd>'
+    +'<dt>판매수량</dt><dd>'+bNum(qty)+'개</dd>'
+    +(mom2!=null?'<dt>전월 대비</dt><dd style="color:'+(mom2>=0?'var(--g700)':'var(--red)')+';font-weight:700">'+(mom2>=0?'▲':'▼')+Math.abs(mom2)+'%</dd>':'')
+    +(yoy!=null?'<dt>전년 동월 대비</dt><dd style="color:'+(yoy>=0?'var(--g700)':'var(--red)')+';font-weight:700">'+(yoy>=0?'▲':'▼')+Math.abs(yoy)+'%</dd>':'')
+    +'</dl>'
+    +'<span class="bNote">채널별·품목별 상세 내역은 [판매 분석] 메뉴에서 확인하실 수 있어요.</span>';
+}
+
 /* ---------- 답변: 분석 ---------- */
 function botAnsAnalysis(e){
   ensureAllYears();
@@ -5400,8 +5544,13 @@ var GAIA_STAFF = [
   {nm:'증정미', team:'콘텐츠마케팅팀', title:'주임'}, /* 확인 필요 — 성함 글자가 작아 확실하지 않음 */
   {nm:'이혜지', team:'콘텐츠마케팅팀', title:'주임'},
   {nm:'이도희', team:'콘텐츠마케팅팀', title:'주임'},
-  {nm:'김수원', team:'키덜트사업팀', title:'차장'}    /* 확인 필요 — '키덜트사업팀'으로 추정 */
+  {nm:'김수원', team:'키덜트사업팀', title:'차장'},   /* 확인 필요 — '키덜트사업팀'으로 추정 */
+  {nm:'배한나', team:'자금팀',       title:'대리'}
 ];
+/* 애칭 — 특정 인물은 이름 대신 이렇게 부르라는 요청이 있으면 여기에 추가한다.
+   실제 성함 매칭·조직도 조회에는 영향 없고, 화면에 표시될 때만 애칭으로 바꾼다. */
+var BOT_NICK = { '배한나':'배니' };
+function botDisplayName(nm){ return BOT_NICK[nm] || nm; }
 function botStaffTeams(){
   if(bot._staffTeams) return bot._staffTeams;
   var set={};
@@ -5576,7 +5725,7 @@ function botAnsCasual(e){
   if(m&&m.fn) txt=m.fn(e);
   else if(m&&m.res&&m.res.length) txt=botPickVariant(m.k,m.res);
   else txt='음... 잘 이해하지 못했어요. "도움말"을 눌러보시겠어요? 🧸';
-  if(bot.mem.name && m && (m.k==='greet'||m.k==='bye'||m.k==='thanks')) txt=bot.mem.name+'님, '+txt;
+  if(bot.mem.name && m && (m.k==='greet'||m.k==='bye'||m.k==='thanks')) txt=botDisplayName(bot.mem.name)+'님, '+txt;
   return '<span class="bLead">'+esc(txt)+'</span>';
 }
 
@@ -5635,11 +5784,12 @@ function botAnswerAsync(q){
         if(id.name)  bot.mem.name=id.name;
         if(id.team)  bot.mem.team=id.team;
         if(id.title) bot.mem.title=id.title;
-        var who=[bot.mem.team,bot.mem.title,bot.mem.name].filter(Boolean).join(' ');
+        var dispNm=botDisplayName(bot.mem.name);
+        var who=[bot.mem.team,bot.mem.title,dispNm].filter(Boolean).join(' ');
         var greetLine = bot.mem.name==='주우태'
           ? '이제부터 알아보고, 최대한 재밌게 모시겠습니다! 무엇을 도와드릴까요?'
           : '이제부터 알아보고 편하게 대해드릴게요. 무엇을 도와드릴까요?';
-        var html2=botWootaeBoost('<span class="bLead">'+esc(who||bot.mem.name)+'님, 기억했어요 🧸</span>'+greetLine)
+        var html2=botWootaeBoost('<span class="bLead">'+esc(who||dispNm)+'님, 기억했어요 🧸</span>'+greetLine)
           +botNext(['이번달 입고 예정','발주필요 목록','3개월 내 KC 만료']);
         bot.mem.lastAns=botPlainText(html2).slice(0,160);
         return Promise.resolve(html2);
@@ -5655,39 +5805,59 @@ function botAnswerAsync(q){
       case 'inbound':  html=botAnsInbound(e);  break;
       case 'kc':       html=botAnsKc(e);       break;
       case 'cost':     html=botAnsCost(e);     break;
+      case 'sales':    html=botAnsSales(e);    break;
       case 'analysis': html=botAnsAnalysis(e); break;
       case 'casual':   html=botAnsCasual(e);   break;
       case 'staff':    html=botAnsStaff(e._staff); break;
       case 'ai':
-        /* 정해진 정답이 없는 자유 대화 — 실제 Claude API로 넘긴다.
-           실패하면(키 미설정·쿼터 초과·네트워크 오류) 조용히 기존 규칙 답변으로 돌아간다. */
-        return botAiChat(q).then(function(reply){
-          var out='<span class="bLead">'+esc(reply)+'</span>';
-          bot.mem.lastAns=botPlainText(out).slice(0,160);
-          return botWootaeBoost(out) + botNext(botFollowups(k,e));
+        /* 정해진 정답이 없는 자유 대화 — 먼저 관리자가 등록해둔 지식 소스(구글시트)에
+           원본 값이 있는지 찾아보고, 없으면 실제 Claude API로 넘긴다.
+           둘 다 실패하면(키 미설정·쿼터 초과·네트워크 오류) 조용히 기존 규칙 답변으로 돌아간다. */
+        return botKsSearch(q).then(function(d){
+          if(d.matches&&d.matches.length){
+            var ksHtml=botKsRender(d,q);
+            bot.mem.lastAns=botPlainText(ksHtml).slice(0,160);
+            return botWootaeBoost(ksHtml);
+          }
+          throw new Error('no ks match');
         }).catch(function(){
-          var fb=botAiFallback(e);
-          bot.mem.lastAns=botPlainText(fb).slice(0,160);
-          return botWootaeBoost(fb) + botNext(botFollowups(k,e));
+          return botAiChat(q).then(function(reply){
+            var out='<span class="bLead">'+esc(reply)+'</span>';
+            bot.mem.lastAns=botPlainText(out).slice(0,160);
+            return botWootaeBoost(out);
+          }).catch(function(){
+            var fb=botAiFallback(e);
+            bot.mem.lastAns=botPlainText(fb).slice(0,160);
+            return botWootaeBoost(fb);
+          });
         });
       default:         return Promise.resolve(botAnsHelp());
     }
     /* 상품 조회인데 한 건도 못 찾았으면(e._zeroHit) 딱딱한 안내 대신
-       한 번 더 자연스럽게 되물어보도록 AI에 시도하고, 그마저 실패하면
-       기존 "찾지 못했습니다" 안내로 되돌아간다. */
+       먼저 등록된 지식 소스에서 찾아보고, 없으면 AI로 한 번 더 자연스럽게
+       되물어보도록 시도하고, 그마저 실패하면 기존 "찾지 못했습니다"로 되돌아간다. */
     if(k==='product' && e._zeroHit){
-      return botAiChat(q).then(function(reply){
-        var out='<span class="bLead">'+esc(reply)+'</span>';
-        bot.mem.lastAns=botPlainText(out).slice(0,160);
-        return botWootaeBoost(out) + botNext(botFollowups(k,e));
+      return botKsSearch(q).then(function(d){
+        if(d.matches&&d.matches.length){
+          var ksHtml=botKsRender(d,q);
+          bot.mem.lastAns=botPlainText(ksHtml).slice(0,160);
+          return botWootaeBoost(ksHtml);
+        }
+        throw new Error('no ks match');
       }).catch(function(){
-        bot.mem.lastAns=botPlainText(html).slice(0,160);
-        return botWootaeBoost(html) + botNext(botFollowups(k,e));
+        return botAiChat(q).then(function(reply){
+          var out='<span class="bLead">'+esc(reply)+'</span>';
+          bot.mem.lastAns=botPlainText(out).slice(0,160);
+          return botWootaeBoost(out);
+        }).catch(function(){
+          bot.mem.lastAns=botPlainText(html).slice(0,160);
+          return botWootaeBoost(html);
+        });
       });
     }
     var isRecall = (k==='casual' && e._casual && (e._casual.k==='recall'||e._casual.k==='clarify'));
     if(!isRecall) bot.mem.lastAns=botPlainText(html).slice(0,160);
-    return Promise.resolve(botWootaeBoost(html) + botNext(botFollowups(k,e)));
+    return Promise.resolve(botWootaeBoost(html));
   }catch(err){
     return Promise.resolve('<span class="bLead">답변을 만들지 못했습니다</span>'
       +'<span class="bWarn">'+esc(String(err&&err.message||err))+'</span>'
@@ -5775,8 +5945,66 @@ function botToggle(open){
     setTimeout(function(){ var t=document.getElementById('botQ'); if(t)t.focus(); },120);
   }else{
     w.classList.remove('on'); f.classList.remove('hide');
+    var ksp=document.getElementById('botKsPanel'); if(ksp)ksp.classList.remove('on');
   }
 }
+/* ---------- 갈슨 지식 소스 관리 패널 ---------- */
+function botKsMsg(t,isErr){
+  var m=document.getElementById('botKsMsg');
+  if(!m)return;
+  m.textContent=t||'';
+  m.style.color=isErr?'var(--gs-red-d)':'';
+}
+function botKsLoadList(){
+  var list=document.getElementById('botKsList');
+  if(!list)return;
+  list.innerHTML='<div class="empty" style="padding:14px">불러오는 중…</div>';
+  jsonp({action:'ksList'}).then(function(d){
+    if(!d||!d.ok) throw new Error((d&&d.error)||'목록을 불러오지 못했습니다');
+    if(!d.sources.length){ list.innerHTML='<div class="empty" style="padding:14px">등록된 지식 소스가 아직 없어요.</div>'; return; }
+    list.innerHTML=d.sources.map(function(s){
+      return '<div class="botKsRow"><div class="n"><b>'+esc(s.label)+'</b><span>'+esc(s.tab)+' · '+esc(s.addedAt||'')+'</span></div>'
+        +'<button data-ksdel="'+esc(s.id)+'">삭제</button></div>';
+    }).join('');
+  }).catch(function(e){
+    list.innerHTML='<div class="empty" style="padding:14px">'+esc(String(e.message||e))+'</div>';
+  });
+}
+function botKsInitPanel(){
+  var openBtn=document.getElementById('botKsOpen'), closeBtn=document.getElementById('botKsClose'), panel=document.getElementById('botKsPanel');
+  var addBtn=document.getElementById('botKsAdd');
+  var list=document.getElementById('botKsList');
+  if(!openBtn||!panel)return;
+  openBtn.addEventListener('click',function(){ panel.classList.add('on'); botKsMsg(''); botKsLoadList(); });
+  if(closeBtn)closeBtn.addEventListener('click',function(){ panel.classList.remove('on'); });
+  if(addBtn)addBtn.addEventListener('click',function(){
+    var label=document.getElementById('botKsLabel').value.trim();
+    var url=document.getElementById('botKsUrl').value.trim();
+    var tab=document.getElementById('botKsTab').value.trim();
+    if(!label||!url||!tab){ botKsMsg('라벨 · 시트 URL · 탭 이름을 모두 입력해주세요',true); return; }
+    addBtn.disabled=true; botKsMsg('등록 중…');
+    jsonp({action:'ksAdd',label:label,sheetId:url,tab:tab}).then(function(d){
+      addBtn.disabled=false;
+      if(!d||!d.ok){ botKsMsg((d&&d.error)||'등록 실패',true); return; }
+      botKsMsg('등록했어요 — 이제 이 자료로도 답할 수 있어요 🧸');
+      document.getElementById('botKsLabel').value='';
+      document.getElementById('botKsUrl').value='';
+      document.getElementById('botKsTab').value='';
+      botKsLoadList();
+    }).catch(function(e){ addBtn.disabled=false; botKsMsg(String(e.message||e),true); });
+  });
+  if(list)list.addEventListener('click',function(ev){
+    var btn=ev.target.closest('[data-ksdel]');
+    if(!btn)return;
+    var id=btn.dataset.ksdel;
+    btn.disabled=true; btn.textContent='삭제 중…';
+    jsonp({action:'ksRemove',id:id}).then(function(d){
+      if(!d||!d.ok){ botKsMsg((d&&d.error)||'삭제 실패',true); btn.disabled=false; btn.textContent='삭제'; return; }
+      botKsLoadList();
+    }).catch(function(e){ botKsMsg(String(e.message||e),true); btn.disabled=false; btn.textContent='삭제'; });
+  });
+}
+
 function initBot(){
   if(bot.inited)return;
   bot.inited=true;
@@ -5789,6 +6017,7 @@ function initBot(){
 
   fab.addEventListener('click',function(){ botToggle(true); });
   if(cls)cls.addEventListener('click',function(){ botToggle(false); });
+  botKsInitPanel();
 
   /* 말풍선 — 처음 오신 분께 갈슨 존재를 한 번 알려준다. 이미 봤거나 챗봇을 한 번이라도
      열어본 적 있으면(gaia_garsonhint_seen) 다시 안 띄운다. */
