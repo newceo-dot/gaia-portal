@@ -1887,6 +1887,13 @@ function catDetail(o){
   if(!catx.ready||!catx.det)return null;
   var b=normBc(o.bc); return b?(catx.det[b]||null):null;
 }
+/* 판매가(카탈로그 등록값) — 없으면 null. 정렬·비교에 그대로 쓸 수 있도록 숫자로 반환 */
+function priceOf(o){
+  var cd=catDetail(o);
+  if(!cd||!cd.sp)return null;
+  var n=Number(String(cd.sp).replace(/[^0-9.]/g,''));
+  return isNaN(n)||n<=0?null:n;
+}
 function inCatalog(o){
   if(!catx.ready)return null;
   var b=normBc(o.bc);
@@ -2279,6 +2286,15 @@ function masterFiltered(){
     return true;
   }).sort(function(a,b){
     if(state.mSort==='name')return String(a.name||'').localeCompare(String(b.name||''));
+    if(state.mSort==='price'){
+      /* 판매가 없는 상품은 항상 맨 뒤로 — 0원으로 취급하면 무가격 상품이 "가장 싼 상품"인 것처럼
+         뒤섞여 보이므로, 가격 있음/없음을 먼저 가르고 그 다음 가격 높은순으로 정렬한다 */
+      var pa=priceOf(a), pb=priceOf(b);
+      var ha=pa!=null?1:0, hb=pb!=null?1:0;
+      if(ha!==hb)return hb-ha;
+      if(ha&&pa!==pb)return pb-pa;
+      return String(a.name||'').localeCompare(String(b.name||''));
+    }
     var ia=imgList(exOf(a)).length?1:0, ib=imgList(exOf(b)).length?1:0;
     if(ia!==ib)return ib-ia;
     var la=liveStockOf(a), lb=liveStockOf(b);
@@ -2370,7 +2386,7 @@ function vMaster(){
   FGROUPS.forEach(function(g){g.items.forEach(function(it){
     if(it[0]===state.mf.stock)curLabel=(g.t==='이미지'?'이미지 ':'')+it[1];
   })});
-  var SORTS=[['img','이미지·재고순'],['name','이름순']];
+  var SORTS=[['img','이미지·재고순'],['name','이름순'],['price','판매가 높은순']];
   var sortLabel=(SORTS.filter(function(s){return s[0]===state.mSort})[0]||SORTS[0])[1];
 
   /* 1줄 — 조건 */
