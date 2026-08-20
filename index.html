@@ -1103,6 +1103,8 @@ function go(view,f){
   var bhE=document.getElementById('brandHome');
   if(bhE)bhE.classList.toggle('atHome',view==='dash');
   document.querySelectorAll('.nav-item').forEach(function(x){x.classList.toggle('on',x.dataset.view===navKey)});
+  /* 카탈로그는 드라이브에서 방금 폴더·파일을 직접 정리했을 수 있어, 탭을 열 때마다 항상 최신 상태로 새로 불러온다 */
+  if(view==='pcatalog')fetchPcat(true);
   render();
 }
 
@@ -1691,29 +1693,24 @@ function imgTag(id,w,cls,extra){
 }
 function driveDown(id){ return 'https://drive.google.com/uc?export=download&id='+encodeURIComponent(id); }
 
-/* ================= 제품 카탈로그 모음 ================= */
-var pcat={status:'loading',files:[],folderUrl:'',err:''};
+/* ================= 제품 카탈로그 모음 =================
+   드라이브 폴더 구조를 그대로 반영한다: 카탈로그 루트 폴더 아래의 하위 폴더 하나하나가
+   화면의 그룹(브랜드·제품 등) 하나가 된다. 드라이브에서 직접 하위 폴더를 만들고 파일을
+   넣어도, 다음에 목록을 불러올 때 그 구조를 그대로 읽어와 자동으로 분류되어 보인다 —
+   포털에서 미리 등록해둬야 하는 절차가 없다. */
+var pcat={status:'loading',groups:[],folderUrl:'',err:''};
 function fetchPcat(force){
   pcat.status='loading';
   return jsonp({action:'catalogList',refresh:force?'1':'0'}).then(function(d){
     if(!d.ok)throw new Error(d.error||'서버 오류');
-    pcat.files=d.files||[];pcat.folderUrl=d.folderUrl||'';pcat.status='ok';
+    pcat.groups=d.groups||[];pcat.folderUrl=d.folderUrl||'';pcat.status='ok';
     if(state.view==='pcatalog')render();
   }).catch(function(e){
     pcat.status='error';pcat.err=String(e.message||e);
     if(state.view==='pcatalog')render();
   });
 }
-/* 파일명 앞부분(브랜드_원본파일명 규칙으로 업로드됨)을 브랜드명으로 인식해 묶는다.
-   등록된 브랜드명과 매칭되지 않으면(업로드 폼을 거치지 않고 드라이브에 직접 넣은 파일 등) '기타'로 분류한다 */
-function catalogBrandOf(name){
-  var base=String(name||'').replace(/\.[^.]+$/,'');
-  var m=String(base.split(/[_\-]/)[0]||'').replace(/[（(].*$/,'').replace(/\s+/g,'').replace(/[·・]/g,'');
-  for(var i=0;i<BRAND_ALIAS.length;i++){
-    if(BRAND_ALIAS[i][0].test(m))return BRAND_ALIAS[i][1];
-  }
-  return '기타';
-}
+function pcatCount(){ return pcat.groups.reduce(function(s,g){return s+(g.files?g.files.length:0)},0); }
 function fmtBytes(n){
   n=Number(n)||0;
   if(n<1024)return n+'B';
@@ -3133,7 +3130,7 @@ function render(){
   var ck=$('#cntKc');if(ck)ck.textContent=d.kcTodo.length||'';
   var cm=$('#cntMaster');if(cm)cm.textContent=ms.status==='ok'?ms.list.length.toLocaleString():'';
   var cs=$('#cntStock');if(cs&&hy.status==='ok'){var urg=(hy.agg.cls['발주필요']||0)+(hy.agg.cls['품절위험']||0);cs.textContent=urg||'';cs.className='cnt'+(urg?' hot':'');}
-  var cp=$('#cntPcat');if(cp)cp.textContent=pcat.status==='ok'?(pcat.files.length||''):'';
+  var cp=$('#cntPcat');if(cp)cp.textContent=pcat.status==='ok'?(pcatCount()||''):'';
   renderSideInfo();
   var v=$('#view');
   if(state.view==='dash')v.innerHTML=vDash(rs,d);
@@ -3587,24 +3584,35 @@ function vSheets(){
 
 /* ================= 제품 카탈로그 모음 ================= */
 function vPcatalog(){
-  var h=pageHead('제품 카탈로그','브랜드사에서 받은 카탈로그 파일 모음 · 브랜드별로 묶어서 다운로드'
-    +(pcat.status==='ok'?(' · 총 '+pcat.files.length+'개'):''));
+  var h=pageHead('제품 카탈로그','드라이브 폴더 구조 그대로 자동 분류 · 폴더별로 묶어서 다운로드'
+    +(pcat.status==='ok'?(' · 총 '+pcatCount()+'개'):''));
+
+  var folderOpts=pcat.groups.filter(function(g){return !g.isRoot}).map(function(g){
+    return '<option value="'+esc(g.folderId)+'">'+esc(g.name)+'</option>';
+  }).join('');
 
   h+='<div class="toolbar">'
-    +'<input type="text" id="pcq" placeholder="파일명·브랜드 검색" value="'+esc(state.pcq||'')+'">'
+    +'<input type="text" id="pcq" placeholder="파일명·폴더명 검색" value="'+esc(state.pcq||'')+'">'
+    +'<button class="chip" id="pcRefreshBtn" title="드라이브에서 방금 정리한 폴더·파일 다시 불러오기">'+icon('refresh-cw')+' 새로고침</button>'
+    +'<button class="chip" id="pcNewFolderBtn">'+icon('folder-plus')+' 새 폴더</button>'
     +'<button class="chip'+(state.pcUpload?' on':'')+'" id="pcUploadBtn">'+icon('upload')+' 카탈로그 등록</button>'
     +(pcat.folderUrl?'<a class="chip" href="'+esc(pcat.folderUrl)+'" target="_blank" rel="noopener" style="text-decoration:none">'+icon('folder-open')+' 드라이브 폴더 열기</a>':'')
-    +'</div>';
+    +'</div>'
+    +(pcat.status==='ok'?'<div style="font-size:.74rem;color:var(--ink-3);margin:-6px 0 12px">캐시 없이 매번 드라이브에서 바로 불러옵니다 — 드라이브에서 폴더·파일을 정리했다면 [새로고침]으로 바로 확인하세요.</div>':'');
 
   if(state.pcUpload){
     h+='<section class="card" style="margin-bottom:14px;padding:16px 20px">'
       +'<div style="font-size:.88rem;font-weight:800;margin-bottom:12px">새 카탈로그 등록</div>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
-      +'<input type="text" id="pcBrand" placeholder="브랜드명 (예: FUNKO)" style="flex:1;min-width:150px;padding:9px 12px;border:1px solid var(--line-2);border-radius:10px">'
+      +'<select id="pcFolderSel" style="padding:9px 12px;border:1px solid var(--line-2);border-radius:10px">'
+      +'<option value="">미분류(루트)</option>'
+      +folderOpts
+      +'<option value="__new">+ 새 폴더 만들어서 등록</option></select>'
+      +'<input type="text" id="pcNewFolderName" placeholder="새 폴더 이름" style="display:none;flex:1;min-width:150px;padding:9px 12px;border:1px solid var(--line-2);border-radius:10px">'
       +'<input type="file" id="pcFile" accept=".pdf,.jpg,.jpeg,.png,.zip" style="flex:2;min-width:220px">'
       +'<button class="btnDl" id="pcUploadSubmit">등록</button>'
       +'</div>'
-      +'<div id="pcUploadMsg" style="font-size:.75rem;color:var(--ink-3);margin-top:10px">PDF·이미지·ZIP 파일을 올릴 수 있습니다. 등록하면 브랜드명 기준으로 자동 분류됩니다.</div>'
+      +'<div id="pcUploadMsg" style="font-size:.75rem;color:var(--ink-3);margin-top:10px">PDF·이미지·ZIP 파일을 올릴 수 있습니다. 등록할 폴더를 고르거나, 새 폴더를 만들어 등록하세요.</div>'
       +'</section>';
   }
 
@@ -3618,32 +3626,30 @@ function vPcatalog(){
   }
 
   var q=(state.pcq||'').toLowerCase();
-  var files=pcat.files.filter(function(f){
-    return !q||((f.name||'').toLowerCase().indexOf(q)!==-1);
-  });
+  var groups=pcat.groups.map(function(g){
+    var files=g.files.filter(function(f){
+      return !q||((f.name||'').toLowerCase().indexOf(q)!==-1)||((g.name||'').toLowerCase().indexOf(q)!==-1);
+    });
+    return {folderId:g.folderId,name:g.name,isRoot:g.isRoot,files:files};
+  }).filter(function(g){return g.files.length||(!q&&!g.isRoot)});
 
-  var groups={};
-  files.forEach(function(f){
-    var br=catalogBrandOf(f.name);
-    (groups[br]=groups[br]||[]).push(f);
-  });
-  var brandKeys=Object.keys(groups).sort(function(a,b){
-    if(a==='기타')return 1; if(b==='기타')return -1;
-    return a.localeCompare(b,'ko');
-  });
-
-  if(!brandKeys.length){
-    h+='<div class="card"><div class="empty">'+(q?'검색 결과가 없습니다':'등록된 카탈로그가 없습니다 — [카탈로그 등록]으로 추가해 보세요')+'</div></div>';
+  if(!groups.length){
+    h+='<div class="card"><div class="empty">'+(q?'검색 결과가 없습니다':'등록된 카탈로그가 없습니다 — [새 폴더]로 브랜드·제품 폴더를 만들고 [카탈로그 등록]으로 추가해 보세요')+'</div></div>';
     return h;
   }
 
-  brandKeys.forEach(function(br){
-    var items=groups[br];
+  groups.forEach(function(g){
+    var items=g.files;
     h+='<section class="card" style="margin-bottom:12px">'
-      +'<div class="section-head"><span style="width:34px;height:34px;border-radius:11px;background:var(--g100);display:flex;align-items:center;justify-content:center;color:var(--g700);margin-right:2px">'+icon('book-image')+'</span>'
-      +'<h3>'+esc(br)+'</h3><span class="sub">'+items.length+'개</span></div>'
+      +'<div class="section-head"><span style="width:34px;height:34px;border-radius:11px;background:var(--g100);display:flex;align-items:center;justify-content:center;color:var(--g700);margin-right:2px">'+icon(g.isRoot?'folder':'book-image')+'</span>'
+      +'<h3>'+esc(g.name)+'</h3><span class="sub">'+items.length+'개</span>'
+      +(g.isRoot?'':'<div style="margin-left:auto;display:flex;gap:6px">'
+        +'<button class="chip" data-pcfren="'+esc(g.folderId)+'" data-pcfname="'+esc(g.name)+'" style="padding:5px 10px">이름변경</button>'
+        +'<button class="chip" data-pcfdel="'+esc(g.folderId)+'" style="padding:5px 10px">폴더삭제</button>'
+        +'</div>')
+      +'</div>'
       +'<div style="padding:2px 12px 14px">'
-      +items.map(function(f){
+      +(items.length?items.map(function(f){
         return '<div class="task-row" style="cursor:default">'
           +'<div class="task-icon">'+icon('file-text')+'</div>'
           +'<div class="task-copy" style="flex:1;min-width:0">'
@@ -3652,7 +3658,7 @@ function vPcatalog(){
           +'<a class="chip" href="'+esc(driveDown(f.id))+'" target="_blank" rel="noopener" style="text-decoration:none;margin-left:auto">'+icon('download')+' 다운로드</a>'
           +'<button class="chip" data-pcdel="'+esc(f.id)+'" style="margin-left:8px">삭제</button>'
           +'</div>';
-      }).join('')
+      }).join(''):'<div class="empty" style="padding:18px">이 폴더에는 아직 파일이 없습니다 — 드라이브에서 폴더를 열어 바로 넣거나, [카탈로그 등록]으로 추가하세요</div>')
       +'</div></section>';
   });
   return h;
@@ -4679,16 +4685,39 @@ function bindView(){
     inp.click();
   });
   bindSearch('pcq',function(v){state.pcq=v;});
+  var pcR=$('#pcRefreshBtn');if(pcR)pcR.addEventListener('click',function(){pcR.disabled=true;fetchPcat(true).then(function(){pcR.disabled=false;});});
   var pcU=$('#pcUploadBtn');if(pcU)pcU.addEventListener('click',function(){state.pcUpload=!state.pcUpload;render();});
+  var pcNF=$('#pcNewFolderBtn');if(pcNF)pcNF.addEventListener('click',function(){
+    var name=prompt('새 폴더 이름 (브랜드명·제품명 등)');
+    if(!name||!name.trim())return;
+    pcNF.disabled=true;
+    gasPost({action:'createCatalogFolder',name:name.trim()})
+      .then(function(){ return new Promise(function(r){setTimeout(r,1500)}); })
+      .then(function(){ return fetchPcat(true); })
+      .catch(function(e){ alert('폴더 생성 실패: '+(e.message||e)); pcNF.disabled=false; });
+  });
+  var pcFS=$('#pcFolderSel');if(pcFS)pcFS.addEventListener('change',function(){
+    var nn=$('#pcNewFolderName');if(nn)nn.style.display=(pcFS.value==='__new')?'':'none';
+  });
   var pcS=$('#pcUploadSubmit');if(pcS)pcS.addEventListener('click',function(){
-    var brand=($('#pcBrand').value||'').trim();
     var file=$('#pcFile').files[0];
     if(!file){alert('업로드할 파일을 선택하세요');return;}
+    var sel=$('#pcFolderSel'), selV=sel?sel.value:'';
+    var newName=($('#pcNewFolderName')&&$('#pcNewFolderName').value||'').trim();
+    if(selV==='__new'&&!newName){alert('새 폴더 이름을 입력하세요');return;}
     var msg=$('#pcUploadMsg');
     if(msg)msg.textContent='업로드 중…';
     pcS.disabled=true;
-    fileToBase64(file).then(function(b64){
-      return gasPost({action:'uploadCatalog',brand:brand,name:file.name,data:b64,mime:file.type||'application/octet-stream'});
+    var getFolderId=(selV==='__new')
+      ? gasPost({action:'createCatalogFolder',name:newName}).then(function(){ return new Promise(function(r){setTimeout(r,1500)}); }).then(function(){ return fetchPcat(true); }).then(function(){
+          var g=pcat.groups.filter(function(gr){return !gr.isRoot&&gr.name===newName})[0];
+          return g?g.folderId:'';
+        })
+      : Promise.resolve(selV);
+    getFolderId.then(function(folderId){
+      return fileToBase64(file).then(function(b64){
+        return gasPost({action:'uploadCatalog',folderId:folderId||'',name:file.name,data:b64,mime:file.type||'application/octet-stream'});
+      });
     }).then(function(){
       return new Promise(function(r){setTimeout(r,2000)});
     }).then(function(){
@@ -4708,6 +4737,28 @@ function bindView(){
         .then(function(){ return new Promise(function(r){setTimeout(r,1500)}); })
         .then(function(){ return fetchPcat(true); })
         .catch(function(e){ alert('삭제 실패: '+(e.message||e)); b.disabled=false; });
+    });
+  });
+  v.querySelectorAll('[data-pcfren]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var id=b.dataset.pcfren, cur=b.dataset.pcfname||'';
+      var nn=prompt('새 폴더 이름',cur); if(!nn||!nn.trim()||nn.trim()===cur)return;
+      b.disabled=true;
+      gasPost({action:'renameCatalogFolder',id:id,name:nn.trim()})
+        .then(function(){ return new Promise(function(r){setTimeout(r,1500)}); })
+        .then(function(){ return fetchPcat(true); })
+        .catch(function(e){ alert('이름 변경 실패: '+(e.message||e)); b.disabled=false; });
+    });
+  });
+  v.querySelectorAll('[data-pcfdel]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var id=b.dataset.pcfdel;
+      if(!confirm('이 폴더와 안의 파일을 모두 삭제할까요?'))return;
+      b.disabled=true;
+      gasPost({action:'deleteCatalogFolder',id:id})
+        .then(function(){ return new Promise(function(r){setTimeout(r,1500)}); })
+        .then(function(){ return fetchPcat(true); })
+        .catch(function(e){ alert('폴더 삭제 실패: '+(e.message||e)); b.disabled=false; });
     });
   });
   var ffx=$('#frFx');if(ffx)ffx.addEventListener('input',function(){state.fr.fx=this.value;frUpdateCells();});
