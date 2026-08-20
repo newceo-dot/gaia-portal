@@ -833,6 +833,7 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
     <div class="nav-label">상품</div>
     <button class="nav-item" data-view="master"><i data-lucide="package-search"></i><span class="tx">상품 마스터</span><span class="cnt" id="cntMaster"></span></button>
     <button class="nav-item" data-view="brands"><i data-lucide="tags"></i><span class="tx">브랜드 현황</span></button>
+    <button class="nav-item" data-view="pcatalog"><i data-lucide="book-image"></i><span class="tx">제품 카탈로그</span><span class="cnt" id="cntPcat"></span></button>
 
     <div class="nav-label">실무 도구</div>
     <button class="nav-item" data-view="sheets"><i data-lucide="folder-open"></i><span class="tx">공유 시트</span></button>
@@ -1068,7 +1069,7 @@ $('#yearSeg').addEventListener('click',function(e){
     });
   } else loadYear(state.year).then(render);
 });
-$('#btnRefresh').addEventListener('click',function(){_rtSuf=null;fetchStock(true);fetchCert(true);fetchFx(true);fetchWx(true);loadYear(state.year,true).then(render);});
+$('#btnRefresh').addEventListener('click',function(){_rtSuf=null;fetchStock(true);fetchCert(true);fetchFx(true);fetchWx(true);fetchPcat(true);loadYear(state.year,true).then(render);});
 $('#btnMeeting').addEventListener('click',function(){
   document.body.classList.toggle('meeting');
   var on=document.body.classList.contains('meeting');
@@ -1689,6 +1690,44 @@ function imgTag(id,w,cls,extra){
     +' loading="lazy" onerror="if(!this.dataset.f){this.dataset.f=1;this.src=\''+driveThumbAlt(id,w)+'\'}">';
 }
 function driveDown(id){ return 'https://drive.google.com/uc?export=download&id='+encodeURIComponent(id); }
+
+/* ================= 제품 카탈로그 모음 ================= */
+var pcat={status:'loading',files:[],folderUrl:'',err:''};
+function fetchPcat(force){
+  pcat.status='loading';
+  return jsonp({action:'catalogList',refresh:force?'1':'0'}).then(function(d){
+    if(!d.ok)throw new Error(d.error||'서버 오류');
+    pcat.files=d.files||[];pcat.folderUrl=d.folderUrl||'';pcat.status='ok';
+    if(state.view==='pcatalog')render();
+  }).catch(function(e){
+    pcat.status='error';pcat.err=String(e.message||e);
+    if(state.view==='pcatalog')render();
+  });
+}
+/* 파일명 앞부분(브랜드_원본파일명 규칙으로 업로드됨)을 브랜드명으로 인식해 묶는다.
+   등록된 브랜드명과 매칭되지 않으면(업로드 폼을 거치지 않고 드라이브에 직접 넣은 파일 등) '기타'로 분류한다 */
+function catalogBrandOf(name){
+  var base=String(name||'').replace(/\.[^.]+$/,'');
+  var m=String(base.split(/[_\-]/)[0]||'').replace(/[（(].*$/,'').replace(/\s+/g,'').replace(/[·・]/g,'');
+  for(var i=0;i<BRAND_ALIAS.length;i++){
+    if(BRAND_ALIAS[i][0].test(m))return BRAND_ALIAS[i][1];
+  }
+  return '기타';
+}
+function fmtBytes(n){
+  n=Number(n)||0;
+  if(n<1024)return n+'B';
+  if(n<1024*1024)return (n/1024).toFixed(1)+'KB';
+  return (n/1024/1024).toFixed(1)+'MB';
+}
+function fileToBase64(file){
+  return new Promise(function(res,rej){
+    var rd=new FileReader();
+    rd.onload=function(){ res(String(rd.result).split(',')[1]); };
+    rd.onerror=function(){ rej(new Error('파일 읽기 실패')); };
+    rd.readAsDataURL(file);
+  });
+}
 
 var _gpSeq=0;
 function gasPost(payload){
@@ -3094,6 +3133,7 @@ function render(){
   var ck=$('#cntKc');if(ck)ck.textContent=d.kcTodo.length||'';
   var cm=$('#cntMaster');if(cm)cm.textContent=ms.status==='ok'?ms.list.length.toLocaleString():'';
   var cs=$('#cntStock');if(cs&&hy.status==='ok'){var urg=(hy.agg.cls['발주필요']||0)+(hy.agg.cls['품절위험']||0);cs.textContent=urg||'';cs.className='cnt'+(urg?' hot':'');}
+  var cp=$('#cntPcat');if(cp)cp.textContent=pcat.status==='ok'?(pcat.files.length||''):'';
   renderSideInfo();
   var v=$('#view');
   if(state.view==='dash')v.innerHTML=vDash(rs,d);
@@ -3107,6 +3147,7 @@ function render(){
   else if(state.view==='brand')v.innerHTML=vBrandDetail();
   else if(state.view==='freight')v.innerHTML=vFreight();
   else if(state.view==='sheets')v.innerHTML=vSheets();
+  else if(state.view==='pcatalog')v.innerHTML=vPcatalog();
   bindView();refreshIcons();
 }
 function pageHead(t,sub){return '<div class="page-head"><div><h2>'+t+'</h2><p>'+sub+'</p></div></div>'}
@@ -3544,6 +3585,79 @@ function vSheets(){
   return h;
 }
 
+/* ================= 제품 카탈로그 모음 ================= */
+function vPcatalog(){
+  var h=pageHead('제품 카탈로그','브랜드사에서 받은 카탈로그 파일 모음 · 브랜드별로 묶어서 다운로드'
+    +(pcat.status==='ok'?(' · 총 '+pcat.files.length+'개'):''));
+
+  h+='<div class="toolbar">'
+    +'<input type="text" id="pcq" placeholder="파일명·브랜드 검색" value="'+esc(state.pcq||'')+'">'
+    +'<button class="chip'+(state.pcUpload?' on':'')+'" id="pcUploadBtn">'+icon('upload')+' 카탈로그 등록</button>'
+    +(pcat.folderUrl?'<a class="chip" href="'+esc(pcat.folderUrl)+'" target="_blank" rel="noopener" style="text-decoration:none">'+icon('folder-open')+' 드라이브 폴더 열기</a>':'')
+    +'</div>';
+
+  if(state.pcUpload){
+    h+='<section class="card" style="margin-bottom:14px;padding:16px 20px">'
+      +'<div style="font-size:.88rem;font-weight:800;margin-bottom:12px">새 카탈로그 등록</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+      +'<input type="text" id="pcBrand" placeholder="브랜드명 (예: FUNKO)" style="flex:1;min-width:150px;padding:9px 12px;border:1px solid var(--line-2);border-radius:10px">'
+      +'<input type="file" id="pcFile" accept=".pdf,.jpg,.jpeg,.png,.zip" style="flex:2;min-width:220px">'
+      +'<button class="btnDl" id="pcUploadSubmit">등록</button>'
+      +'</div>'
+      +'<div id="pcUploadMsg" style="font-size:.75rem;color:var(--ink-3);margin-top:10px">PDF·이미지·ZIP 파일을 올릴 수 있습니다. 등록하면 브랜드명 기준으로 자동 분류됩니다.</div>'
+      +'</section>';
+  }
+
+  if(pcat.status==='loading'){
+    h+='<div class="card"><div class="empty"><div class="spin" style="display:inline-block;vertical-align:-4px;margin-right:9px"></div>카탈로그 목록을 불러오는 중…</div></div>';
+    return h;
+  }
+  if(pcat.status==='error'){
+    h+='<div class="card"><div class="empty">카탈로그 목록 로드 실패 — '+esc(pcat.err)+'</div></div>';
+    return h;
+  }
+
+  var q=(state.pcq||'').toLowerCase();
+  var files=pcat.files.filter(function(f){
+    return !q||((f.name||'').toLowerCase().indexOf(q)!==-1);
+  });
+
+  var groups={};
+  files.forEach(function(f){
+    var br=catalogBrandOf(f.name);
+    (groups[br]=groups[br]||[]).push(f);
+  });
+  var brandKeys=Object.keys(groups).sort(function(a,b){
+    if(a==='기타')return 1; if(b==='기타')return -1;
+    return a.localeCompare(b,'ko');
+  });
+
+  if(!brandKeys.length){
+    h+='<div class="card"><div class="empty">'+(q?'검색 결과가 없습니다':'등록된 카탈로그가 없습니다 — [카탈로그 등록]으로 추가해 보세요')+'</div></div>';
+    return h;
+  }
+
+  brandKeys.forEach(function(br){
+    var items=groups[br];
+    h+='<section class="card" style="margin-bottom:12px">'
+      +'<div class="section-head"><span style="width:34px;height:34px;border-radius:11px;background:var(--g100);display:flex;align-items:center;justify-content:center;color:var(--g700);margin-right:2px">'+icon('book-image')+'</span>'
+      +'<h3>'+esc(br)+'</h3><span class="sub">'+items.length+'개</span></div>'
+      +'<div style="padding:2px 12px 14px">'
+      +items.map(function(f){
+        return '<div class="task-row" style="cursor:default">'
+          +'<div class="task-icon">'+icon('file-text')+'</div>'
+          +'<div class="task-copy" style="flex:1;min-width:0">'
+          +'<span style="font-weight:700;font-size:.88rem;display:block">'+esc(f.name)+'</span>'
+          +'<span>'+fmtBytes(f.size)+' · '+new Date(f.updated).toLocaleDateString('ko-KR')+'</span></div>'
+          +'<a class="chip" href="'+esc(driveDown(f.id))+'" target="_blank" rel="noopener" style="text-decoration:none;margin-left:auto">'+icon('download')+' 다운로드</a>'
+          +'<button class="chip" data-pcdel="'+esc(f.id)+'" style="margin-left:8px">삭제</button>'
+          +'</div>';
+      }).join('')
+      +'</div></section>';
+  });
+  return h;
+}
+
 /* ================= KC 인증서 만료 관리 ================= */
 var cert={status:'loading',list:[],idx:null,err:''};
 function fetchCert(force){
@@ -3928,6 +4042,7 @@ var FRATES=[
   {route:"방콕 → 인천 (TSN-ICN)",mode:"항공",unit:"KG",varUsd:3.10,varKrw:0,fixUsd:0,fixKrw:30000,sur:0.05,note:"FOB · C.C.FEE 5% 포함"}
 ];
 state.shq='';state.shEdit=false;
+state.pcq='';state.pcUpload=false;
 state.fr={fx:1500,rows:FRATES.map(function(){return {qty:'',pcs:''}}),edit:false};
 state.fr.rows[0].qty=1;
 function frNum(v){var n=parseFloat(v);return isFinite(n)?n:0}
@@ -4562,6 +4677,38 @@ function bindView(){
       rd.readAsText(f);
     };
     inp.click();
+  });
+  bindSearch('pcq',function(v){state.pcq=v;});
+  var pcU=$('#pcUploadBtn');if(pcU)pcU.addEventListener('click',function(){state.pcUpload=!state.pcUpload;render();});
+  var pcS=$('#pcUploadSubmit');if(pcS)pcS.addEventListener('click',function(){
+    var brand=($('#pcBrand').value||'').trim();
+    var file=$('#pcFile').files[0];
+    if(!file){alert('업로드할 파일을 선택하세요');return;}
+    var msg=$('#pcUploadMsg');
+    if(msg)msg.textContent='업로드 중…';
+    pcS.disabled=true;
+    fileToBase64(file).then(function(b64){
+      return gasPost({action:'uploadCatalog',brand:brand,name:file.name,data:b64,mime:file.type||'application/octet-stream'});
+    }).then(function(){
+      return new Promise(function(r){setTimeout(r,2000)});
+    }).then(function(){
+      state.pcUpload=false;
+      return fetchPcat(true);
+    }).catch(function(e){
+      pcS.disabled=false;
+      if(msg)msg.textContent='업로드 실패: '+(e.message||e);
+    });
+  });
+  v.querySelectorAll('[data-pcdel]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var id=b.dataset.pcdel;
+      if(!confirm('이 카탈로그 파일을 삭제할까요?'))return;
+      b.disabled=true;
+      gasPost({action:'deleteCatalog',id:id})
+        .then(function(){ return new Promise(function(r){setTimeout(r,1500)}); })
+        .then(function(){ return fetchPcat(true); })
+        .catch(function(e){ alert('삭제 실패: '+(e.message||e)); b.disabled=false; });
+    });
   });
   var ffx=$('#frFx');if(ffx)ffx.addEventListener('input',function(){state.fr.fx=this.value;frUpdateCells();});
   var fed=$('#frEdit');if(fed)fed.addEventListener('click',function(){state.fr.edit=!state.fr.edit;render();});
@@ -6183,7 +6330,7 @@ function initBot(){
 /* ================= 시작 ================= */
 initCat();initKn();buildYearSeg();renderSideInfo();initBot();refreshIcons();
 var _bh0=document.getElementById('brandHome'); if(_bh0)_bh0.classList.add('atHome');
-[fetchHayoung,fetchMaster,fetchStock,fetchCert,fetchExtra,fetchFx,fetchWx].forEach(function(fn){
+[fetchHayoung,fetchMaster,fetchStock,fetchCert,fetchExtra,fetchFx,fetchWx,fetchPcat].forEach(function(fn){
   try{ fn(); }catch(e){ console.warn('init',fn.name,e); }
 });
 loadYear(state.year).then(render);
