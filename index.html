@@ -2915,16 +2915,19 @@ function costInfo(o){
   return null;
 }
 function costPrice(o){ var c=costInfo(o); return c?c.krw:null; }
-/* 마진율 = (판매가(없으면 소비자가) - 매입단가) / 판매가 × 100. 매입단가나 판매가/소비자가를
-   원화로 알 수 없으면(환율 미확보 등) null — 이 경우 화면에 마진율 자체를 표시하지 않는다. */
+/* 마진율(=이익율) — 소비자가·판매가(MSRP성 카탈로그 가격) 기준이 아니라, 회사에서 이미 쓰는
+   "이익율" 기준과 똑같이 실제 납품가 기준으로 계산한다: 이익율 = (매출(공급가) - 원가) ÷ 매출.
+   여기서 매출은 채널별 실제 판매수량 × 공급가(=supplyPrice, 재고/발주 DB 매출 기준 평균 단가),
+   원가는 채널별 판매수량 × 재고단가(stockOf(o).it.dp) — 수량이 분자·분모에 똑같이 곱해지므로
+   단가만으로 계산해도 비율은 동일하다: 이익율 = (평균공급가 - 재고단가) ÷ 평균공급가.
+   평균공급가(실거래 데이터)나 재고단가 중 하나라도 없으면(2026년 판매 이력이 없는 신상품 등)
+   null을 반환해 마진율 자체를 표시하지 않는다 — 소비자가 대비로 억지로 계산하면 실제 회사가
+   쓰는 이익율과 다른 숫자가 나와 오해를 줄 수 있기 때문이다. */
 function marginPct_(o){
-  var c=costInfo(o); if(!c||!c.krw)return null;
-  var cd=catDetail(o);
-  var spRaw=(cd&&cd.sp)?Number(String(cd.sp).replace(/[^0-9.]/g,'')):null;
-  var rrpRaw=o.rrp?Number(String(o.rrp).replace(/[^0-9.]/g,'')):null;
-  var price=spRaw||rrpRaw;
-  if(!price||!isFinite(price))return null;
-  var pct=(1-c.krw/price)*100;
+  var sup=supplyPrice(o); if(!sup||!sup.unit)return null;
+  var s=stockOf(o); var dp=(s&&s.it&&s.it.dp)?s.it.dp:null;
+  if(!dp||!isFinite(dp))return null;
+  var pct=(1-dp/sup.unit)*100;
   if(!isFinite(pct))return null;
   return Math.round(pct*10)/10;
 }
@@ -5987,7 +5990,13 @@ function botAnsKc(e){
   return h;
 }
 
-/* ---------- 답변: 원가·마진 ---------- */
+/* ---------- 답변: 원가·이익율 ----------
+   이익율은 소비자가·판매가(카탈로그 표시가) 기준이 아니라, 회사가 이미 "이익율" 화면에서
+   쓰고 있는 것과 똑같은 기준 — 실제 납품(공급)가 대비로 계산한다:
+   이익율 = (평균공급가 - 재고단가) ÷ 평균공급가. 평균공급가는 실거래 매출/수량(supplyPrice),
+   재고단가는 재고/발주 DB 평가단가(stockOf().it.dp) — 둘 다 2026년 실제 판매 이력이 있어야
+   나오므로, 판매 이력이 없는 신상품은 이익율을 계산하지 않는다(억지로 소비자가 대비로 계산하면
+   실제 이익율과 다른 숫자가 나와 오해를 줄 수 있다). */
 function botAnsCost(e){
   var hit=botFind(e);
   if(hit.length===1){
@@ -5995,48 +6004,50 @@ function botAnsCost(e){
     if(!ci) return '<span class="bLead">'+esc(o.name)+'</span>원가 정보가 없습니다. 오더에 매입단가가 등록되어 있지 않습니다.'+botCard(o);
     var sp=cd.sp?Number(String(cd.sp).replace(/[^0-9.]/g,'')):null;
     var rrp=o.rrp?Number(String(o.rrp).replace(/[^0-9.]/g,'')):null;
+    var sup=supplyPrice(o);
+    var st=stockOf(o); var dp=(st&&st.it&&st.it.dp!=null)?st.it.dp:null;
     var rows=[];
     if(ci.krw!=null) rows.push('<dt>원가</dt><dd>'+bWon(ci.krw)+'</dd>');
     if(ci.usd) rows.push('<dt>매입단가</dt><dd>$'+ci.usd+'</dd>');
     if(ci.rate) rows.push('<dt>적용환율</dt><dd>'+bNum(ci.rate)+'원</dd>');
     rows.push('<dt>출처</dt><dd style="font-weight:400;color:var(--ink-2)">'+esc(ci.src)+'</dd>');
+    if(sup&&sup.unit) rows.push('<dt>평균 공급가</dt><dd>'+bWon(sup.unit)+'</dd>');
     if(sp) rows.push('<dt>판매가</dt><dd>'+bWon(sp)+'</dd>');
-    /* 원가(원)가 없으면 마진을 계산하지 않는다.
-       null 을 그대로 빼면 마진율이 100%로 나와 완전히 잘못된 숫자가 된다. */
-    if(sp && ci.krw!=null){
-      var m=sp-ci.krw;
-      rows.push('<dt>마진액</dt><dd style="color:'+(m>0?'var(--g700)':'var(--red)')+'">'+bWon(m)+'</dd>');
-      rows.push('<dt>마진율</dt><dd style="color:'+(m>0?'var(--g700)':'var(--red)')+'">'+(m/sp*100).toFixed(1)+'%</dd>');
+    /* 평균공급가·재고단가 둘 다 있어야 이익율 계산 — 하나라도 없으면 표시하지 않는다 */
+    if(sup&&sup.unit&&dp!=null){
+      var m=sup.unit-dp;
+      rows.push('<dt>이익액(단가)</dt><dd style="color:'+(m>0?'var(--g700)':'var(--red)')+'">'+bWon(m)+'</dd>');
+      rows.push('<dt>이익율</dt><dd style="color:'+(m>0?'var(--g700)':'var(--red)')+'">'+(m/sup.unit*100).toFixed(1)+'%</dd>');
     }
     if(rrp) rows.push('<dt>소비자가</dt><dd>'+bWon(rrp)+'</dd>');
     var warn='';
     if(ci.krw==null) warn='<span class="bWarn">환율을 아직 받지 못해 원화 원가를 계산하지 못했습니다. 잠시 후 다시 물어봐 주세요.</span>';
-    else if(!sp) warn='<span class="bNote">판매가가 없어 마진은 계산하지 못했습니다.</span>';
+    else if(!sup||!sup.unit||dp==null) warn='<span class="bNote">2026년 실제 판매 이력(평균 공급가·재고단가)이 없어 이익율은 계산하지 못했습니다.</span>';
     else if(ci.kind==='stock') warn='<span class="bNote">오더 매입단가가 없어 재고DB 평가액을 원가로 썼습니다. 실제 매입원가와 차이가 클 수 있습니다.</span>';
-    return '<span class="bLead">'+esc(o.name)+' 원가·마진</span>'+botCard(o)+'<dl class="bDl">'+rows.join('')+'</dl>'+warn;
+    return '<span class="bLead">'+esc(o.name)+' 원가·이익율</span>'+botCard(o)+'<dl class="bDl">'+rows.join('')+'</dl>'+warn;
   }
   if(hit.length>1){
     var arr=hit.slice(0,400).map(function(o){
-      var ci=costInfo(o), cd=catDetail(o)||{};
-      var sp=cd.sp?Number(String(cd.sp).replace(/[^0-9.]/g,'')):null;
-      var mr=(ci&&ci.krw!=null&&sp)?((sp-ci.krw)/sp*100):null;
-      return {o:o,cost:(ci&&ci.krw!=null)?ci.krw:null,sp:sp,mr:mr};
-    }).filter(function(x){return x.cost!=null});
-    if(!arr.length) return '<span class="bLead">원가 정보 없음</span>검색된 '+hit.length+'건 모두 오더에 매입단가가 등록되어 있지 않습니다.';
-    arr.sort(function(a,b){ return (a.mr==null?999:a.mr)-(b.mr==null?999:b.mr); });
-    var h='<span class="bLead">'+(e.brand?esc(e.brand)+' ':'')+'원가·마진 '+arr.length+'건</span>'
-      +'<span class="bNote">마진율 낮은 순'+(hit.length>arr.length?' · 검색 '+hit.length+'건 중 원가가 있는 '+arr.length+'건':'')+'</span>'
-      +'<table class="bTbl"><thead><tr><th>상품</th><th class="num">원가</th><th class="num">판매가</th><th class="num">마진율</th></tr></thead><tbody>';
+      var sup=supplyPrice(o);
+      var st=stockOf(o); var dp=(st&&st.it&&st.it.dp!=null)?st.it.dp:null;
+      var mr=(sup&&sup.unit&&dp!=null)?((sup.unit-dp)/sup.unit*100):null;
+      return {o:o,cost:dp,sup:(sup&&sup.unit)?sup.unit:null,mr:mr};
+    }).filter(function(x){return x.mr!=null});
+    if(!arr.length) return '<span class="bLead">이익율 정보 없음</span>검색된 '+hit.length+'건 모두 2026년 실제 판매 이력(평균 공급가·재고단가)이 없습니다.';
+    arr.sort(function(a,b){ return a.mr-b.mr; });
+    var h='<span class="bLead">'+(e.brand?esc(e.brand)+' ':'')+'이익율 '+arr.length+'건</span>'
+      +'<span class="bNote">이익율 낮은 순'+(hit.length>arr.length?' · 검색 '+hit.length+'건 중 2026년 판매 이력 있는 '+arr.length+'건':'')+'</span>'
+      +'<table class="bTbl"><thead><tr><th>상품</th><th class="num">재고단가</th><th class="num">평균공급가</th><th class="num">이익율</th></tr></thead><tbody>';
     arr.slice(0,e.topN||10).forEach(function(x){
       h+='<tr><td>'+esc(String(x.o.name||'—').slice(0,22))+'</td>'
         +'<td class="num">'+bNum(x.cost)+'</td>'
-        +'<td class="num">'+(x.sp?bNum(x.sp):'—')+'</td>'
-        +'<td class="num" style="'+(x.mr!=null&&x.mr<20?'color:var(--red);font-weight:700':'')+'">'+(x.mr!=null?x.mr.toFixed(1)+'%':'—')+'</td></tr>';
+        +'<td class="num">'+bNum(x.sup)+'</td>'
+        +'<td class="num" style="'+(x.mr<20?'color:var(--red);font-weight:700':'')+'">'+x.mr.toFixed(1)+'%</td></tr>';
     });
     return h+'</tbody></table>';
   }
-  return '<span class="bLead">어느 상품의 원가인가요?</span>바코드·ITEM#·상품명을 알려주시면 원가와 마진을 계산해 드립니다.'
-    + botChips(['3467452081877 원가','마조렛 마진','FUNKO 원가']);
+  return '<span class="bLead">어느 상품의 원가인가요?</span>바코드·ITEM#·상품명을 알려주시면 원가와 이익율을 계산해 드립니다.'
+    + botChips(['3467452081877 원가','마조렛 이익율','FUNKO 원가']);
 }
 
 /* ---------- 답변: 매출 ---------- */
