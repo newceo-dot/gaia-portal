@@ -959,7 +959,7 @@ svg rect,svg circle,svg polyline{transition:opacity .3s var(--ease-soft)}
   </div>
   <div class="botFoot">
     <div class="botIn">
-      <textarea id="botQ" rows="1" placeholder="갈슨에게 물어보세요 — 예: 마조렛 재고, 3개월 내 KC 만료"></textarea>
+      <textarea id="botQ" rows="1" placeholder="갈슨에게 물어보세요 — 예: 마조렛 재고, 이번달 입고 예정"></textarea>
       <button class="bSend" id="botSend" aria-label="보내기"><i data-lucide="send"></i></button>
     </div>
   </div>
@@ -4705,10 +4705,16 @@ function navGo(goV,f){
     go('stock');return;
   }
   var nf={q:'',brand:'',status:'',im:''};
-  if(f.indexOf('status:')===0)nf.status=f.slice(7);
-  if(f.indexOf('im:')===0)nf.im=f.slice(3);
-  if(f.indexOf('brand:')===0)nf.brand=f.slice(6);
-  if(f.indexOf('etdmiss')===0)nf.status='etdmiss';
+  /* 오더 화면은 상태·입고월·브랜드를 동시에 걸 수 있어 "&"로 여러 조건을 이어붙인
+     합성 필터 문자열을 받는다(예: "status:delay&brand:FUNKO") — 챗봇 답변이 실제로
+     보여준 조건 그대로 화면을 열기 위함. 기존처럼 조건 하나만 와도 그대로 동작한다. */
+  String(f||'').split('&').forEach(function(seg){
+    if(seg.indexOf('status:')===0)nf.status=seg.slice(7);
+    else if(seg.indexOf('im:')===0)nf.im=seg.slice(3);
+    else if(seg.indexOf('brand:')===0)nf.brand=seg.slice(6);
+    else if(seg.indexOf('q:')===0)nf.q=decodeURIComponent(seg.slice(2));
+    else if(seg.indexOf('etdmiss')===0)nf.status='etdmiss';
+  });
   if(goV==='kc'&&f)state.kcf=f;
   go(goV,goV==='orders'?nf:state.f);
 }
@@ -5523,10 +5529,10 @@ function botFollowups(k,e){
     out.push(br+' 발주필요');
   }
   var base={
-    product :['발주필요 목록','3개월 내 KC 만료'],
+    product :['발주필요 목록','이번달 입고 예정'],
     stock   :['발주필요 목록','품절위험 상위 10개','이번달 입고 예정'],
     inbound :['지연 오더','다음달 입고 예정','브랜드별 발주액 TOP 10'],
-    kc      :['만료된 KC 인증서','6개월 내 만료되는 인증서','3개월 내 KC 만료'],
+    kc      :['만료된 KC 인증서','6개월 내 만료되는 인증서'],
     cost    :['브랜드별 발주액 TOP 10','발주필요 목록'],
     sales   :['매출 TOP 5 브랜드','이번달 발주필요 목록'],
     analysis:['지난달 발주','지연 오더','발주필요 목록'],
@@ -5817,6 +5823,16 @@ function botAnsInbound(e){
      어느 컬럼에 그 상태 문구가 들어있는지 시트마다 다를 수 있어, 특정 필드를 고정하지 않고
      행 전체 텍스트에서 문구가 있는지로 찾는다(컬럼명이 바뀌어도 안 깨짐). */
   var wantPaid = /송금\s*완료|입금\s*완료/.test(e.lq);
+  /* "입고예정 중에 KC 안된 것"처럼, 입고 목록을 KC 인증 여부로 다시 걸러 묻는 질문 —
+     KC 번호가 아예 없거나, 있어도 관리대장(cert.list)에서 못 찾거나, 이미 만료된 경우를
+     모두 "안 된 것"으로 본다(임박은 별도 개념이라 제외 — 그건 "3개월 내 KC 만료"로 물어야 함). */
+  var wantNoKc = /(kc\s*(가|이)?\s*(안\s*(된|됨|되)|없|미\s*(인증|등록|보유))|인증\s*(이|가)?\s*(안\s*(된|됨|되)|없)|미인증)/i.test(e.lq);
+  function botRowNoKc_(r){
+    var od=ordAttr(r.bc)||{}, kn=knOf(r.bc)||{};
+    var kcno=r.kcno||od.kcno||kn.kc||'';
+    var ct=certOf(kcno, r.kcname||od.kcname);
+    return !ct || ct._st==='expired';
+  }
   /* PI/SC# (예: 320S0001788) — 상품명·브랜드보다 훨씬 정확한 단서라서 있으면 최우선으로 쓴다 */
   var piM = e.raw.match(/\b(\d{2,4}[A-Za-z]\d{4,})\b/);
   var pi = piM ? piM[1] : '';
@@ -5842,6 +5858,7 @@ function botAnsInbound(e){
     if(ym) return parseYM(r.im)===ym && !r.ind && !isDelayed(r) && !isCarry(r);
     return !r.ind && !isDelayed(r) && !isCarry(r);
   });
+  if(wantNoKc) list=list.filter(botRowNoKc_);
   /* 지연·이월로 분류되어 이번 답변에서 빠진 건수 — 0건으로 답할 때 "아예 없다"고
      오해하지 않도록, 있으면 어디로 물어봐야 나오는지 알려준다. */
   var excludedStatusCount = 0;
@@ -5873,6 +5890,7 @@ function botAnsInbound(e){
   }
 
   var label = wantPaid?'송금완료 건의 입고 예정':(wantDelay?'지연 오더':(wantCarry?'이월 오더':(ym?fmtYM(ym)+' 입고 예정':'미입고 오더')));
+  if(wantNoKc) label += ' 중 KC 미인증';
 
   /* 확실하지 않으면 틀린 걸 짚어주지 말고, 더 정확한 단서(PI 번호)를 물어본다 —
      특히 "송금완료" 같은 문구는 여러 건에 붙어 있을 수 있어, 브랜드·상품 특정 없이
@@ -5886,6 +5904,7 @@ function botAnsInbound(e){
     }
     none+='<span class="bNote">PI 번호(SC/PI#, 예: 320S0001788)를 알려주시면 정확히 찾아드릴게요.</span>';
     if(!list.length && wantPaid) none+='<span class="bNote">혹시 "송금완료" 표기가 다른 문구(예: "결제완료")로 되어 있다면 그것도 알려주세요.</span>';
+    if(!list.length && wantNoKc) none+='<span class="bNote">KC 번호가 없거나 관리대장에 없거나 이미 만료된 건을 기준으로 찾았습니다 — 조건에 맞는 건이 없습니다.</span>';
     none+=botNext(['지연 오더','이월 오더','발주필요 목록']);
     return none;
   }
@@ -5907,7 +5926,7 @@ function botAnsInbound(e){
 
   var h='<span class="bLead">'+esc(label)+' '+list.length+'건'+(e.brand?' · '+esc(e.brand):'')+(pi?' · PI '+esc(pi):'')+'</span>'
     +'수량 <b>'+bNum(qty)+'</b>개 · 금액 <b>'+fmtUSD(amt)+'</b><br>'+summary
-    +'<table class="bTbl"><thead><tr><th>상품</th><th>ETA</th><th class="num">수량</th><th>입금</th><th>상태</th></tr></thead><tbody>';
+    +'<table class="bTbl"><thead><tr><th>상품</th><th>ETA</th><th class="num">수량</th><th>입금</th><th>상태</th>'+(wantNoKc?'<th>KC</th>':'')+'</tr></thead><tbody>';
   list.slice(0,n).forEach(function(r){
     var st = r.ind ? '입고완료('+r.ind+')' : (isDelayed(r)?'지연':(isCarry(r)?'이월':(ST[statusOf(r)]?ST[statusOf(r)].label:'')));
     var paid = botPaidInfoFor_(r,paidByBl);
@@ -5915,14 +5934,31 @@ function botAnsInbound(e){
       +'<td>'+esc(r.eta||r.im||'—')+'</td>'
       +'<td class="num">'+bNum(amtNum(r.qty))+'</td>'
       +'<td>'+(paid?esc(paid):'<span style="color:var(--ink-3)">미확인</span>')+'</td>'
-      +'<td>'+esc(st)+'</td></tr>';
+      +'<td>'+esc(st)+'</td>'
+      +(wantNoKc?'<td style="color:var(--red);font-weight:700">'+(function(){
+          var od=ordAttr(r.bc)||{}, kn=knOf(r.bc)||{};
+          var kcno=r.kcno||od.kcno||kn.kc||'';
+          var ct=certOf(kcno, r.kcname||od.kcname);
+          return !kcno?'미등록':(ct&&ct._st==='expired'?'만료':'대장 없음');
+        })()+'</td>':'')
+      +'</tr>';
   });
   h+='</tbody></table>';
   if(list.length>n) h+='<span class="bNote">'+n+'건만 표시했습니다. 브랜드나 PI 번호를 알려주시면 더 좁혀집니다.</span>';
   if(excludedStatusCount>0) h+='<span class="bNote">지연·이월 상태인 '+excludedStatusCount+'건은 제외했습니다 — "지연 오더"/"이월 오더"로 물어보시면 확인하실 수 있어요.</span>';
   if(list.slice(0,n).some(function(r){return !botPaidInfoFor_(r,paidByBl)})) h+='<span class="bNote">입금 확인은 BL 단위로 합니다(같은 BL의 다른 품목에 문구가 있으면 그걸 따름) — "미확인"은 그 BL 전체에서도 "송금완료"/"입금완료" 문구를 못 찾았다는 뜻입니다. 실제로는 입금됐는데 문구가 다르게 적혀 있을 수도 있어요.</span>';
-  h+=botGoBtn('오더 현황 화면에서 전체 보기','orders', e.brand?('brand:'+e.brand):'');
-  var nextQs = wantDelay ? ['이월 오더','발주필요 목록','3개월 내 KC 만료']
+  /* "전체 보기"로 뭉뚱그리지 않고, 이 답변이 실제로 걸어 보여준 조건(상태·입고월·PI·브랜드) 그대로
+     오더 관리 화면을 열어준다 — 화면에 도착했는데 필터가 안 걸려 있으면 답변과 다른 걸 보는 셈이라. */
+  var goF=[], goLabel;
+  if(pi){ goF.push('q:'+encodeURIComponent(pi)); goLabel='PI '+pi; }
+  else if(wantDelay){ goF.push('status:delay'); goLabel='지연 오더'; }
+  else if(wantCarry){ goF.push('status:carry'); goLabel='이월 오더'; }
+  else if(ym){ goF.push('im:'+ym); goLabel=fmtYM(ym)+' 입고 예정'; }
+  else { goLabel='미입고 오더'; }
+  if(e.brand){ goF.push('brand:'+e.brand); goLabel+=' · '+e.brand; }
+  if(wantPaid||wantNoKc){ goLabel+=' (화면에는 없는 조건은 브랜드·기간만 반영돼요)'; }
+  h+=botGoBtn(goLabel+' 화면에서 보기','orders', goF.join('&'));
+  var nextQs = wantDelay ? ['이월 오더','발주필요 목록','이번달 입고 예정']
     : wantCarry ? ['지연 오더','발주필요 목록','이번달 입고 예정']
     : wantPaid ? ['이번달 입고 예정','지연 오더','발주필요 목록']
     : ['지연 오더','이월 오더','발주필요 목록'];
@@ -6698,9 +6734,9 @@ function botToggle(open){
     botHideHint();
     w.classList.add('on'); f.classList.add('hide');
     if(!bot.msgs.length){
-      botPush('ai','<span class="bLead">안녕하세요, 갈슨입니다 🧸</span>'
+      botPush('ai','<span class="bLead">안녕하세요, MD팀 마스코트 갈슨입니다 🧸</span>'
         +'상품·재고·입고·KC·원가, 궁금한 걸 편하게 물어보세요.'
-        +botNext(['이번달 입고 예정','송금완료 건 입고 예정','발주필요 목록','3개월 내 KC 만료']), 'happy');
+        +botNext(['이번달 입고 예정','송금완료 건 입고 예정','발주필요 목록','재고 현황 확인']), 'happy');
     }
     setTimeout(function(){ var t=document.getElementById('botQ'); if(t)t.focus(); },120);
   }else{
