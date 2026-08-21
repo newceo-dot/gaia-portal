@@ -3689,7 +3689,7 @@ function vPcatalog(){
     +'<button class="chip'+(state.pcUpload?' on':'')+'" id="pcUploadBtn">'+icon('upload')+' 카탈로그 등록</button>'
     +(pcat.folderUrl?'<a class="chip" href="'+esc(pcat.folderUrl)+'" target="_blank" rel="noopener" style="text-decoration:none">'+icon('folder-open')+' 드라이브 폴더 열기</a>':'')
     +'</div>'
-    +'<input type="file" id="pcInlineFile" accept=".pdf,.jpg,.jpeg,.png,.zip" style="display:none">'
+    +'<input type="file" id="pcInlineFile" accept=".pdf,.jpg,.jpeg,.png,.zip,.ppt,.pptx,.doc,.docx,.xls,.xlsx" multiple style="display:none">'
     +(pcat.status==='ok'?'<div style="font-size:.74rem;color:var(--ink-3);margin:-6px 0 12px">캐시 없이 매번 드라이브에서 바로 불러옵니다 — 드라이브에서 폴더·파일을 정리했다면 [새로고침]으로 바로 확인하세요. 각 폴더 카드의 [업로드]를 누르면 그 폴더에 바로 파일을 올릴 수 있습니다.</div>':'');
 
   if(state.pcUpload){
@@ -3702,10 +3702,10 @@ function vPcatalog(){
       +(extraFolderOpts?'<optgroup label="그 외 기존 폴더">'+extraFolderOpts+'</optgroup>':'')
       +'<option value="__new">+ 직접 폴더 이름 입력</option></select>'
       +'<input type="text" id="pcNewFolderName" placeholder="새 폴더 이름" style="display:none;flex:1;min-width:150px;padding:9px 12px;border:1px solid var(--line-2);border-radius:10px">'
-      +'<input type="file" id="pcFile" accept=".pdf,.jpg,.jpeg,.png,.zip" style="flex:2;min-width:220px">'
+      +'<input type="file" id="pcFile" accept=".pdf,.jpg,.jpeg,.png,.zip,.ppt,.pptx,.doc,.docx,.xls,.xlsx" multiple style="flex:2;min-width:220px">'
       +'<button class="btnDl" id="pcUploadSubmit">등록</button>'
       +'</div>'
-      +'<div id="pcUploadMsg" style="font-size:.75rem;color:var(--ink-3);margin-top:10px">PDF·이미지·ZIP 파일을 올릴 수 있습니다. 브랜드를 고르면 그 브랜드 폴더에(없으면 자동으로 새로 만들어서) 등록됩니다.</div>'
+      +'<div id="pcUploadMsg" style="font-size:.75rem;color:var(--ink-3);margin-top:10px">PDF·이미지·ZIP·PPT·문서 파일을 여러 개 한번에 선택해서 올릴 수 있습니다. 브랜드를 고르면 그 브랜드 폴더에(없으면 자동으로 새로 만들어서) 등록됩니다.</div>'
       +'</section>';
   }
 
@@ -4801,8 +4801,8 @@ function bindView(){
     var nn=$('#pcNewFolderName');if(nn)nn.style.display=(pcFS.value==='__new')?'':'none';
   });
   var pcS=$('#pcUploadSubmit');if(pcS)pcS.addEventListener('click',function(){
-    var file=$('#pcFile').files[0];
-    if(!file){alert('업로드할 파일을 선택하세요');return;}
+    var files=$('#pcFile').files;
+    if(!files||!files.length){alert('업로드할 파일을 선택하세요');return;}
     var sel=$('#pcFolderSel'), selV=sel?sel.value:'';
     var newName=($('#pcNewFolderName')&&$('#pcNewFolderName').value||'').trim();
     if(selV==='__new'&&!newName){alert('새 폴더 이름을 입력하세요');return;}
@@ -4827,14 +4827,10 @@ function bindView(){
       ? ensureFolderByName(newName)
       : (selV ? ensureFolderByName(selV) : Promise.resolve(''));
     getFolderId.then(function(folderId){
-      return fileToBase64(file).then(function(b64){
-        return gasPost({action:'uploadCatalog',folderId:folderId||'',name:file.name,data:b64,mime:file.type||'application/octet-stream'});
-      });
-    }).then(function(){
-      return new Promise(function(r){setTimeout(r,2000)});
-    }).then(function(){
       state.pcUpload=false;
-      return fetchPcat(true);
+      return pcDoUploadMulti(files,folderId,{onProgress:function(i,total){
+        if(msg)msg.textContent=total>1?('업로드 중… ('+i+'/'+total+')'):'업로드 중…';
+      }});
     }).catch(function(e){
       pcS.disabled=false;
       if(msg)msg.textContent='업로드 실패: '+(e.message||e);
@@ -4845,20 +4841,30 @@ function bindView(){
       openCatalogPreview(row.dataset.pcview, row.dataset.pcname||'', row.dataset.pcmime||'');
     });
   });
-  /* 폴더 카드에 보이는 [업로드] 버튼 + 카드에 파일을 끌어다 놓는 드래그&드롭 — 둘 다 결국
-     "이 폴더 ID에 이 파일을 올린다"로 귀결되므로 업로드 로직 자체는 한 함수로 공유한다. */
-  function pcDoUpload(file,folderId,indicatorEl,origHtml){
-    if(indicatorEl) indicatorEl.disabled=true;
-    fileToBase64(file).then(function(b64){
-      return gasPost({action:'uploadCatalog',folderId:folderId||'',name:file.name,data:b64,mime:file.type||'application/octet-stream'});
-    }).then(function(){
-      return new Promise(function(r){setTimeout(r,2000)});
-    }).then(function(){
-      return fetchPcat(true);
-    }).catch(function(e){
-      alert('업로드 실패: '+(e.message||e));
-      if(indicatorEl){ indicatorEl.disabled=false; if(origHtml!=null)indicatorEl.textContent=origHtml; }
-    });
+  /* 폴더 카드에 보이는 [업로드] 버튼 + 카드에 파일을 끌어다 놓는 드래그&드롭 + 상단 등록 폼 —
+     셋 다 결국 "이 폴더 ID에 파일 1개 이상을 올린다"로 귀결되므로 업로드 로직 자체는 한
+     함수로 공유한다. 여러 파일을 한 번에 골라도(또는 끌어다 놓아도) 순서대로 하나씩 올리고,
+     전부 끝나면 딱 한 번만 목록을 다시 불러온다. */
+  function pcDoUploadMulti(fileList,folderId,opts){
+    opts=opts||{};
+    var files=Array.prototype.slice.call(fileList||[]);
+    if(!files.length) return Promise.resolve();
+    var total=files.length, failed=[];
+    function step(i){
+      if(i>=total) return Promise.resolve();
+      if(opts.onProgress) opts.onProgress(i+1,total);
+      return fileToBase64(files[i]).then(function(b64){
+        return gasPost({action:'uploadCatalog',folderId:folderId||'',name:files[i].name,data:b64,mime:files[i].type||'application/octet-stream'});
+      }).catch(function(e){
+        failed.push(files[i].name+': '+(e.message||e));
+      }).then(function(){ return step(i+1); });
+    }
+    return step(0)
+      .then(function(){ return new Promise(function(r){setTimeout(r,1500)}); })
+      .then(function(){ return fetchPcat(true); })
+      .then(function(){
+        if(failed.length) alert('일부 파일 업로드 실패:\n'+failed.join('\n'));
+      });
   }
   /* 숨겨진 파일 입력 하나를 여러 [업로드] 버튼이 같이 쓰고, 어느 버튼을 눌렀는지(어느
      폴더로 올릴지)만 클릭 시점에 기억해둔다. */
@@ -4872,11 +4878,18 @@ function bindView(){
     });
   });
   if(pcInlineFile) pcInlineFile.addEventListener('change',function(){
-    var file=pcInlineFile.files[0];
-    if(!file) return;
+    var files=pcInlineFile.files;
+    if(!files||!files.length) return;
     var btn=pcInlineBtn, origTxt=btn?btn.textContent:'';
-    if(btn) btn.textContent='업로드 중…';
-    pcDoUpload(file,pcInlineTarget,btn,origTxt);
+    if(btn){ btn.disabled=true; btn.textContent=files.length>1?('업로드 중…(1/'+files.length+')'):'업로드 중…'; }
+    pcDoUploadMulti(files,pcInlineTarget,{onProgress:function(i,total){
+      if(btn) btn.textContent=total>1?('업로드 중…('+i+'/'+total+')'):'업로드 중…';
+    }}).then(function(){
+      if(btn){ btn.disabled=false; btn.textContent=origTxt; }
+    }).catch(function(e){
+      alert('업로드 실패: '+(e.message||e));
+      if(btn){ btn.disabled=false; btn.textContent=origTxt; }
+    });
   });
   /* 폴더 카드 자체에 파일을 끌어다 놓으면(드래그&드롭) 그 폴더에 바로 업로드 — 구글드라이브
      폴더를 열지 않고도 대시보드 화면에서 바로 끌어다 놓을 수 있게 하기 위함 */
@@ -4888,9 +4901,11 @@ function bindView(){
     card.addEventListener('drop',function(ev){
       ev.preventDefault();
       pcDragDepth=0; card.classList.remove('pcDragOver');
-      var file=ev.dataTransfer&&ev.dataTransfer.files&&ev.dataTransfer.files[0];
-      if(!file) return;
-      pcDoUpload(file,card.dataset.pcdropfolder,null,null);
+      var files=ev.dataTransfer&&ev.dataTransfer.files;
+      if(!files||!files.length) return;
+      pcDoUploadMulti(files,card.dataset.pcdropfolder,{}).catch(function(e){
+        alert('업로드 실패: '+(e.message||e));
+      });
     });
   });
   v.querySelectorAll('[data-pcdel]').forEach(function(b){
