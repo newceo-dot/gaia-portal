@@ -3682,7 +3682,8 @@ function vPcatalog(){
     +'<button class="chip'+(state.pcUpload?' on':'')+'" id="pcUploadBtn">'+icon('upload')+' 카탈로그 등록</button>'
     +(pcat.folderUrl?'<a class="chip" href="'+esc(pcat.folderUrl)+'" target="_blank" rel="noopener" style="text-decoration:none">'+icon('folder-open')+' 드라이브 폴더 열기</a>':'')
     +'</div>'
-    +(pcat.status==='ok'?'<div style="font-size:.74rem;color:var(--ink-3);margin:-6px 0 12px">캐시 없이 매번 드라이브에서 바로 불러옵니다 — 드라이브에서 폴더·파일을 정리했다면 [새로고침]으로 바로 확인하세요.</div>':'');
+    +'<input type="file" id="pcInlineFile" accept=".pdf,.jpg,.jpeg,.png,.zip" style="display:none">'
+    +(pcat.status==='ok'?'<div style="font-size:.74rem;color:var(--ink-3);margin:-6px 0 12px">캐시 없이 매번 드라이브에서 바로 불러옵니다 — 드라이브에서 폴더·파일을 정리했다면 [새로고침]으로 바로 확인하세요. 각 폴더 카드의 [업로드]를 누르면 그 폴더에 바로 파일을 올릴 수 있습니다.</div>':'');
 
   if(state.pcUpload){
     h+='<section class="card" style="margin-bottom:14px;padding:16px 20px">'
@@ -3728,10 +3729,11 @@ function vPcatalog(){
     h+='<section class="card" style="margin-bottom:12px">'
       +'<div class="section-head"><span style="width:34px;height:34px;border-radius:11px;background:var(--g100);display:flex;align-items:center;justify-content:center;color:var(--g700);margin-right:2px">'+icon(g.isRoot?'folder':'book-image')+'</span>'
       +'<h3>'+esc(g.name)+'</h3><span class="sub">'+items.length+'개</span>'
-      +(g.isRoot?'':'<div style="margin-left:auto;display:flex;gap:6px">'
-        +'<button class="chip" data-pcfren="'+esc(g.folderId)+'" data-pcfname="'+esc(g.name)+'" style="padding:5px 10px">이름변경</button>'
-        +'<button class="chip" data-pcfdel="'+esc(g.folderId)+'" style="padding:5px 10px">폴더삭제</button>'
-        +'</div>')
+      +'<div style="margin-left:auto;display:flex;gap:6px">'
+      +'<button class="chip" data-pcufolder="'+esc(g.folderId)+'" title="이 폴더에 바로 파일 올리기" style="padding:5px 10px">'+icon('upload')+' 업로드</button>'
+      +(g.isRoot?'':'<button class="chip" data-pcfren="'+esc(g.folderId)+'" data-pcfname="'+esc(g.name)+'" style="padding:5px 10px">이름변경</button>'
+        +'<button class="chip" data-pcfdel="'+esc(g.folderId)+'" style="padding:5px 10px">폴더삭제</button>')
+      +'</div>'
       +'</div>'
       +'<div style="padding:2px 12px 14px">'
       +(items.length?items.map(function(f){
@@ -4833,6 +4835,34 @@ function bindView(){
   v.querySelectorAll('[data-pcview]').forEach(function(row){
     row.addEventListener('click',function(){
       openCatalogPreview(row.dataset.pcview, row.dataset.pcname||'', row.dataset.pcmime||'');
+    });
+  });
+  /* 폴더 카드에 보이는 [업로드] 버튼 — 별도 "카탈로그 등록" 창을 거치지 않고, 지금 화면에
+     보이는 그 폴더에 바로 파일을 올린다. 숨겨진 파일 입력 하나를 여러 버튼이 같이 쓰고,
+     어느 버튼을 눌렀는지(어느 폴더로 올릴지)만 클릭 시점에 기억해둔다. */
+  var pcInlineFile=$('#pcInlineFile');
+  var pcInlineTarget='', pcInlineBtn=null;
+  v.querySelectorAll('[data-pcufolder]').forEach(function(b){
+    b.addEventListener('click',function(){
+      pcInlineTarget=b.dataset.pcufolder||'';
+      pcInlineBtn=b;
+      if(pcInlineFile){ pcInlineFile.value=''; pcInlineFile.click(); }
+    });
+  });
+  if(pcInlineFile) pcInlineFile.addEventListener('change',function(){
+    var file=pcInlineFile.files[0];
+    if(!file) return;
+    var folderId=pcInlineTarget, btn=pcInlineBtn, origTxt=btn?btn.textContent:'';
+    if(btn){ btn.disabled=true; btn.textContent='업로드 중…'; }
+    fileToBase64(file).then(function(b64){
+      return gasPost({action:'uploadCatalog',folderId:folderId||'',name:file.name,data:b64,mime:file.type||'application/octet-stream'});
+    }).then(function(){
+      return new Promise(function(r){setTimeout(r,2000)});
+    }).then(function(){
+      return fetchPcat(true);
+    }).catch(function(e){
+      alert('업로드 실패: '+(e.message||e));
+      if(btn){ btn.disabled=false; btn.textContent=origTxt; }
     });
   });
   v.querySelectorAll('[data-pcdel]').forEach(function(b){
